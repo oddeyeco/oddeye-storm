@@ -60,7 +60,7 @@ public class KakaHbaseTopology {
 // property should be false
 //        kafkaConfig.forceFromStart = true;
 // set the kafka spout class
-        builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), 2);
+        builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), 3);
 
 //// set the spout class
 //        builder.setSpout("LearningStormSpout",
@@ -80,12 +80,12 @@ public class KakaHbaseTopology {
 //        HBaseBolt hbase = new HBaseBolt("oddeyedata", mapper);
         
         builder.setBolt("KaftaToJsonBolt",
-                new KaftaToJsonBolt(), 2)
+                new KaftaToJsonBolt(), 3)
                 .shuffleGrouping("KafkaSpout");  
         
 //        builder.setBolt("WriteHbase", hbase, 2).fieldsGrouping("KaftaToJsonBolt", new Fields("word"));
         Config conf = new Config();
-        conf.setNumWorkers(2);
+        conf.setNumWorkers(3);
         conf.put(Config.TOPOLOGY_DEBUG, true);
         conf.setDebug(true);
         try {

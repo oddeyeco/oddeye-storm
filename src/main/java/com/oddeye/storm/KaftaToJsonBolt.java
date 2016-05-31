@@ -43,6 +43,7 @@ public class KaftaToJsonBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
+        System.out.println("Mtav Bolt");
         Option msgObject = null;
         String msg = input.getString(0);
         Function1<String, Object> f = new AbstractFunction1<String, Object>() {
@@ -60,6 +61,7 @@ public class KaftaToJsonBolt extends BaseRichBolt {
                 JsonMap = (Map) maps;
                 if (!JsonMap.get("UUID").isEmpty() & !JsonMap.get("tags").isEmpty() & !JsonMap.get("data").isEmpty()) {
                     try {
+                        System.out.println("Hasav grelun");
                         UUID uuid = UUID.randomUUID();
                         byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()));
                         java.util.Date date = new java.util.Date();
