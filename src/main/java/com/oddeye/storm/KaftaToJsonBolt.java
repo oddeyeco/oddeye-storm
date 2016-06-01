@@ -17,6 +17,7 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.log4j.Logger;
 import org.apache.storm.Config;
 import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.task.OutputCollector;
@@ -40,10 +41,11 @@ import scala.util.parsing.json.JSON;
 public class KaftaToJsonBolt extends BaseRichBolt {
 
     private HTable htable = null;
-
+    private static final Logger logger = Logger.getLogger(KaftaToJsonBolt.class);
     @Override
     public void execute(Tuple input) {
-        System.out.println("Mtav Bolt");
+
+        logger.info("Mtav Bolt: " + input.getString(0));
         Option msgObject = null;
         String msg = input.getString(0);
         Function1<String, Object> f = new AbstractFunction1<String, Object>() {
@@ -61,7 +63,8 @@ public class KaftaToJsonBolt extends BaseRichBolt {
                 JsonMap = (Map) maps;
                 if (!JsonMap.get("UUID").isEmpty() & !JsonMap.get("tags").isEmpty() & !JsonMap.get("data").isEmpty()) {
                     try {
-                        System.out.println("Hasav grelun");
+                        logger.info("Json sargec sksuma grel");
+                        
                         UUID uuid = UUID.randomUUID();
                         byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()));
                         java.util.Date date = new java.util.Date();
@@ -99,18 +102,19 @@ public class KaftaToJsonBolt extends BaseRichBolt {
                         }
                         this.htable.put(row);
                         this.htable.flushCommits();
+                        logger.info("grec prcav");
                     } catch (Exception e) {
-                        System.out.println(e);
+                        logger.error(e);
                     }
 
                 } else {
-                    System.out.println("JSON Not valid");
+                    logger.error("JSON Not valid");
                 }
             } else {
-                System.out.println("Data Not Mapped");
+                logger.error("Data Not Mapped");                
             }
         } else {
-            System.out.println("Data Not Json");
+            logger.error("Data Not Json");            
         }
     }
 
