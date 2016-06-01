@@ -120,7 +120,6 @@
     </dependency>
   </dependencies>
   <properties>
-    <hbase.version>0.98.5-hadoop2</hbase.version>
     <provided.scope>provided</provided.scope>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

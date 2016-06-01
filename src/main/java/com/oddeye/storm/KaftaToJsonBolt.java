@@ -13,9 +13,12 @@ import kafka.utils.Json;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.apache.storm.Config;
@@ -40,7 +43,8 @@ import scala.util.parsing.json.JSON;
  */
 public class KaftaToJsonBolt extends BaseRichBolt {
 
-    private HTable htable = null;
+    private Table htable = null;    
+    
     private static final Logger logger = Logger.getLogger(KaftaToJsonBolt.class);
     @Override
     public void execute(Tuple input) {
@@ -101,7 +105,7 @@ public class KaftaToJsonBolt extends BaseRichBolt {
 
                         }
                         this.htable.put(row);
-                        this.htable.flushCommits();
+//                        this.htable.flushCommits();
                         logger.info("grec prcav");
                     } catch (Exception e) {
                         logger.error(e);
@@ -128,13 +132,11 @@ public class KaftaToJsonBolt extends BaseRichBolt {
         config.set("hbase.zookeeper.quorum", "192.168.10.50");
         config.set("hbase.zookeeper.property.clientPort", "2181");
         try {
-
-            HBaseAdmin.checkHBaseAvailable(config);
-            // TODO Nael poxel
-            this.htable = new HTable(config, "oddeyedata");
-
+            HBaseAdmin.checkHBaseAvailable(config);                        
+            Connection connection = ConnectionFactory.createConnection(config);
+            this.htable = connection.getTable(TableName.valueOf("oddeyedata"));
         } catch (Exception e) {
+            logger.error(e);
         }
-//        this.hBaseClient = new HBaseClient(hbaseConfMap, hbConfig, tableName);
     }
 }

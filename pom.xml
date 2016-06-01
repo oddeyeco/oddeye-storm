@@ -9,8 +9,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- see comment below... This fixes an annoyance with intellij -->
-        <provided.scope>provided</provided.scope>
-        <hbase.version>0.98.5-hadoop2</hbase.version>
+        <provided.scope>provided</provided.scope>        
     </properties>
     
     <profiles>
@@ -106,7 +105,7 @@
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-client</artifactId>
-            <version>0.98.19-hadoop2</version>
+            <version>1.2.0-cdh5.7.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.zookeeper</groupId>

@@ -52,7 +52,6 @@ public class KakaHbaseTopology {
         SpoutConfig kafkaConfig = new SpoutConfig(zkHosts,
                 "oddeye", "", "id7");
 // Specify that the kafka messages are String        
-
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 // We want to consume all the first messages in
 // the topic every time we run the topology to
