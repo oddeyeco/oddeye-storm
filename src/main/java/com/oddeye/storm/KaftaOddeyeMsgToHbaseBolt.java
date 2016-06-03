@@ -41,15 +41,21 @@ import scala.util.parsing.json.JSON;
  *
  * @author vahan
  */
-public class KaftaToJsonBolt extends BaseRichBolt {
+public class KaftaOddeyeMsgToHbaseBolt extends BaseRichBolt {
 
-    private Table htable = null;    
-    
-    private static final Logger logger = Logger.getLogger(KaftaToJsonBolt.class);
+    private Table htable = null;
+    protected OutputCollector collector;
+
+    private static final Logger logger = Logger.getLogger(KaftaOddeyeMsgToHbaseBolt.class);
+
+    // Congig parametors
+    protected String configKey = "hbase.config";
+    protected String tableName;
+
     @Override
     public void execute(Tuple input) {
 
-        logger.info("Mtav Bolt: " + input.getString(0));
+        logger.info("Start bolt vs message: " + input.getString(0));
         Option msgObject = null;
         String msg = input.getString(0);
         Function1<String, Object> f = new AbstractFunction1<String, Object>() {
@@ -67,14 +73,14 @@ public class KaftaToJsonBolt extends BaseRichBolt {
                 JsonMap = (Map) maps;
                 if (!JsonMap.get("UUID").isEmpty() & !JsonMap.get("tags").isEmpty() & !JsonMap.get("data").isEmpty()) {
                     try {
-                        logger.info("Json sargec sksuma grel");
-                        
+                        logger.info("Message Ready to write hbase");
+
                         UUID uuid = UUID.randomUUID();
                         byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()));
                         java.util.Date date = new java.util.Date();
                         Put row = new Put(buuid, date.getTime());
 
-                        row.add(Bytes.toBytes("tags"), Bytes.toBytes("UUID"), Bytes.toBytes(JsonMap.get("UUID").get().toString()));
+                        row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("UUID"), Bytes.toBytes(JsonMap.get("UUID").get().toString()));
 
                         Map tagsMap = (Map) JsonMap.get("tags").get();
                         java.util.Map<String, String> javatagsMap = (java.util.Map<String, String>) JavaConverters$.MODULE$.mapAsJavaMapConverter(tagsMap).asJava();
@@ -83,9 +89,9 @@ public class KaftaToJsonBolt extends BaseRichBolt {
                             String value = entry.getValue().toString();
                             if (NumberUtils.isNumber(value)) {
                                 Double d_Value = Double.parseDouble(value);
-                                row.add(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
+                                row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
                             } else {
-                                row.add(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
+                                row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
                             }
 
                         }
@@ -98,45 +104,68 @@ public class KaftaToJsonBolt extends BaseRichBolt {
                             String value = entry.getValue().toString();
                             if (NumberUtils.isNumber(value)) {
                                 Double d_Value = Double.parseDouble(value);
-                                row.add(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
+                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
                             } else {
-                                row.add(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
+                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
                             }
 
                         }
                         this.htable.put(row);
-//                        this.htable.flushCommits();
-                        logger.info("grec prcav");
+                        logger.info("Writing Finish");
                     } catch (Exception e) {
-                        logger.error(e);
+                        this.collector.reportError(e);
                     }
 
                 } else {
                     logger.error("JSON Not valid");
                 }
             } else {
-                logger.error("Data Not Mapped");                
+                logger.error("Data Not Mapped");
             }
         } else {
-            logger.error("Data Not Json");            
+            logger.error("Data Not Json");
         }
+        this.collector.ack(input);
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
+
     }
 
     @Override
     public void prepare(java.util.Map map, TopologyContext topologyContext, OutputCollector collector) {
+        logger.info("DoPrepare KaftaOddeyeMsgToHbaseBolt");
+        this.tableName = "oddeyedata";
+        this.collector = collector;
         Configuration config = HBaseConfiguration.create();
         config.clear();
-        config.set("hbase.zookeeper.quorum", "192.168.10.50");
-        config.set("hbase.zookeeper.property.clientPort", "2181");
-        try {
-            HBaseAdmin.checkHBaseAvailable(config);                        
+
+        java.util.Map<String, Object> conf = (java.util.Map<String, Object>) map.get(this.configKey);
+
+        if (conf == null) {
+            throw new IllegalArgumentException("HBase configuration not found using key '" + this.configKey + "'");
+        }
+
+        if (conf.get("hbase.rootdir") == null) {
+            logger.warn("No 'hbase.rootdir' value found in configuration! Using HBase defaults.");
+        }
+
+        config.set("hbase.zookeeper.quorum", String.valueOf(conf.get("zookeeper.quorum")));
+        config.set("hbase.zookeeper.property.clientPort", String.valueOf(conf.get("zookeeper.clientPort")));
+        logger.info(conf.get("tablename"));
+
+        if (conf.get("tablename") != null) {
+            this.tableName = String.valueOf(conf.get("tablename"));
+        }
+        try {                        
             Connection connection = ConnectionFactory.createConnection(config);
-            this.htable = connection.getTable(TableName.valueOf("oddeyedata"));
-        } catch (Exception e) {
+            this.htable = connection.getTable(TableName.valueOf(this.tableName));
+            logger.info("Connect to table " + this.tableName);
+        } catch (Exception e) {            
             logger.error(e);
+        }
+        if (this.htable == null) {
+            throw new RuntimeException("Hbase Table '" + this.tableName + "' Can not connect");
         }
     }
 }
