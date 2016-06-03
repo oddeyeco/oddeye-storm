@@ -46,15 +46,15 @@ public class KafkaHbaseTopology {
 //        kafkaConfig.forceFromStart = true;
 // set the kafka spout class
         
-        builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), 1);
+        builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), 3);
         
         builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
-                new KafkaOddeyeMsgToHbaseBolt(), 1)
+                new KafkaOddeyeMsgToHbaseBolt(), 3)
                 .shuffleGrouping("KafkaSpout");  
         
 //        builder.setBolt("WriteHbase", hbase, 2).fieldsGrouping("KaftaToJsonBolt", new Fields("word"));
         Config conf = new Config();
-        conf.setNumWorkers(1);
+        conf.setNumWorkers(3);
         conf.put(Config.TOPOLOGY_DEBUG, true);
         conf.setDebug(true);
         try {
