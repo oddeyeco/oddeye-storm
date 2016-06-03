@@ -22,7 +22,7 @@ import org.apache.storm.topology.TopologyBuilder;
  *
  * @author vahan
  */
-public class KakaHbaseTopology {
+public class KafkaHbaseTopology {
 
     public static void main(String[] args) {
                                 
@@ -48,8 +48,8 @@ public class KakaHbaseTopology {
         
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), 1);
         
-        builder.setBolt("KaftaOddeyeMsgToHbaseBolt",
-                new KaftaOddeyeMsgToHbaseBolt(), 1)
+        builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
+                new KafkaOddeyeMsgToHbaseBolt(), 1)
                 .shuffleGrouping("KafkaSpout");  
         
 //        builder.setBolt("WriteHbase", hbase, 2).fieldsGrouping("KaftaToJsonBolt", new Fields("word"));
@@ -59,7 +59,7 @@ public class KakaHbaseTopology {
         conf.setDebug(true);
         try {
 // This statement submit the topology on remote cluster. // args[0] = name of topology StormSubmitter.
-            StormSubmitter.submitTopology("KakaHbaseTopologyDebug", conf, builder.createTopology());
+            StormSubmitter.submitTopology("KafkaHbaseTopology", conf, builder.createTopology());
         } catch (AlreadyAliveException alreadyAliveException) {
             System.out.println(alreadyAliveException);
         } catch (InvalidTopologyException invalidTopologyException) {

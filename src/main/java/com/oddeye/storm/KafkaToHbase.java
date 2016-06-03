@@ -28,12 +28,12 @@ import scala.Option;
  *
  * @author vahan
  */
-public class KaftaToHbase extends BaseRichBolt {
+public class KafkaToHbase extends BaseRichBolt {
 
     private Table htable = null;
     protected OutputCollector collector;
 
-    private static final Logger logger = Logger.getLogger(KaftaToHbase.class);
+    private static final Logger logger = Logger.getLogger(KafkaToHbase.class);
 
     @Override
     public void execute(Tuple input) {

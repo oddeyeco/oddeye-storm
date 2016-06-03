@@ -41,12 +41,12 @@ import scala.util.parsing.json.JSON;
  *
  * @author vahan
  */
-public class KaftaOddeyeMsgToHbaseBolt extends BaseRichBolt {
+public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
 
     private Table htable = null;
     protected OutputCollector collector;
 
-    private static final Logger logger = Logger.getLogger(KaftaOddeyeMsgToHbaseBolt.class);
+    private static final Logger logger = Logger.getLogger(KafkaOddeyeMsgToHbaseBolt.class);
 
     // Congig parametors
     protected String configKey = "hbase.config";
