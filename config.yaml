@@ -1,0 +1,14 @@
+## YAML Template.
+---
+Kafka:
+   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181" 
+   topic: "oddeye"
+   zkRoot: "/storm_oddeye"
+   zkKey: "oddeye-staus"
+   
+Topology:
+    DisplayName: "KafkaHbaseTopology"
+    SpoutParallelism_hint: 1
+    BoltParallelism_hint: 1
+    NumWorkers: 1
+    

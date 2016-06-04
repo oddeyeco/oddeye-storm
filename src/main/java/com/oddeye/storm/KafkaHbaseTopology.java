@@ -5,6 +5,8 @@
  */
 package com.oddeye.storm;
 
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -15,6 +17,7 @@ import org.apache.storm.kafka.KafkaSpout;
 import org.apache.storm.kafka.SpoutConfig;
 import org.apache.storm.kafka.StringScheme;
 import org.apache.storm.kafka.ZkHosts;
+import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.topology.TopologyBuilder;
 
@@ -24,18 +27,30 @@ import org.apache.storm.topology.TopologyBuilder;
  */
 public class KafkaHbaseTopology {
 
-    public static void main(String[] args) {
-                                
+    public static void main(String[] args) {        
+        System.out.println(args[0]);
+        String Filename = args[0];
+        Config topologyconf = new Config();
+        try {            
+            Yaml yaml = new Yaml();
+            java.util.Map rs = (java.util.Map) yaml.load(new InputStreamReader(new FileInputStream(Filename)));
+            topologyconf.putAll(rs);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        java.util.Map<String, Object> kafkaconf = (java.util.Map<String, Object>) topologyconf.get("kafka");
+        java.util.Map<String, Object> tconf = (java.util.Map<String, Object>) topologyconf.get("Topology");        
+
         TopologyBuilder builder = new TopologyBuilder();
 //        HBaseBolt
 // zookeeper hosts for the Kafka cluster
-        BrokerHosts zkHosts = new ZkHosts("nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181");
+        BrokerHosts zkHosts = new ZkHosts(String.valueOf(kafkaconf.get("zkHosts")));
 // Create the KafkaSpout configuration
 // Second argument is the topic name
 // Third argument is the ZooKeeper root for Kafka
 // Fourth argument is consumer group id
         SpoutConfig kafkaConfig = new SpoutConfig(zkHosts,
-                "oddeye", "/storm_oddeye", "oddeye-staus");
+                String.valueOf(kafkaconf.get("topic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKey")));
 // Specify that the kafka messages are String        
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 //        kafkaConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
@@ -45,16 +60,16 @@ public class KafkaHbaseTopology {
 // property should be false
 //        kafkaConfig.forceFromStart = true;
 // set the kafka spout class
-        
-        builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), 12);
-        
+           
+        builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
+
         builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
-                new KafkaOddeyeMsgToHbaseBolt(), 12)
-                .shuffleGrouping("KafkaSpout");  
-        
+                new KafkaOddeyeMsgToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("BoltParallelism_hint"))))
+                .shuffleGrouping("KafkaSpout");
+
 //        builder.setBolt("WriteHbase", hbase, 2).fieldsGrouping("KaftaToJsonBolt", new Fields("word"));
         Config conf = new Config();
-        conf.setNumWorkers(12);
+        conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
         conf.put(Config.TOPOLOGY_DEBUG, true);
         conf.setDebug(true);
         try {
