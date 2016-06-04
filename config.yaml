@@ -11,4 +11,5 @@ Topology:
     SpoutParallelism_hint: 1
     BoltParallelism_hint: 1
     NumWorkers: 1
+    Debug: false
     
