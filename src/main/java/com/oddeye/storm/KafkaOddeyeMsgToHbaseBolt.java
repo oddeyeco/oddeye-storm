@@ -60,7 +60,11 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
         String msg = input.getString(0);
         Function1<String, Object> f = new AbstractFunction1<String, Object>() {
             public Object apply(String s) {
-                return Double.parseDouble(s);
+                try {
+                    return Integer.parseInt(s);
+                } catch (NumberFormatException e) {
+                    return Double.parseDouble(s);
+                }
             }
         };
 
@@ -157,11 +161,11 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
         if (conf.get("tablename") != null) {
             this.tableName = String.valueOf(conf.get("tablename"));
         }
-        try {                        
+        try {
             Connection connection = ConnectionFactory.createConnection(config);
             this.htable = connection.getTable(TableName.valueOf(this.tableName));
             logger.info("Connect to table " + this.tableName);
-        } catch (Exception e) {            
+        } catch (Exception e) {
             logger.error(e);
         }
         if (this.htable == null) {
