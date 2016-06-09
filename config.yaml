@@ -8,8 +8,8 @@ Kafka:
    
 Topology:
     DisplayName: "KafkaHbaseTopology"
-    SpoutParallelism_hint: 20
-    BoltParallelism_hint: 20
-    NumWorkers: 20
+    SpoutParallelism_hint: 4
+    BoltParallelism_hint: 24
+    NumWorkers: 3
     Debug: false
     
