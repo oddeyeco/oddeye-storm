@@ -16,18 +16,13 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
-import org.apache.storm.Config;
-import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 import scala.Function1;
@@ -156,10 +151,10 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
 
         config.set("hbase.zookeeper.quorum", String.valueOf(conf.get("zookeeper.quorum")));
         config.set("hbase.zookeeper.property.clientPort", String.valueOf(conf.get("zookeeper.clientPort")));
-        logger.info(conf.get("tablename"));
+        logger.info(conf.get("datatablename"));
 
-        if (conf.get("tablename") != null) {
-            this.tableName = String.valueOf(conf.get("tablename"));
+        if (conf.get("datatablename") != null) {
+            this.tableName = String.valueOf(conf.get("datatablename"));
         }
         try {
             Connection connection = ConnectionFactory.createConnection(config);

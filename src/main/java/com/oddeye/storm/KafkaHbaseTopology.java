@@ -64,8 +64,13 @@ public class KafkaHbaseTopology {
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
 
         builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
-                new KafkaOddeyeMsgToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("BoltParallelism_hint"))))
+                new KafkaOddeyeMsgToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
+        
+        builder.setBolt("KafkaOddeyeMetaToHbaseBolt",
+                new KafkaOddeyeMetaToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MetaBoltParallelism_hint"))))
+                .shuffleGrouping("KafkaSpout");
+        
 
 //        builder.setBolt("WriteHbase", hbase, 2).fieldsGrouping("KaftaToJsonBolt", new Fields("word"));
         Config conf = new Config();
