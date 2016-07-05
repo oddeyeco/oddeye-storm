@@ -53,8 +53,7 @@ public class KafkaOddeyeMetaToHbaseBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
 
-        logger.info("Start bolt vs message: " + input.getString(0));
-        Option msgObject = null;
+        logger.info("Start bolt vs message: " + input.getString(0));        
         String msg = input.getString(0);
         Function1<String, Object> f = new AbstractFunction1<String, Object>() {
             public Object apply(String s) {
@@ -67,12 +66,11 @@ public class KafkaOddeyeMetaToHbaseBolt extends BaseRichBolt {
         };
 
         JSON.globalNumberParser_$eq(f);
-        msgObject = JSON.parseFull(msg);
-        Map JsonMap = null;
+        Option msgObject = JSON.parseFull(msg);        
         if (!msgObject.isEmpty()) {
             Object maps = msgObject.productElement(0);
             if (maps instanceof Map) {
-                JsonMap = (Map) maps;
+                Map JsonMap = (Map) maps;
                 if (!JsonMap.get("UUID").isEmpty() & !JsonMap.get("tags").isEmpty() & !JsonMap.get("data").isEmpty()) {
                     try {
                         logger.info("Message Ready to write meta to hbase");
@@ -95,56 +93,62 @@ public class KafkaOddeyeMetaToHbaseBolt extends BaseRichBolt {
                         for (java.util.Map.Entry tagentry : javatagsMap.entrySet()) {
                             String tagvalue = tagentry.getValue().toString();
                             String tagkey = tagentry.getKey().toString();
+                            if (tagkey.equals("timestamp")) {
+                                continue;
+                            }
                             for (java.util.Map.Entry keyentry : javadataMap.entrySet()) {
                                 String key = keyentry.getKey().toString();
                                 String rowkey = msgUUID + "/" + tagkey + "/" + tagvalue + "/" + key;
-                                keysList.add(rowkey);
-                                Get g = new Get(Bytes.toBytes(rowkey));
-                                Result metaRow = this.htable.get(g);
-                                byte[] value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("counter"));
-                                long counter = 0;                                
-                                if (value != null) {
-                                    counter = Bytes.toLong(value);                                    
-                                }
-                                
-                                String Datavalue = keyentry.getValue().toString();                                
-                                double DbDatavalue = Double.parseDouble(Datavalue);
-                                
-                                double max = DbDatavalue;
-                                value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("max"));                                                          
-                                double oldmax = DbDatavalue;
-                                if (value != null) {
-                                    oldmax = Bytes.toDouble(value);
-                                }                                                                                                
-                                max=Double.max(max, oldmax);
-                                
-                                double min = DbDatavalue;
-                                value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("min"));                                                          
-                                double oldmin = DbDatavalue;
-                                if (value != null) {
-                                    oldmin = Bytes.toDouble(value);
-                                }                                                                                                
-                                min=Double.min(min, oldmin); 
-                                
-                                value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("min"));                                                          
-                                double oldavg = 0;
-                                if (value != null) {
-                                    oldavg = Bytes.toDouble(value);
-                                }          
-                                double avg = (oldavg*counter+DbDatavalue)/(counter+1);                                                                                                
-                                long newcounter = counter+1;
+//                                keysList.add(rowkey);
                                 byte[] Browkey = Bytes.toBytes(rowkey);
-                                Put row = new Put(Browkey, date.getTime());
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("tagkey"), Bytes.toBytes(tagkey));
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("tagvalue"), Bytes.toBytes(tagvalue));
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("datakey"), Bytes.toBytes(key));
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("lasttimestamp"), Bytes.toBytes(date.getTime()));
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("counter"), Bytes.toBytes(newcounter));
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("max"), Bytes.toBytes(max));
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("min"), Bytes.toBytes(min));
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("avg"), Bytes.toBytes(avg));
-                                
-                                this.htable.put(row);
+                                Get g = new Get(Browkey);
+                                Result metaRow = this.htable.get(g);
+                                /*
+                                 byte[] value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("counter"));
+                                 long counter = 0;
+                                 if (value != null) {
+                                 counter = Bytes.toLong(value);
+                                 }
+
+                                 String Datavalue = keyentry.getValue().toString();
+                                 double DbDatavalue = Double.parseDouble(Datavalue);
+
+                                 double max = DbDatavalue;
+                                 value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("max"));
+                                 double oldmax = DbDatavalue;
+                                 if (value != null) {
+                                 oldmax = Bytes.toDouble(value);
+                                 }
+                                 max = Double.max(max, oldmax);
+
+                                 double min = DbDatavalue;
+                                 value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("min"));
+                                 double oldmin = DbDatavalue;
+                                 if (value != null) {
+                                 oldmin = Bytes.toDouble(value);
+                                 }
+                                 min = Double.min(min, oldmin);
+
+                                 value = metaRow.getValue(Bytes.toBytes("data"), Bytes.toBytes("min"));
+                                 double oldavg = 0;
+                                 if (value != null) {
+                                 oldavg = Bytes.toDouble(value);
+                                 }
+                                 double avg = (oldavg * counter + DbDatavalue) / (counter + 1);
+                                 long newcounter = counter + 1;*/
+                                if (metaRow.getRow() == null) {                                    
+                                    Put row = new Put(Browkey, date.getTime());
+                                    row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("tagkey"), Bytes.toBytes(tagkey));
+                                    row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("tagvalue"), Bytes.toBytes(tagvalue));
+                                    row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("datakey"), Bytes.toBytes(key));
+//                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("lasttimestamp"), Bytes.toBytes(date.getTime()));
+//                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("counter"), Bytes.toBytes(newcounter));
+//                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("max"), Bytes.toBytes(max));
+//                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("min"), Bytes.toBytes(min));
+//                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("avg"), Bytes.toBytes(avg));
+
+                                    this.htable.put(row);
+                                }
 
                             }
 
