@@ -5,11 +5,10 @@
  */
 package com.oddeye.storm;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.UUID;
-import kafka.utils.Json;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -49,8 +48,8 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-
-        logger.info("Start bolt vs message: " + input.getString(0));
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
+//        logger.info("Start bolt vs message: " + input.getString(0));
         Option msgObject = null;
         String msg = input.getString(0);
         Function1<String, Object> f = new AbstractFunction1<String, Object>() {
@@ -72,16 +71,21 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                 JsonMap = (Map) maps;
                 if (!JsonMap.get("UUID").isEmpty() & !JsonMap.get("tags").isEmpty() & !JsonMap.get("data").isEmpty()) {
                     try {
-                        logger.info("Message Ready to write hbase");
+                        java.util.Date date = new java.util.Date();
+                        long startdate = System.currentTimeMillis();
+                        logger.info("Message Ready to write hbase server time "+ df.format(date.getTime()));
 
                         UUID uuid = UUID.randomUUID();
-                        byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()));
-                        java.util.Date date = new java.util.Date();
+                        
+                        
+                        Map tagsMap = (Map) JsonMap.get("tags").get();
+                        
+                        byte[] buuid = Bytes.add(Bytes.toBytes(Long.parseLong(tagsMap.get("timestamp").get().toString())*1000),Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()) );
                         Put row = new Put(buuid, date.getTime());
 
                         row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("UUID"), Bytes.toBytes(JsonMap.get("UUID").get().toString()));
 
-                        Map tagsMap = (Map) JsonMap.get("tags").get();
+                        
                         java.util.Map<String, String> javatagsMap = (java.util.Map<String, String>) JavaConverters$.MODULE$.mapAsJavaMapConverter(tagsMap).asJava();
 
                         for (java.util.Map.Entry entry : javatagsMap.entrySet()) {
@@ -110,7 +114,9 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
 
                         }
                         this.htable.put(row);
-                        logger.info("Writing Finish");
+                        java.util.Date clientdate = new java.util.Date (Long.parseLong(tagsMap.get("timestamp").get().toString())*1000);
+                        long enddate= System.currentTimeMillis()- startdate;
+                        logger.info("Writing Finish:interval "+enddate+" server time "+ df.format(date.getTime())+" client time "+df.format(clientdate.getTime()));
                     } catch (Exception e) {
                         this.collector.reportError(e);
                     }

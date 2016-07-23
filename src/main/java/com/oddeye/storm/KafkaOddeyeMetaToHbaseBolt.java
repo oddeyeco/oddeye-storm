@@ -5,13 +5,7 @@
  */
 package com.oddeye.storm;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.UUID;
-import kafka.utils.Json;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -53,7 +47,7 @@ public class KafkaOddeyeMetaToHbaseBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
 
-        logger.info("Start bolt vs message: " + input.getString(0));        
+//        logger.info("Start bolt vs message: " + input.getString(0));        
         String msg = input.getString(0);
         Function1<String, Object> f = new AbstractFunction1<String, Object>() {
             public Object apply(String s) {
@@ -73,7 +67,7 @@ public class KafkaOddeyeMetaToHbaseBolt extends BaseRichBolt {
                 Map JsonMap = (Map) maps;
                 if (!JsonMap.get("UUID").isEmpty() & !JsonMap.get("tags").isEmpty() & !JsonMap.get("data").isEmpty()) {
                     try {
-                        logger.info("Message Ready to write meta to hbase");
+                        logger.info("Meta Ready to write hbase");
 
 //                        UUID uuid = UUID.randomUUID();
 //                        byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()));
@@ -153,7 +147,7 @@ public class KafkaOddeyeMetaToHbaseBolt extends BaseRichBolt {
                             }
 
                         }
-                        logger.info("Writing Finish");
+                        logger.info("Meta Writing Finish");
                     } catch (Exception e) {
                         this.collector.reportError(e);
                     }
