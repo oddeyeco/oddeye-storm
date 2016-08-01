@@ -5,7 +5,6 @@
  */
 package com.oddeye.storm;
 
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.UUID;
@@ -73,50 +72,70 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                     try {
                         java.util.Date date = new java.util.Date();
                         long startdate = System.currentTimeMillis();
-                        logger.info("Message Ready to write hbase server time "+ df.format(date.getTime()));
-
-                        UUID uuid = UUID.randomUUID();
-                        
-                        
+                        logger.info("Message Ready to write hbase server time " + df.format(date.getTime()));
                         Map tagsMap = (Map) JsonMap.get("tags").get();
-                        
-                        byte[] buuid = Bytes.add(Bytes.toBytes(Long.parseLong(tagsMap.get("timestamp").get().toString())*1000),Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()) );
-                        Put row = new Put(buuid, date.getTime());
-
-                        row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("UUID"), Bytes.toBytes(JsonMap.get("UUID").get().toString()));
-
-                        
+                        UUID uuid = uuid = UUID.fromString(JsonMap.get("UUID").get().toString());
                         java.util.Map<String, String> javatagsMap = (java.util.Map<String, String>) JavaConverters$.MODULE$.mapAsJavaMapConverter(tagsMap).asJava();
+                        String tagvalue;
+                        String tagkey;
+                        String rowkey = "";
+                        Long clienttimestamp = null;
 
                         for (java.util.Map.Entry entry : javatagsMap.entrySet()) {
-                            String value = entry.getValue().toString();
-                            if (NumberUtils.isNumber(value)) {
-                                Double d_Value = Double.parseDouble(value);
-                                row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
-                            } else {
-                                row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
+                            tagvalue = entry.getValue().toString();
+                            tagkey = entry.getKey().toString();
+
+                            if ((!tagkey.equals("UUID")) & (!tagkey.equals("timestamp"))) {
+                                rowkey = '/'+tagkey + "=" + tagvalue + "/";
+                            }
+                            if (tagkey.equals("UUID")) {
+                                uuid = UUID.fromString(tagvalue);
+                            }
+                            if (tagkey.equals("timestamp")) {
+                                clienttimestamp = Long.parseLong(tagsMap.get("timestamp").get().toString()) * 1000;
                             }
 
                         }
 
-                        Map dataMap = (Map) JsonMap.get("data").get();
+                        if ((clienttimestamp != null) & (uuid != null)) {
+                            byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()),Bytes.toBytes(rowkey) );
+                            byte[] B_rowkey = Bytes.add(buuid, Bytes.toBytes(clienttimestamp) );
+                            Put row = new Put(B_rowkey, date.getTime());
 
-                        java.util.Map<String, String> javadataMap = (java.util.Map<String, String>) JavaConverters$.MODULE$.mapAsJavaMapConverter(dataMap).asJava();
+                            row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("UUID"), Bytes.toBytes(JsonMap.get("UUID").get().toString()));
 
-                        for (java.util.Map.Entry entry : javadataMap.entrySet()) {
-                            String value = entry.getValue().toString();
-                            if (NumberUtils.isNumber(value)) {
-                                Double d_Value = Double.parseDouble(value);
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
-                            } else {
-                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
+                            for (java.util.Map.Entry entry : javatagsMap.entrySet()) {
+                                String value = entry.getValue().toString();
+                                if (NumberUtils.isNumber(value)) {
+                                    Double d_Value = Double.parseDouble(value);
+                                    row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
+                                } else {
+                                    row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
+                                }
+
                             }
 
+                            Map dataMap = (Map) JsonMap.get("data").get();
+
+                            java.util.Map<String, String> javadataMap = (java.util.Map<String, String>) JavaConverters$.MODULE$.mapAsJavaMapConverter(dataMap).asJava();
+
+                            for (java.util.Map.Entry entry : javadataMap.entrySet()) {
+                                String value = entry.getValue().toString();
+                                if (NumberUtils.isNumber(value)) {
+                                    Double d_Value = Double.parseDouble(value);
+                                    row.addColumn(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(d_Value));
+                                } else {
+                                    row.addColumn(Bytes.toBytes("data"), Bytes.toBytes(entry.getKey().toString()), Bytes.toBytes(value));
+                                }
+
+                            }
+                            this.htable.put(row);
+                            java.util.Date clientdate = new java.util.Date(Long.parseLong(tagsMap.get("timestamp").get().toString()) * 1000);
+                            long enddate = System.currentTimeMillis() - startdate;
+                            logger.info("Writing Finish:interval " + enddate + " server time " + df.format(date.getTime()) + " client time " + df.format(clientdate.getTime()));
+                        } else {
+                            logger.info("Writing falil: clienttimestamp or uuid is null");
                         }
-                        this.htable.put(row);
-                        java.util.Date clientdate = new java.util.Date (Long.parseLong(tagsMap.get("timestamp").get().toString())*1000);
-                        long enddate= System.currentTimeMillis()- startdate;
-                        logger.info("Writing Finish:interval "+enddate+" server time "+ df.format(date.getTime())+" client time "+df.format(clientdate.getTime()));
                     } catch (Exception e) {
                         this.collector.reportError(e);
                     }
