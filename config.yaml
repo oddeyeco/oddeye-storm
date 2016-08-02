@@ -9,8 +9,8 @@ Kafka:
 Topology:
     DisplayName: "KafkaHbaseTopology"
     SpoutParallelism_hint: 3
-    MsgBoltParallelism_hint: 24
-    MetaBoltParallelism_hint: 24
+    MsgBoltParallelism_hint: 48
+    MetaBoltParallelism_hint: 12
     NumWorkers: 3
 #    SpoutParallelism_hint: 1
 #    MsgBoltParallelism_hint: 1

@@ -78,7 +78,7 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                         java.util.Map<String, String> javatagsMap = (java.util.Map<String, String>) JavaConverters$.MODULE$.mapAsJavaMapConverter(tagsMap).asJava();
                         String tagvalue;
                         String tagkey;
-                        String rowkey = "";
+                        String rowkey = "/";
                         Long clienttimestamp = null;
 
                         for (java.util.Map.Entry entry : javatagsMap.entrySet()) {
@@ -86,7 +86,7 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                             tagkey = entry.getKey().toString();
 
                             if ((!tagkey.equals("UUID")) & (!tagkey.equals("timestamp"))) {
-                                rowkey = '/'+tagkey + "=" + tagvalue + "/";
+                                rowkey = rowkey+tagkey + "=" + tagvalue + "/";
                             }
                             if (tagkey.equals("UUID")) {
                                 uuid = UUID.fromString(tagvalue);
@@ -98,8 +98,9 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                         }
 
                         if ((clienttimestamp != null) & (uuid != null)) {
-                            byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()),Bytes.toBytes(rowkey) );
-                            byte[] B_rowkey = Bytes.add(buuid, Bytes.toBytes(clienttimestamp) );
+                            byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()),Bytes.toBytes(clienttimestamp) );
+//                            byte[] buuid = Bytes.add(Bytes.toBytes(uuid.toString()),Bytes.toBytes(rowkey) );
+                            byte[] B_rowkey = Bytes.add(buuid, Bytes.toBytes(rowkey) );
                             Put row = new Put(B_rowkey, date.getTime());
 
                             row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("UUID"), Bytes.toBytes(JsonMap.get("UUID").get().toString()));
