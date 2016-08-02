@@ -4,7 +4,7 @@
   <groupId>com.mycompany</groupId>
   <artifactId>KafkaHbaseStorm</artifactId>
   <name>KafkaHbaseStorm</name>
-  <version>0.3</version>
+  <version>0.4</version>
   <build>
     <plugins>
       <plugin>
