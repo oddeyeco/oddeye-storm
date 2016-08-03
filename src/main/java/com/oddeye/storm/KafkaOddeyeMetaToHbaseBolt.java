@@ -142,12 +142,13 @@ public class KafkaOddeyeMetaToHbaseBolt extends BaseRichBolt {
 //                                row.addColumn(Bytes.toBytes("data"), Bytes.toBytes("avg"), Bytes.toBytes(avg));
 
                                     this.htable.put(row);
+                                    logger.info("Meta Writing Finish");
                                 }
 
                             }
 
                         }
-                        logger.info("Meta Writing Finish");
+                        logger.info("Meta is exist");
                     } catch (Exception e) {
                         this.collector.reportError(e);
                     }

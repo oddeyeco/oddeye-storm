@@ -20,6 +20,7 @@ import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
 
 /**
  *
@@ -67,9 +68,11 @@ public class KafkaHbaseTopology {
                 new KafkaOddeyeMsgToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
         
-        builder.setBolt("KafkaOddeyeMetaToHbaseBolt",
-                new KafkaOddeyeMetaToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MetaBoltParallelism_hint"))))
-                .shuffleGrouping("KafkaSpout");
+//        builder.setBolt("KafkaOddeyeMetaToHbaseBolt",
+//                new KafkaOddeyeMetaToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MetaBoltParallelism_hint"))))
+//                .fieldsGrouping("KafkaOddeyeMsgToHbaseBolt", new Fields("json"));
+//                .shuffleGrouping("KafkaOddeyeMsgToHbaseBolt");
+        
         
 
 //        builder.setBolt("WriteHbase", hbase, 2).fieldsGrouping("KaftaToJsonBolt", new Fields("word"));
