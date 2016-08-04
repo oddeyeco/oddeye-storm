@@ -68,9 +68,9 @@ public class KafkaHbaseTopology {
                 new KafkaOddeyeMsgToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
         
-//        builder.setBolt("KafkaOddeyeMetaToHbaseBolt",
-//                new KafkaOddeyeMetaToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MetaBoltParallelism_hint"))))
-//                .fieldsGrouping("KafkaOddeyeMsgToHbaseBolt", new Fields("json"));
+        builder.setBolt("KafkaOddeyeMetaToHbaseBolt",
+                new KafkaOddeyeMetaToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MetaBoltParallelism_hint"))))
+                .fieldsGrouping("KafkaOddeyeMsgToHbaseBolt", new Fields("json"));
 //                .shuffleGrouping("KafkaOddeyeMsgToHbaseBolt");
         
         

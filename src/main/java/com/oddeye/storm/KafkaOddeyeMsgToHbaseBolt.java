@@ -136,11 +136,14 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                             java.util.Date clientdate = new java.util.Date(Long.parseLong(tagsMap.get("timestamp").get().toString()) * 1000);
                             long enddate = System.currentTimeMillis() - startdate;
                             logger.info("Writing Finish:interval " + enddate + " server time " + df.format(date.getTime()) + " client time " + df.format(clientdate.getTime()));
+//                            this.collector.emit(input,new Values(input.getString(0)));
                         } else {
                             logger.info("Writing falil: clienttimestamp or uuid is null");
                         }
                     } catch (Exception e) {
                         this.collector.reportError(e);
+                        logger.error("vOT ON pIZDZEC");
+                        logger.error(e);
                     }
 
                 } else {
@@ -152,7 +155,7 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
         } else {
             logger.error("Data Not Json");
         }
-        this.collector.emit(input,new Values(input.getString(0)));
+        
         this.collector.ack(input);
     }
 
