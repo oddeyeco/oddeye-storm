@@ -88,7 +88,7 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                             tagkey = entry.getKey().toString();
 
                             if ((!tagkey.equals("UUID")) & (!tagkey.equals("timestamp"))) {
-                                rowkey = rowkey+tagkey + "=" + tagvalue + "/";
+                                rowkey = rowkey+tagkey + ":" + tagvalue + "/";
                             }
                             if (tagkey.equals("UUID")) {
                                 uuid = UUID.fromString(tagvalue);
@@ -100,9 +100,9 @@ public class KafkaOddeyeMsgToHbaseBolt extends BaseRichBolt {
                         }
 
                         if ((clienttimestamp != null) & (uuid != null)) {
-                            byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()),Bytes.toBytes(clienttimestamp) );
+                            byte[] buuid = Bytes.add(Bytes.toBytes(uuid.getMostSignificantBits()), Bytes.toBytes(uuid.getLeastSignificantBits()),Bytes.toBytes(rowkey) );
 //                            byte[] buuid = Bytes.add(Bytes.toBytes(uuid.toString()),Bytes.toBytes(rowkey) );
-                            byte[] B_rowkey = Bytes.add(buuid, Bytes.toBytes(rowkey) );
+                            byte[] B_rowkey = Bytes.add(buuid,Bytes.toBytes(clienttimestamp) );
                             Put row = new Put(B_rowkey, date.getTime());
 
                             row.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("UUID"), Bytes.toBytes(JsonMap.get("UUID").get().toString()));
