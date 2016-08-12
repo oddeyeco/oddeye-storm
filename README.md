@@ -9,10 +9,10 @@ mvn install
 **Deploy**
 
 {STORM_HOME}bin/storm jar projectjarfile mainclass projectconfig.file
-projectjarfile-> KafkaHbaseStorm-0.2.jar mainclass -> com.oddeye.storm.KakaHbaseTopology
+projectjarfile-> KafkaHbaseStorm-0.2.jar mainclass -> co.oddeye.storm.KakaHbaseTopology
 
 ```
 cd target
-/usr/local/storm/bin/storm jar KafkaHbaseStorm-0.2.jar com.oddeye.storm.KafkaHbaseTopology ../config.yaml
+/usr/local/storm/bin/storm jar KafkaHbaseStorm-0.2.jar co.oddeye.storm.KafkaHbaseTopology ../config.yaml
 ```
 

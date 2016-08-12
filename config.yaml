@@ -3,6 +3,7 @@
 Kafka:
    zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181" 
    topic: "oddeye"
+   tsdbtopic: "oddeyetsdb"
    zkRoot: "/storm_oddeye"
    zkKey: "oddeye-staus"
    
@@ -10,6 +11,7 @@ Topology:
     DisplayName: "KafkaHbaseTopology"
     SpoutParallelism_hint: 3
     MsgBoltParallelism_hint: 9
+    TSDBMsgBoltParallelism_hint: 9
     MetaBoltParallelism_hint: 1
     NumWorkers: 3
 #    SpoutParallelism_hint: 1

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.oddeye.storm;
+package co.oddeye.storm;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

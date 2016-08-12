@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.oddeye.storm;
+package co.oddeye.storm;
 
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -50,8 +50,11 @@ public class KafkaHbaseTopology {
 // Second argument is the topic name
 // Third argument is the ZooKeeper root for Kafka
 // Fourth argument is consumer group id
+        
         SpoutConfig kafkaConfig = new SpoutConfig(zkHosts,
-                String.valueOf(kafkaconf.get("topic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKey")));
+                String.valueOf(kafkaconf.get("tsdbtopic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKey")));
+        
+        
 // Specify that the kafka messages are String        
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 //        kafkaConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
@@ -63,7 +66,8 @@ public class KafkaHbaseTopology {
 // set the kafka spout class
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
-
+/*
+        //Disable hbase bolts
         builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
                 new KafkaOddeyeMsgToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
@@ -72,10 +76,14 @@ public class KafkaHbaseTopology {
                 new KafkaOddeyeMetaToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MetaBoltParallelism_hint"))))
                 .fieldsGrouping("KafkaOddeyeMsgToHbaseBolt", new Fields("json"));
 //                .shuffleGrouping("KafkaOddeyeMsgToHbaseBolt");
-        
-        
+        */
 
-//        builder.setBolt("WriteHbase", hbase, 2).fieldsGrouping("KaftaToJsonBolt", new Fields("word"));
+        builder.setBolt("KafkaOddeyeMsgToTSDBBolt",
+                new KafkaOddeyeMsgToTSDBBolt(), Integer.parseInt(String.valueOf(tconf.get("TSDBMsgBoltParallelism_hint"))))
+                .shuffleGrouping("KafkaSpout");
+        
+                
+
         Config conf = new Config();
         conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
         conf.put(Config.TOPOLOGY_DEBUG, true);
