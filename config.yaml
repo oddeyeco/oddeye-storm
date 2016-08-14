@@ -6,14 +6,15 @@ Kafka:
    tsdbtopic: "oddeyetsdb"
    zkRoot: "/storm_oddeye"
    zkKey: "oddeye-staus"
+   zkKeyTSDB: "oddeye-stausTSDB"
    
 Topology:
     DisplayName: "KafkaHbaseTopology"
-    SpoutParallelism_hint: 3
+    SpoutParallelism_hint: 1
     MsgBoltParallelism_hint: 9
-    TSDBMsgBoltParallelism_hint: 9
+    TSDBMsgBoltParallelism_hint: 1
     MetaBoltParallelism_hint: 1
-    NumWorkers: 3
+    NumWorkers: 1
 #    SpoutParallelism_hint: 1
 #    MsgBoltParallelism_hint: 1
 #    MetaBoltParallelism_hint: 1

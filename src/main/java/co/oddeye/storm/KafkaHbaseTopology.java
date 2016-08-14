@@ -52,7 +52,7 @@ public class KafkaHbaseTopology {
 // Fourth argument is consumer group id
         
         SpoutConfig kafkaConfig = new SpoutConfig(zkHosts,
-                String.valueOf(kafkaconf.get("tsdbtopic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKey")));
+                String.valueOf(kafkaconf.get("tsdbtopic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKeyTSDB")));
         
         
 // Specify that the kafka messages are String        
