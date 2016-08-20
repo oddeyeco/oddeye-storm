@@ -56,12 +56,14 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         if (this.jsonResult != null) {
             try {
                 if (this.jsonResult.size() > 0) {
+                    logger.info("Ready count: " + this.jsonResult.size());
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         if (Metric.getAsJsonObject().get("tags") != null) {
                             HashMap<String, String> tags = new ObjectMapper().readValue(Metric.getAsJsonObject().get("tags").getAsJsonObject().toString(), HashMap.class);
                             tsdb.addPoint(Metric.getAsJsonObject().get("metric").getAsString(), Metric.getAsJsonObject().get("timestamp").getAsLong(), Metric.getAsJsonObject().get("value").getAsDouble(), tags);
                         }
+                        logger.info(this.jsonResult.size() + " Metrics Write to dbase");
 
                     }
                 }
