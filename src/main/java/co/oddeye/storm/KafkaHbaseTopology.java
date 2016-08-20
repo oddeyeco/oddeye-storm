@@ -20,7 +20,7 @@ import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.tuple.Fields;
+
 
 /**
  *

@@ -53,6 +53,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             logger.info("msg parse Exception" + ex.toString());
         }
 
+        ObjectMapper mapper= new ObjectMapper();
+        HashMap<String, String> tags ;
         if (this.jsonResult != null) {
             try {
                 if (this.jsonResult.size() > 0) {
@@ -60,8 +62,9 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         if (Metric.getAsJsonObject().get("tags") != null) {
-                            HashMap<String, String> tags = new ObjectMapper().readValue(Metric.getAsJsonObject().get("tags").getAsJsonObject().toString(), HashMap.class);
-                            tsdb.addPoint(Metric.getAsJsonObject().get("metric").getAsString(), Metric.getAsJsonObject().get("timestamp").getAsLong(), Metric.getAsJsonObject().get("value").getAsDouble(), tags);
+                            tags = mapper.readValue(Metric.getAsJsonObject().get("tags").getAsJsonObject().toString(), HashMap.class);
+                            tsdb.addPoint(Metric.getAsJsonObject().get("metric").getAsString(), Metric.getAsJsonObject().get("timestamp").getAsLong(), Metric.getAsJsonObject().get("value").getAsDouble(), tags);                            
+                            tags.clear();
                         }                        
                     }
                     logger.info(this.jsonResult.size() + " Metrics Write to dbase");
