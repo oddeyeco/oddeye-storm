@@ -5,7 +5,8 @@
  */
 package co.oddeye.storm;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -15,7 +16,8 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Properties;
 import net.opentsdb.core.TSDB;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -32,7 +34,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     protected OutputCollector collector;
 
-    private static final Logger logger = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
+//    private static final Logger logger = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
+    public static final Logger logger = LoggerFactory.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
     private TSDB tsdb = null;
 
     private JsonParser parser = null;
@@ -40,7 +43,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-
+        Gson gson = new Gson();  
         String msg = input.getString(0);
         logger.info("Start KafkaOddeyeMsgToTSDBBolt " + msg);
         DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
@@ -53,8 +56,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             logger.info("msg parse Exception" + ex.toString());
         }
 
-        ObjectMapper mapper= new ObjectMapper();
-        HashMap<String, String> tags ;
+        
+
+//        Map<String, String> myMap = gson.fromJson("{'k1':'apple','k2':'orange'}", type);        
+//        ObjectMapper mapper= new ObjectMapper();
+        HashMap<String,String> tags = new HashMap<String,String>();
         if (this.jsonResult != null) {
             try {
                 if (this.jsonResult.size() > 0) {
@@ -62,7 +68,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         if (Metric.getAsJsonObject().get("tags") != null) {
-                            tags = mapper.readValue(Metric.getAsJsonObject().get("tags").getAsJsonObject().toString(), HashMap.class);
+                            tags= gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
                             tsdb.addPoint(Metric.getAsJsonObject().get("metric").getAsString(), Metric.getAsJsonObject().get("timestamp").getAsLong(), Metric.getAsJsonObject().get("value").getAsDouble(), tags);                            
                             tags.clear();
                         }                        
