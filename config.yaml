@@ -8,17 +8,12 @@ Kafka:
    zkKey: "oddeye-staus"
    zkKeyTSDB: "oddeye-stausTSDB"
    
-Topology:
+Topology:    
     DisplayName: "KafkaHbaseTopology"
-    SpoutParallelism_hint: 1
-    MsgBoltParallelism_hint: 1
-    TSDBMsgBoltParallelism_hint: 1
-    MetaBoltParallelism_hint: 1
-    NumWorkers: 3
-#    SpoutParallelism_hint: 1
-#    MsgBoltParallelism_hint: 1
-#    MetaBoltParallelism_hint: 1
-#    NumWorkers: 1
-
+    NumWorkers: 2
+    SpoutParallelism_hint: 2
+    TSDBMsgBoltParallelism_hint: 2    
+    MsgBoltParallelism_hint: 1    
+    MetaBoltParallelism_hint: 1    
     Debug: false
     
