@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
-import java.util.Properties;
 import net.opentsdb.core.TSDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +39,16 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     private JsonParser parser = null;
     private JsonArray jsonResult = null;
+    private final java.util.Map<String, Object> conf;
+    
+    /**
+     *
+     * @param config
+     */
+    public KafkaOddeyeMsgToTSDBBolt (java.util.Map config)
+    {
+       this.conf = config;
+    }
 
     @Override
     public void execute(Tuple input) {
@@ -55,11 +64,6 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         } catch (Exception ex) {
             logger.info("msg parse Exception" + ex.toString());
         }
-
-        
-
-//        Map<String, String> myMap = gson.fromJson("{'k1':'apple','k2':'orange'}", type);        
-//        ObjectMapper mapper= new ObjectMapper();
         HashMap<String,String> tags = new HashMap<String,String>();
         if (this.jsonResult != null) {
             try {
@@ -101,20 +105,13 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         logger.info("DoPrepare KafkaOddeyeMsgToTSDBBolt");
         this.collector = collector;
         this.parser = new JsonParser();
-        Properties tsdbConf = new Properties();
-        try {
-            tsdbConf.put("hbase.zookeeper.quorum", "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181");
-            tsdbConf.put("tsd.core.auto_create_metrics", "true");
-            tsdbConf.put("tsd.storage.hbase.data_table", "test_tsdb");
-            tsdbConf.put("tsd.storage.hbase.uid_table", "test_tsdb-uid");
 
-            String quorum = tsdbConf.getProperty("hbase.zookeeper.quorum", "localhost");
-
+        try {            
+            String quorum = String.valueOf(conf.get("zkHosts"));
             Config openTsdbConfig = new net.opentsdb.utils.Config(true);
-
-            openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", "true");
-            openTsdbConfig.overrideConfig("tsd.storage.hbase.data_table", "test_tsdb");
-            openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", "test_tsdb-uid");
+            openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
+            openTsdbConfig.overrideConfig("tsd.storage.hbase.data_table", String.valueOf(conf.get("tsd.storage.hbase.data_table")));
+            openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
 
             org.hbase.async.HBaseClient client = new org.hbase.async.HBaseClient(quorum);
             this.tsdb = new TSDB(

@@ -78,8 +78,10 @@ public class KafkaHbaseTopology {
 //                .shuffleGrouping("KafkaOddeyeMsgToHbaseBolt");
         */
 
+        java.util.Map<String, Object> TSDBconfig = (java.util.Map<String, Object>) topologyconf.get("Tsdb");
+        
         builder.setBolt("KafkaOddeyeMsgToTSDBBolt",
-                new KafkaOddeyeMsgToTSDBBolt(), Integer.parseInt(String.valueOf(tconf.get("TSDBMsgBoltParallelism_hint"))))
+                new KafkaOddeyeMsgToTSDBBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("TSDBMsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
         
                 
