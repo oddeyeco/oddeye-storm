@@ -10,6 +10,7 @@ Kafka:
    
 Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
+  metatable: oddeye_tsdb_meta
   tsd.core.auto_create_metrics: true
   tsd.storage.hbase.data_table: test_tsdb
   tsd.storage.hbase.uid_table: test_tsdb-uid
