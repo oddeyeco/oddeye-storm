@@ -22,25 +22,16 @@
     </profiles>    
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>                
-                <exclusion>
-                    <groupId>org.jboss.netty</groupId>
-                    <artifactId>netty</artifactId>
-                </exclusion>                    
-            </exclusions>              
-        </dependency>
-        <dependency>
             <groupId>net.spy</groupId>
             <artifactId>spymemcached</artifactId>
             <version>2.12.1</version>
-        </dependency>         
+        </dependency>   
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.21</version>
+            <scope>provided</scope>
+        </dependency>                                      
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
@@ -58,7 +49,27 @@
                 <exclusion>
                     <groupId>org.jboss.netty</groupId>
                     <artifactId>netty</artifactId>
-                </exclusion>                      
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                </exclusion>
             </exclusions>              
             <!--
               Use "provided" scope to keep storm out of the jar-with-dependencies
@@ -82,32 +93,17 @@
                 <exclusion>
                     <groupId>org.jboss.netty</groupId>
                     <artifactId>netty</artifactId>
-                </exclusion>                                 
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
             </exclusions>                    
-        </dependency>
-        <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-hdfs</artifactId>
-            <version>1.0.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.zookeeper</groupId>
-                    <artifactId>zookeeper</artifactId>
-                </exclusion>                
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>          
-                <exclusion>
-                    <groupId>org.jboss.netty</groupId>
-                    <artifactId>netty</artifactId>
-                </exclusion>                          
-            </exclusions>              
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.11</artifactId>
-            <version>0.9.0.1</version>   
+            <version>0.10.0.1</version>   
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.zookeeper</groupId>
@@ -126,11 +122,35 @@
                     <artifactId>netty</artifactId>
                 </exclusion>                                    
             </exclusions>                     
-        </dependency>
+        </dependency>                
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>0.10.0.1</version>   
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>                                    
+            </exclusions>                     
+        </dependency>        
+        
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>3.4.5-cdh5.7.0</version>     
+            <version>3.4.9</version>     
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -143,9 +163,13 @@
                 <exclusion>
                     <groupId>org.jboss.netty</groupId>
                     <artifactId>netty</artifactId>
-                </exclusion>                  
+                </exclusion>
+                <exclusion>
+                    <groupId>jline</groupId>
+                    <artifactId>jline</artifactId>
+                </exclusion>
             </exclusions>                                       
-        </dependency>
+        </dependency>        
         <dependency>
             <groupId>net.opentsdb</groupId>
             <artifactId>opentsdb</artifactId>
@@ -162,9 +186,39 @@
                 <exclusion>
                     <groupId>org.jboss.netty</groupId>
                     <artifactId>netty</artifactId>
-                </exclusion>                                
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.gwt</groupId>
+                    <artifactId>gwt-user</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
             </exclusions>                        
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.7</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.9</version>
+        </dependency>                                
     </dependencies>  
     <build>
         <plugins>
