@@ -11,12 +11,18 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.opentsdb.core.TSDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +33,11 @@ import org.apache.storm.topology.base.BaseRichBolt;
 //import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import net.opentsdb.utils.Config;
+import net.spy.memcached.MemcachedClient;
+import org.apache.commons.codec.binary.Hex;
 import org.hbase.async.Bytes;
+import org.hbase.async.GetRequest;
+import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
 
 /**
@@ -51,6 +61,35 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private HashMap<UUID, Set<String>> metricsmap = new HashMap<UUID, Set<String>>();
     private HashMap<UUID, Set<String>> tagksmap = new HashMap<UUID, Set<String>>();
     private HashMap<UUID, Set<String>> tagvsmap = new HashMap<UUID, Set<String>>();
+    private int p_weight;
+    private String alert_level;
+    private double value;
+    private int weight;
+    private int houre;
+    private MemcachedClient t_cache;
+
+    public void updateCache(final Calendar CalendarObj) {
+
+        final int l_houre = CalendarObj.get(Calendar.HOUR_OF_DAY);
+        for (int D = 0; D < 7; D++) {
+            try {
+                //        for (int H = 1; H < 5 + 1; H++) {
+                CalendarObj.add(Calendar.DATE, -1);
+//                System.out.println();
+                logger.info("Update Time" + CalendarObj.getTime().toString());
+                final byte[] key = ByteBuffer.allocate(12).putInt(CalendarObj.get(Calendar.YEAR)).putInt(CalendarObj.get(Calendar.DAY_OF_YEAR)).putInt(l_houre).array();
+                GetRequest request = new GetRequest("oddeyerules", key);
+                final ArrayList<KeyValue> hourevalues = client.get(request).joinUninterruptibly();
+                for (KeyValue hourevalue : hourevalues) {
+                    t_cache.set(Hex.encodeHexString(hourevalue.family()) + Hex.encodeHexString(key) + Hex.encodeHexString(hourevalue.qualifier()), 3600 * 4, ByteBuffer.wrap(hourevalue.value()).getDouble());
+                }
+            } catch (Exception ex) {
+                logger.error(ex.toString());
+            }
+
+        }
+        t_cache.set(Integer.toString(houre), 3600 * 4, true);
+    }
 
     /**
      *
@@ -62,9 +101,10 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
+        final Calendar CalendarObj = Calendar.getInstance();
         Gson gson = new Gson();
         String msg = input.getString(0);
-        logger.info("Start KafkaOddeyeMsgToTSDBBolt " + msg);
+        logger.debug("Start KafkaOddeyeMsgToTSDBBolt " + msg);
         DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
         java.util.Date date = new java.util.Date();
         logger.info("Bolt ready to write to TSDB " + df.format(date.getTime()));
@@ -88,9 +128,26 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                         if (Metric.getAsJsonObject().get("tags") != null) {
                             tags = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
                             logger.info("tags count: " + tags.size());
-                            
-                            //oddeye_tsdb_meta
+                            CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
+                            logger.info("Metric Time: " + CalendarObj.getTime().toString());
                             uuid = UUID.fromString(tags.get("UUID"));
+
+                            if (tags.get("alert_level") != null) {
+                                alert_level = tags.get("alert_level");
+                                p_weight = Integer.parseInt(alert_level);
+                            } else {
+                                alert_level = null;
+                            }
+
+                            if ((alert_level == null) || (p_weight < -1)) {
+                                weight = 0;
+                                houre = CalendarObj.get(Calendar.HOUR_OF_DAY);
+//                                if (t_cache.get(Integer.toString(houre)) == null) {
+//                                    logger.info("Update data to " + houre);
+//                                    updateCache(CalendarObj);                                    
+//                                }
+                                value = Metric.getAsJsonObject().get("value").getAsDouble();
+                            }
 
                             tagkslist = (Set<String>) tagksmap.get(uuid);
                             if (tagkslist == null) {
@@ -163,6 +220,9 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         this.parser = new JsonParser();
 
         try {
+            t_cache = new MemcachedClient(
+                    new InetSocketAddress("192.168.10.60", 11211));
+            //TODO do config
             String quorum = String.valueOf(conf.get("zkHosts"));
             Config openTsdbConfig = new net.opentsdb.utils.Config(true);
             openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
