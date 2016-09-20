@@ -32,7 +32,7 @@
             <version>1.7.21</version>
             <scope>provided</scope>
         </dependency>                                      
-        <dependency>
+<!--        <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>1.0.1</version>
@@ -71,12 +71,24 @@
                     <artifactId>log4j-slf4j-impl</artifactId>
                 </exclusion>
             </exclusions>              
-            <!--
+            
               Use "provided" scope to keep storm out of the jar-with-dependencies
               For IntelliJ dev, intellij will load properly.
-            -->
             
+            
+        </dependency>-->
+        <dependency>
+            <groupId>com.twitter.heron</groupId>
+            <artifactId>heron-api</artifactId>
+            <version>0.14.3</version>
+            <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.twitter.heron</groupId>
+            <artifactId>heron-storm</artifactId>
+            <version>0.14.3</version>
+            <scope>compile</scope>
+        </dependency>        
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-kafka</artifactId>
