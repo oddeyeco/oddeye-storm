@@ -77,12 +77,12 @@
             
             
         </dependency>-->
-        <dependency>
+<!--        <dependency>
             <groupId>com.twitter.heron</groupId>
             <artifactId>heron-api</artifactId>
             <version>0.14.3</version>
             <scope>compile</scope>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>com.twitter.heron</groupId>
             <artifactId>heron-storm</artifactId>
@@ -230,6 +230,10 @@
                 <exclusion>
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
                 </exclusion>
             </exclusions>                        
         </dependency>
