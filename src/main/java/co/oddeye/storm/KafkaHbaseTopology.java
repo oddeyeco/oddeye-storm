@@ -10,16 +10,16 @@ import java.io.InputStreamReader;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
-//import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.kafka.BrokerHosts;
 import org.apache.storm.kafka.KafkaSpout;
 import org.apache.storm.kafka.SpoutConfig;
 import org.apache.storm.kafka.StringScheme;
 import org.apache.storm.kafka.ZkHosts;
+import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.topology.TopologyBuilder;
-import org.yaml.snakeyaml.Yaml;
 
 
 /**
@@ -97,8 +97,8 @@ public class KafkaHbaseTopology {
             System.out.println(alreadyAliveException);
         } catch (InvalidTopologyException invalidTopologyException) {
             System.out.println(invalidTopologyException);
-//        } catch (AuthorizationException invalidAuthorizationException) {
-//            System.out.println(invalidAuthorizationException);
+        } catch (AuthorizationException invalidAuthorizationException) {
+            System.out.println(invalidAuthorizationException);
         }
     }
 }
