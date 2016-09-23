@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>co.oddeye.storm</groupId>
     <artifactId>KafkaHbaseStorm</artifactId>
-    <version>0.5</version>
+    <version>0.6</version>
     <packaging>jar</packaging>
       
     <properties>
@@ -21,11 +21,11 @@
         </profile>
     </profiles>    
     <dependencies>
-        <dependency>
+<!--        <dependency>
             <groupId>net.spy</groupId>
             <artifactId>spymemcached</artifactId>
             <version>2.12.1</version>
-        </dependency>   
+        </dependency>   -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -79,8 +79,31 @@
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
+            <artifactId>storm-hdfs</artifactId>
+            <version>1.0.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>                
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>          
+                <exclusion>
+                    <groupId>org.jboss.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-client</artifactId>
+                </exclusion>
+            </exclusions>              
+        </dependency>        
+        <dependency>
+            <groupId>org.apache.storm</groupId>
             <artifactId>storm-kafka</artifactId>
-            <version>1.0.1</version>      
+            <version>1.0.2</version>      
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.zookeeper</groupId>
@@ -103,7 +126,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.11</artifactId>
-            <version>0.10.0.1</version>   
+            <version>0.10.0.0</version>   
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.zookeeper</groupId>
@@ -126,7 +149,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>0.10.0.1</version>   
+            <version>0.10.0.0</version>   
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.zookeeper</groupId>
@@ -150,7 +173,7 @@
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>3.4.5-cdh5.7.0</version>     
+            <version>3.4.5</version>     
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -218,14 +241,15 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.9</version>
-        </dependency>                                
+        </dependency>
+                                        
     </dependencies>  
-    <repositories>
+<!--    <repositories>
         <repository>
             <id>cloudera</id>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
         </repository>
-    </repositories>      
+    </repositories>      -->
     
     <build>
         <plugins>

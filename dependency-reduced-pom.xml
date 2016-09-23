@@ -4,7 +4,7 @@
   <groupId>co.oddeye.storm</groupId>
   <artifactId>KafkaHbaseStorm</artifactId>
   <name>KafkaHbaseStorm</name>
-  <version>0.5</version>
+  <version>0.6</version>
   <build>
     <plugins>
       <plugin>
@@ -93,7 +93,7 @@
     <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-core</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -139,10 +139,6 @@
         <exclusion>
           <artifactId>disruptor</artifactId>
           <groupId>com.lmax</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>servlet-api</artifactId>
-          <groupId>javax.servlet</groupId>
         </exclusion>
       </exclusions>
     </dependency>
