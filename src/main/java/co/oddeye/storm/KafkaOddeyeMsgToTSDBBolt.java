@@ -10,13 +10,17 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Properties;
+import java.util.Map;
+
 import java.util.Set;
 import java.util.UUID;
 import net.opentsdb.core.TSDB;
@@ -32,8 +36,6 @@ import net.opentsdb.utils.Config;
 //import net.spy.memcached.MemcachedClient;
 import org.hbase.async.Bytes;
 import org.hbase.async.PutRequest;
-
-import org.apache.curator.framework.imps.CuratorFrameworkImpl;
 
 /**
  *
@@ -53,9 +55,9 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private org.hbase.async.HBaseClient client;
 
     private byte[] metatable;
-    private HashMap<UUID, Set<String>> metricsmap = new HashMap<UUID, Set<String>>();
-    private HashMap<UUID, Set<String>> tagksmap = new HashMap<UUID, Set<String>>();
-    private HashMap<UUID, Set<String>> tagvsmap = new HashMap<UUID, Set<String>>();
+    private final HashMap<UUID, Set<String>> metricsmap = new HashMap<UUID, Set<String>>();
+    private final HashMap<UUID, Set<String>> tagksmap = new HashMap<UUID, Set<String>>();
+    private final HashMap<UUID, Set<String>> tagvsmap = new HashMap<UUID, Set<String>>();
     private int p_weight;
     private String alert_level;
     private double value;
@@ -109,6 +111,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             logger.info("msg parse Exception" + ex.toString());
         }
         HashMap<String, String> tags = new HashMap<String, String>();
+        HashMap<String, Object> tagsjson = new HashMap<String, Object>();
+        
         UUID uuid;
         Set<String> metriclist;
         Set<String> tagkslist;
@@ -127,7 +131,18 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         if (Metric.getAsJsonObject().get("tags") != null) {
+                            tagsjson = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tagsjson.getClass());
                             tags = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
+                            for (Map.Entry<String, Object> tag : tagsjson.entrySet()) {
+                                if (tag.getValue().getClass().equals(String.class)) {
+                                    tags.put(tag.getKey(), (String) tag.getValue());
+                                }
+                                if (tag.getValue().getClass().equals(Double.class)) {
+                                    tags.put(tag.getKey(), Long.toString ( Math.round((Double) tag.getValue())));
+                                }                                
+                            }                            
+                            
+//                            tags = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
 //                            logger.info("tags count: " + tags.size());
 //                            CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
 //                            logger.info("Metric Time: " + CalendarObj.getTime().toString());
@@ -196,14 +211,26 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     logger.info(this.jsonResult.size() + " Metrics Write to dbase");
                     this.collector.ack(input);
                 }
-            } catch (Exception ex) {
-                logger.info("JSON parse Exception" + ex.toString());
+            } catch (JsonSyntaxException ex) {
+                logger.error("JsonSyntaxException: " + stackTrace(ex));
+                this.collector.fail(input);
+            } catch (NumberFormatException ex) {
+                logger.error("NumberFormatException: " + stackTrace(ex));
                 this.collector.fail(input);
             }
-        }
-        
-         
+        }                 
     }
+    
+    private String stackTrace(Exception cause) {
+        if (cause == null) {
+            return "";
+        }
+        StringWriter sw = new StringWriter(1024);
+        final PrintWriter pw = new PrintWriter(sw);
+        cause.printStackTrace(pw);
+        pw.flush();
+        return sw.toString();
+    }    
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
 //        declarer.declare(new Fields("json"));
