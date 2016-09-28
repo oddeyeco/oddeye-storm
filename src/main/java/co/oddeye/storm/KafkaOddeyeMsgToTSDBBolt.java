@@ -55,9 +55,9 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private org.hbase.async.HBaseClient client;
 
     private byte[] metatable;
-    private final HashMap<UUID, Set<String>> metricsmap = new HashMap<UUID, Set<String>>();
-    private final HashMap<UUID, Set<String>> tagksmap = new HashMap<UUID, Set<String>>();
-    private final HashMap<UUID, Set<String>> tagvsmap = new HashMap<UUID, Set<String>>();
+    private final HashMap<UUID, Set<String>> metricsmap = new HashMap<>();
+    private final HashMap<UUID, Set<String>> tagksmap = new HashMap<>();
+    private final HashMap<UUID, Set<String>> tagvsmap = new HashMap<>();
     private int p_weight;
     private String alert_level;
     private double value;
@@ -110,8 +110,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         } catch (Exception ex) {
             logger.info("msg parse Exception" + ex.toString());
         }
-        HashMap<String, String> tags = new HashMap<String, String>();
-        HashMap<String, Object> tagsjson = new HashMap<String, Object>();
+        HashMap<String, String> tags = new HashMap<>();
+        HashMap<String, Object> tagsjson = new HashMap<>();
         
         UUID uuid;
         Set<String> metriclist;
@@ -167,11 +167,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
                             tagkslist = tagksmap.get(uuid);
                             if (tagkslist == null) {
-                                tagkslist = new HashSet<String>();
+                                tagkslist = new HashSet<>();
                             }
                             tagvslist = tagvsmap.get(uuid);
                             if (tagvslist == null) {
-                                tagvslist = new HashSet<String>();
+                                tagvslist = new HashSet<>();
                             }
                             for (HashMap.Entry<String, String> entry : tags.entrySet()) {
                                 if (!tagkslist.contains(entry.getKey())) {
@@ -192,7 +192,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
                             metriclist = metricsmap.get(uuid);
                             if (metriclist == null) {
-                                metriclist = new HashSet<String>();
+                                metriclist = new HashSet<>();
                             }
                             if (!metriclist.contains(Metric.getAsJsonObject().get("metric").getAsString())) {
                                 final PutRequest putmetric = new PutRequest(this.metatable, uuid.toString().getBytes(), "metrics".getBytes(), Metric.getAsJsonObject().get("metric").getAsString().getBytes(), Bytes.fromLong(System.currentTimeMillis()));
@@ -232,6 +232,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         return sw.toString();
     }    
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
 //        declarer.declare(new Fields("json"));
     }
@@ -246,6 +247,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         }
     }
 
+    @Override
     public void prepare(java.util.Map map, TopologyContext topologyContext, OutputCollector collector) {
         logger.info("DoPrepare KafkaOddeyeMsgToTSDBBolt");
         this.collector = collector;
