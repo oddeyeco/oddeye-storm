@@ -6,6 +6,8 @@
 package co.oddeye.storm;
 
 //import com.fasterxml.jackson.databind.ObjectMapper;
+import co.oddeye.cache.CacheItem;
+import co.oddeye.cache.CacheItemsList;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -14,6 +16,7 @@ import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -24,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.opentsdb.core.TSDB;
+import net.opentsdb.uid.UniqueId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.storm.task.OutputCollector;
@@ -33,6 +37,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 //import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import net.opentsdb.utils.Config;
+import org.apache.commons.lang.ArrayUtils;
 //import net.spy.memcached.MemcachedClient;
 import org.hbase.async.Bytes;
 import org.hbase.async.PutRequest;
@@ -45,8 +50,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     protected OutputCollector collector;
 
-//    private static final Logger logger = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
-    public static final Logger logger = LoggerFactory.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
+//    private static final Logger LOGGER = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
     private TSDB tsdb = null;
 
     private JsonParser parser = null;
@@ -63,30 +68,14 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private double value;
     private int weight;
     private int houre;
-//    private MemcachedClient t_cache;
+    private byte[] key;
+    private CacheItemsList ItemsList;
+    private byte[] b_metric;
+    private byte[] b_UUID;
+    private byte[] b_host;
+    private byte[] qualifier;
+    private String oddeyerulestable;
 
-//    public void updateCache(final Calendar CalendarObj) {
-//
-//        final int l_houre = CalendarObj.get(Calendar.HOUR_OF_DAY);
-//        for (int D = 0; D < 7; D++) {
-//            try {
-//                //        for (int H = 1; H < 5 + 1; H++) {
-//                CalendarObj.add(Calendar.DATE, -1);
-////                System.out.println();
-//                logger.info("Update Time" + CalendarObj.getTime().toString());
-//                final byte[] key = ByteBuffer.allocate(12).putInt(CalendarObj.get(Calendar.YEAR)).putInt(CalendarObj.get(Calendar.DAY_OF_YEAR)).putInt(l_houre).array();
-//                GetRequest request = new GetRequest("oddeyerules", key);
-//                final ArrayList<KeyValue> hourevalues = client.get(request).joinUninterruptibly();
-//                for (KeyValue hourevalue : hourevalues) {
-//                    t_cache.set(Hex.encodeHexString(hourevalue.family()) + Hex.encodeHexString(key) + Hex.encodeHexString(hourevalue.qualifier()), 3600 * 4, ByteBuffer.wrap(hourevalue.value()).getDouble());
-//                }
-//            } catch (Exception ex) {
-//                logger.error(ex.toString());
-//            }
-//
-//        }
-//        t_cache.set(Integer.toString(houre), 3600 * 4, true);
-//    }
     /**
      *
      * @param config
@@ -100,19 +89,19 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         final Calendar CalendarObj = Calendar.getInstance();
         Gson gson = new Gson();
         String msg = input.getString(0);
-        logger.debug("Start KafkaOddeyeMsgToTSDBBolt " + msg);
+        LOGGER.debug("Start KafkaOddeyeMsgToTSDBBolt " + msg);
         DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
         java.util.Date date = new java.util.Date();
-        logger.info("Bolt ready to write to TSDB " + df.format(date.getTime()));
+        LOGGER.info("Bolt ready to write to TSDB " + df.format(date.getTime()));
         JsonElement Metric;
         try {
             this.jsonResult = (JsonArray) this.parser.parse(msg);
         } catch (Exception ex) {
-            logger.info("msg parse Exception" + ex.toString());
+            LOGGER.info("msg parse Exception" + ex.toString());
         }
         HashMap<String, String> tags = new HashMap<>();
         HashMap<String, Object> tagsjson = new HashMap<>();
-        
+
         UUID uuid;
         Set<String> metriclist;
         Set<String> tagkslist;
@@ -120,12 +109,12 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         if (this.jsonResult != null) {
             try {
                 if (this.jsonResult.size() > 0) {
-                    logger.info("Ready count: " + this.jsonResult.size());
+                    LOGGER.info("Ready count: " + this.jsonResult.size());
                     Metric = this.jsonResult.get(0);
                     tags = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
-                    logger.info("tags count: " + tags.size());
+                    LOGGER.info("tags count: " + tags.size());
                     CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
-                    logger.info("Metric Time: " + CalendarObj.getTime().toString());
+                    LOGGER.info("Metric Time: " + CalendarObj.getTime().toString());
                     uuid = UUID.fromString(tags.get("UUID"));
 
                     for (int i = 0; i < this.jsonResult.size(); i++) {
@@ -138,15 +127,9 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                     tags.put(tag.getKey(), (String) tag.getValue());
                                 }
                                 if (tag.getValue().getClass().equals(Double.class)) {
-                                    tags.put(tag.getKey(), Long.toString ( Math.round((Double) tag.getValue())));
-                                }                                
-                            }                            
-                            
-//                            tags = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
-//                            logger.info("tags count: " + tags.size());
-//                            CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
-//                            logger.info("Metric Time: " + CalendarObj.getTime().toString());
-//                            uuid = UUID.fromString(tags.get("UUID"));
+                                    tags.put(tag.getKey(), Long.toString(Math.round((Double) tag.getValue())));
+                                }
+                            }
 
                             if (tags.get("alert_level") != null) {
                                 alert_level = tags.get("alert_level");
@@ -155,14 +138,79 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 alert_level = null;
                             }
 
-                            if ((alert_level == null) || (p_weight < -1)) {
+                            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
                                 weight = 0;
                                 houre = CalendarObj.get(Calendar.HOUR_OF_DAY);
-//                                if (t_cache.get(Integer.toString(houre)) == null) {
-//                                    logger.info("Update data to " + houre);
-//                                    updateCache(CalendarObj);                                    
-//                                }
+                                CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
+                                LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
                                 value = Metric.getAsJsonObject().get("value").getAsDouble();
+
+                                b_metric = tsdb.getUID(UniqueId.UniqueIdType.METRIC, Metric.getAsJsonObject().get("metric").getAsString());
+                                b_UUID = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("UUID").getAsString());
+                                b_host = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+
+                                qualifier = ArrayUtils.addAll(b_metric, b_UUID);
+                                qualifier = ArrayUtils.addAll(qualifier, b_host);
+
+                                for (int j = 0; j < 7; j++) {
+                                    CalendarObj.add(Calendar.DATE, -1);
+                                    key = ByteBuffer.allocate(12).putInt(CalendarObj.get(Calendar.YEAR)).putInt(CalendarObj.get(Calendar.DAY_OF_YEAR)).putInt(CalendarObj.get(Calendar.HOUR_OF_DAY)).array();
+                                    if (ItemsList.sizebykey(key) == 0) {
+                                        ItemsList.addObject(oddeyerulestable, key, client);
+
+                                    }
+                                    CacheItem Item = ItemsList.get(key, qualifier);
+                                    if (Item == null) {
+                                        // Get calculated data 
+                                        ItemsList.addObject(oddeyerulestable, key, qualifier, client);
+                                        Item = ItemsList.get(key, qualifier);
+                                    }
+
+                                    if (Item == null) {
+                                        ItemsList.addObject(oddeyerulestable, key, CalendarObj, Metric, client, tsdb);
+                                        Item = ItemsList.get(key, qualifier);
+                                    }
+
+                                    if (Item == null) {
+                                        Item = new CacheItem(key, qualifier);
+                                        ItemsList.addObject(Item);
+                                        LOGGER.warn("No rule for check: " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+                                        continue;
+                                    }
+                                    if (p_weight != -1) {
+                                        if (Item.getAvg() != null && Item.getDev() != null) {
+                                            if (value > Item.getAvg() + Item.getDev()) {
+                                                weight++;
+                                            }
+                                        }
+                                        if (Item.getMax() != null) {
+                                            if (value > Item.getMax()) {
+                                                weight++;
+                                            }
+                                        }
+                                    } else {
+                                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+                                    }
+
+                                    if (p_weight != -2) {
+                                        if (Item.getMin() != null) {
+                                            if (value < Item.getMin()) {
+                                                weight++;
+                                            }
+                                        }
+                                        if (Item.getAvg() != null && Item.getDev() != null) {
+                                            if (value < Item.getAvg() - Item.getDev()) {
+                                                weight++;
+                                            }
+                                        }
+                                    } else {
+                                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+                                    }
+
+                                    //To do calculate
+                                }
+                                
+                                tags.put("alert_level", Integer.toString(weight));
                             }
 
                             tagkslist = tagksmap.get(uuid);
@@ -205,32 +253,33 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                             tags.clear();
                         }
                     }
-//                    logger.info("Ready Metrics Flush");
-//                    tsdb.flush();
-//                    this.client.flush();
-                    logger.info(this.jsonResult.size() + " Metrics Write to dbase");
+                    LOGGER.info(this.jsonResult.size() + " Metrics Write to dbase");
                     this.collector.ack(input);
                 }
             } catch (JsonSyntaxException ex) {
-                logger.error("JsonSyntaxException: " + stackTrace(ex));
+                LOGGER.error("JsonSyntaxException: " + stackTrace(ex));
                 this.collector.fail(input);
             } catch (NumberFormatException ex) {
-                logger.error("NumberFormatException: " + stackTrace(ex));
+                LOGGER.error("NumberFormatException: " + stackTrace(ex));
+                this.collector.fail(input);
+            } 
+            catch (Exception ex) {
+                LOGGER.error("Exception: " + stackTrace(ex));
                 this.collector.fail(input);
             }
-        }                 
+        }
     }
-    
+
     private String stackTrace(Exception cause) {
         if (cause == null) {
-            return "";
+            return "-/-";
         }
         StringWriter sw = new StringWriter(1024);
         final PrintWriter pw = new PrintWriter(sw);
         cause.printStackTrace(pw);
         pw.flush();
         return sw.toString();
-    }    
+    }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -242,16 +291,17 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         try {
             this.tsdb.shutdown().joinUninterruptibly();
         } catch (Exception ex) {
-            logger.error("OpenTSDB shutdown execption : " + ex.toString());
+            LOGGER.error("OpenTSDB shutdown execption : " + ex.toString());
             throw new RuntimeException(ex);
         }
     }
 
     @Override
     public void prepare(java.util.Map map, TopologyContext topologyContext, OutputCollector collector) {
-        logger.info("DoPrepare KafkaOddeyeMsgToTSDBBolt");
+        LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt");
         this.collector = collector;
         this.parser = new JsonParser();
+        ItemsList = new CacheItemsList();
 
         try {
 //            t_cache = new MemcachedClient(
@@ -265,6 +315,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
+            
+            oddeyerulestable = String.valueOf(conf.get("oddeyerulestable"));
 
             org.hbase.async.Config clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
@@ -276,12 +328,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     openTsdbConfig);
 
         } catch (IOException ex) {
-            logger.error("OpenTSDB config execption : should not be here !!!");
+            LOGGER.error("OpenTSDB config execption : should not be here !!!");
         } catch (Exception ex) {
-            logger.error("OpenTSDB config execption : " + ex.toString());
+            LOGGER.error("OpenTSDB config execption : " + ex.toString());
         }
-
-        logger.info("DoPrepare KafkaOddeyeMsgToTSDBBolt Finish");
+        LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt Finish");
 
     }
 }

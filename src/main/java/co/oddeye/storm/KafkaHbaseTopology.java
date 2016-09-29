@@ -93,12 +93,8 @@ public class KafkaHbaseTopology {
         try {
 // This statement submit the topology on remote cluster. // args[0] = name of topology StormSubmitter.
             StormSubmitter.submitTopology("KafkaHbaseTopology", conf, builder.createTopology());
-        } catch (AlreadyAliveException alreadyAliveException) {
+        } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException alreadyAliveException) {
             System.out.println(alreadyAliveException);
-        } catch (InvalidTopologyException invalidTopologyException) {
-            System.out.println(invalidTopologyException);
-        } catch (AuthorizationException invalidAuthorizationException) {
-            System.out.println(invalidAuthorizationException);
         }
     }
 }
