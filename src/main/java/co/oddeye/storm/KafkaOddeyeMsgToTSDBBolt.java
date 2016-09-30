@@ -75,6 +75,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private byte[] b_host;
     private byte[] qualifier;
     private String oddeyerulestable;
+    private String s_metriq;
 
     /**
      *
@@ -145,7 +146,13 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
                                 value = Metric.getAsJsonObject().get("value").getAsDouble();
 
-                                b_metric = tsdb.getUID(UniqueId.UniqueIdType.METRIC, Metric.getAsJsonObject().get("metric").getAsString());
+                                s_metriq = Metric.getAsJsonObject().get("metric").getAsString();
+                                if (s_metriq == null)
+                                    LOGGER.error("s_metriq is null");
+                                if (tsdb == null)
+                                    LOGGER.error("tsdb is null");
+                                
+                                b_metric = tsdb.getUID(UniqueId.UniqueIdType.METRIC, s_metriq);
                                 b_UUID = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("UUID").getAsString());
                                 b_host = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
 
