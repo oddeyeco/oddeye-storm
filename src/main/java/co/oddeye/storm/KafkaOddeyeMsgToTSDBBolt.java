@@ -21,7 +21,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 import java.util.Set;
@@ -39,8 +38,6 @@ import org.apache.storm.tuple.Tuple;
 import net.opentsdb.utils.Config;
 import org.apache.commons.lang.ArrayUtils;
 //import net.spy.memcached.MemcachedClient;
-import org.hbase.async.Bytes;
-import org.hbase.async.PutRequest;
 
 /**
  *
@@ -267,16 +264,16 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 //                                }
 //
 //                            }
-                            metriclist = metricsmap.get(uuid);
-                            if (metriclist == null) {
-                                metriclist = new HashSet<>();
-                            }
-                            if (!metriclist.contains(Metric.getAsJsonObject().get("metric").getAsString())) {
-                                final PutRequest putmetric = new PutRequest(this.metatable, uuid.toString().getBytes(), "metrics".getBytes(), Metric.getAsJsonObject().get("metric").getAsString().getBytes(), Bytes.fromLong(System.currentTimeMillis()));
-                                this.client.put(putmetric);
-                                metriclist.add(Metric.getAsJsonObject().get("metric").getAsString());
-                                metricsmap.put(uuid, metriclist);
-                            }
+//                            metriclist = metricsmap.get(uuid);
+//                            if (metriclist == null) {
+//                                metriclist = new HashSet<>();
+//                            }
+//                            if (!metriclist.contains(Metric.getAsJsonObject().get("metric").getAsString())) {
+//                                final PutRequest putmetric = new PutRequest(this.metatable, uuid.toString().getBytes(), "metrics".getBytes(), Metric.getAsJsonObject().get("metric").getAsString().getBytes(), Bytes.fromLong(System.currentTimeMillis()));
+//                                this.client.put(putmetric);
+//                                metriclist.add(Metric.getAsJsonObject().get("metric").getAsString());
+//                                metricsmap.put(uuid, metriclist);
+//                            }
 //
                             tsdb.addPoint(Metric.getAsJsonObject().get("metric").getAsString(), Metric.getAsJsonObject().get("timestamp").getAsLong(), Metric.getAsJsonObject().get("value").getAsDouble(), tags);
                             tags.clear();
