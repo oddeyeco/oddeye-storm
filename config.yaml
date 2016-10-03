@@ -20,8 +20,8 @@ Tsdb:
 Topology:    
     DisplayName: "KafkaHbaseTopology"
     NumWorkers: 3
-    SpoutParallelism_hint: 1
-    TSDBMsgBoltParallelism_hint: 2
+    SpoutParallelism_hint: 3
+    TSDBMsgBoltParallelism_hint: 9
     MsgBoltParallelism_hint: 1    
     MetaBoltParallelism_hint: 1    
     Debug: false

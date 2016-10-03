@@ -191,7 +191,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                         Item = ItemsList.get(key, qualifier);
                                     }
 
-                                    if (CalendarObj.get(Calendar.MINUTE) == 0) {
+                                    if (CalendarObj.get(Calendar.MINUTE) == 80) {
                                         if (Item == null) {
                                             // Calculate rule data
                                             ItemsList.addObject(oddeyerulestable, key, CalendarObj, Metric, client, tsdb);
