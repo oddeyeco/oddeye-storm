@@ -12,8 +12,6 @@ Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
   metatable: oddeye_tsdb_meta
   oddeyerulestable: oddeyerules
-  MemcachedHost: 192.168.10.61
-  MemcachedPort: 11211
   tsd.core.auto_create_metrics: true
   tsd.storage.enable_compaction: false
   tsd.storage.hbase.data_table: test_tsdb
@@ -22,8 +20,8 @@ Tsdb:
 Topology:    
     DisplayName: "KafkaHbaseTopology"
     NumWorkers: 3
-    SpoutParallelism_hint: 3
-    TSDBMsgBoltParallelism_hint: 9
+    SpoutParallelism_hint: 1
+    TSDBMsgBoltParallelism_hint: 2
     MsgBoltParallelism_hint: 1    
     MetaBoltParallelism_hint: 1    
     Debug: false
