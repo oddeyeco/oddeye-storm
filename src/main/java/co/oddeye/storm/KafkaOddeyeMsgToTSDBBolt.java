@@ -145,102 +145,104 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 alert_level = null;
                                 p_weight = 0;
                             }
+
+//Disable check
+
+//                            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
+//                                weight = 0;
+//                                CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
+//                                houre = CalendarObj.get(Calendar.HOUR_OF_DAY);
+//                                LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+//                                value = Metric.getAsJsonObject().get("value").getAsDouble();
 //
-                            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
-                                weight = 0;
-                                CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
-                                houre = CalendarObj.get(Calendar.HOUR_OF_DAY);
-                                LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-                                value = Metric.getAsJsonObject().get("value").getAsDouble();
-
-                                s_metriq = Metric.getAsJsonObject().get("metric").getAsString();
-                                if (s_metriq == null) {
-                                    LOGGER.error("s_metriq is null");
-                                }
-                                if (tsdb == null) {
-                                    LOGGER.error("tsdb is null");
-                                }
-                                while (this.tsdb == null) {
-                                    try {
-                                        this.client = new org.hbase.async.HBaseClient(clientconf);
-                                        this.tsdb = new TSDB(
-                                                this.client,
-                                                openTsdbConfig);
-                                    } catch (Exception e) {
-                                        LOGGER.warn("OpenTSDB Connection fail in run");
-                                        LOGGER.error("Exception: " + stackTrace(e));
-                                    }
-
-                                }
-
-                                b_metric = tsdb.getUID(UniqueId.UniqueIdType.METRIC, s_metriq);
-                                b_UUID = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("UUID").getAsString());
-                                b_host = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-
-                                qualifier = ArrayUtils.addAll(b_metric, b_UUID);
-                                qualifier = ArrayUtils.addAll(qualifier, b_host);
-                                basedate = CalendarObj.getTime();
-                                
-                                for (int j = 0; j < 7; j++) {
-                                    CalendarObj.add(Calendar.DATE, -1);
-                                    key = ByteBuffer.allocate(12).putInt(CalendarObj.get(Calendar.YEAR)).putInt(CalendarObj.get(Calendar.DAY_OF_YEAR)).putInt(CalendarObj.get(Calendar.HOUR_OF_DAY)).array();
-                                    if (ItemsList.sizebykey(key) == 0) {                                        
-                                        ItemsList.addObject(oddeyerulestable, key, client);
-                                    }
-                                    Item = ItemsList.get(key, qualifier);
-                                    if (Item == null) {
-                                        // Get Single calculated data 
-                                        ItemsList.addObject(oddeyerulestable, key, qualifier, client);
-                                        Item = ItemsList.get(key, qualifier);
-                                    }
-
-                                    if (CalendarObj.get(Calendar.MINUTE) == 80) {
-                                        if (Item == null) {
-                                            // Calculate rule data
-                                            ItemsList.addObject(oddeyerulestable, key, CalendarObj, Metric, client, tsdb);
-                                            Item = ItemsList.get(key, qualifier);
-                                        }
-                                    }
-                                    if (Item == null) {
-                                        Item = new CacheItem(key, qualifier);
-                                        ItemsList.addObject(Item);
-                                        LOGGER.warn("No rule for "+CalendarObj.getTime()+" to check: " + basedate + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-                                        continue;
-                                    }
-                                    if (p_weight != -1) {
-                                        if (Item.getAvg() != null && Item.getDev() != null) {
-                                            if (value > Item.getAvg() + Item.getDev()) {
-                                                weight++;
-                                            }
-                                        }
-                                        if (Item.getMax() != null) {
-                                            if (value > Item.getMax()) {
-                                                weight++;
-                                            }
-                                        }
-                                    } else {
-                                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-                                    }
-
-                                    if (p_weight != -2) {
-                                        if (Item.getMin() != null) {
-                                            if (value < Item.getMin()) {
-                                                weight++;
-                                            }
-                                        }
-                                        if (Item.getAvg() != null && Item.getDev() != null) {
-                                            if (value < Item.getAvg() - Item.getDev()) {
-                                                weight++;
-                                            }
-                                        }
-                                    } else {
-                                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-                                    }
-
-                                }
-
-                                tags.put("alert_level", Integer.toString(weight));
-                            }
+//                                s_metriq = Metric.getAsJsonObject().get("metric").getAsString();
+//                                if (s_metriq == null) {
+//                                    LOGGER.error("s_metriq is null");
+//                                }
+//                                if (tsdb == null) {
+//                                    LOGGER.error("tsdb is null");
+//                                }
+//                                while (this.tsdb == null) {
+//                                    try {
+//                                        this.client = new org.hbase.async.HBaseClient(clientconf);
+//                                        this.tsdb = new TSDB(
+//                                                this.client,
+//                                                openTsdbConfig);
+//                                    } catch (Exception e) {
+//                                        LOGGER.warn("OpenTSDB Connection fail in run");
+//                                        LOGGER.error("Exception: " + stackTrace(e));
+//                                    }
+//
+//                                }
+//
+//                                b_metric = tsdb.getUID(UniqueId.UniqueIdType.METRIC, s_metriq);
+//                                b_UUID = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("UUID").getAsString());
+//                                b_host = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+//
+//                                qualifier = ArrayUtils.addAll(b_metric, b_UUID);
+//                                qualifier = ArrayUtils.addAll(qualifier, b_host);
+//                                basedate = CalendarObj.getTime();
+//                                
+//                                for (int j = 0; j < 7; j++) {
+//                                    CalendarObj.add(Calendar.DATE, -1);
+//                                    key = ByteBuffer.allocate(12).putInt(CalendarObj.get(Calendar.YEAR)).putInt(CalendarObj.get(Calendar.DAY_OF_YEAR)).putInt(CalendarObj.get(Calendar.HOUR_OF_DAY)).array();
+//                                    if (ItemsList.sizebykey(key) == 0) {                                        
+//                                        ItemsList.addObject(oddeyerulestable, key, client);
+//                                    }
+//                                    Item = ItemsList.get(key, qualifier);
+//                                    if (Item == null) {
+//                                        // Get Single calculated data 
+//                                        ItemsList.addObject(oddeyerulestable, key, qualifier, client);
+//                                        Item = ItemsList.get(key, qualifier);
+//                                    }
+//
+//                                    if (CalendarObj.get(Calendar.MINUTE) == 80) {
+//                                        if (Item == null) {
+//                                            // Calculate rule data
+//                                            ItemsList.addObject(oddeyerulestable, key, CalendarObj, Metric, client, tsdb);
+//                                            Item = ItemsList.get(key, qualifier);
+//                                        }
+//                                    }
+//                                    if (Item == null) {
+//                                        Item = new CacheItem(key, qualifier);
+//                                        ItemsList.addObject(Item);
+//                                        LOGGER.warn("No rule for "+CalendarObj.getTime()+" to check: " + basedate + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+//                                        continue;
+//                                    }
+//                                    if (p_weight != -1) {
+//                                        if (Item.getAvg() != null && Item.getDev() != null) {
+//                                            if (value > Item.getAvg() + Item.getDev()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                        if (Item.getMax() != null) {
+//                                            if (value > Item.getMax()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                    } else {
+//                                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+//                                    }
+//
+//                                    if (p_weight != -2) {
+//                                        if (Item.getMin() != null) {
+//                                            if (value < Item.getMin()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                        if (Item.getAvg() != null && Item.getDev() != null) {
+//                                            if (value < Item.getAvg() - Item.getDev()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                    } else {
+//                                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+//                                    }
+//
+//                                }
+//
+//                                tags.put("alert_level", Integer.toString(weight));
+//                            }
 
                             // TODO Chage this
 //                            tagkslist = tagksmap.get(uuid);
