@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -78,6 +79,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private int mb;
     private Runtime runtime;
     private CacheItem Item;
+    private Date basedate;
 
     /**
      *
@@ -177,7 +179,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
                                 qualifier = ArrayUtils.addAll(b_metric, b_UUID);
                                 qualifier = ArrayUtils.addAll(qualifier, b_host);
-
+                                basedate = CalendarObj.getTime();
+                                
                                 for (int j = 0; j < 7; j++) {
                                     CalendarObj.add(Calendar.DATE, -1);
                                     key = ByteBuffer.allocate(12).putInt(CalendarObj.get(Calendar.YEAR)).putInt(CalendarObj.get(Calendar.DAY_OF_YEAR)).putInt(CalendarObj.get(Calendar.HOUR_OF_DAY)).array();
@@ -201,7 +204,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                     if (Item == null) {
                                         Item = new CacheItem(key, qualifier);
                                         ItemsList.addObject(Item);
-                                        LOGGER.warn("No rule for check: " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+                                        LOGGER.warn("No rule for "+CalendarObj.getTime()+" to check: " + basedate + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
                                         continue;
                                     }
                                     if (p_weight != -1) {
