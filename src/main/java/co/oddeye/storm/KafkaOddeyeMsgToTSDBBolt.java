@@ -8,6 +8,8 @@ package co.oddeye.storm;
 //import com.fasterxml.jackson.databind.ObjectMapper;
 import co.oddeye.cache.CacheItem;
 import co.oddeye.cache.CacheItemsList;
+import co.oddeye.core.OddeeyMetricMeta;
+import co.oddeye.core.OddeeyMetricMetaList;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -16,7 +18,6 @@ import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.opentsdb.core.TSDB;
-import net.opentsdb.uid.UniqueId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.storm.task.OutputCollector;
@@ -38,6 +38,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 import net.opentsdb.utils.Config;
 import org.apache.commons.lang.ArrayUtils;
+import org.hbase.async.PutRequest;
 //import net.spy.memcached.MemcachedClient;
 
 /**
@@ -80,6 +81,10 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private Runtime runtime;
     private CacheItem Item;
     private Date basedate;
+    private OddeeyMetricMeta mtrsc;
+    private OddeeyMetricMetaList mtrscList;
+    private final byte[] family = "d".getBytes();
+    private double d_value;
 
     /**
      *
@@ -106,197 +111,34 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         }
         HashMap<String, String> tags = new HashMap<>();
         HashMap<String, Object> tagsjson = new HashMap<>();
-
-        UUID uuid;
-        Set<String> metriclist;
-        Set<String> tagkslist;
-        Set<String> tagvslist;
         if (this.jsonResult != null) {
             try {
                 if (this.jsonResult.size() > 0) {
-                    LOGGER.info("Ready count: " + this.jsonResult.size());
+                    LOGGER.debug("Ready count: " + this.jsonResult.size());
                     Metric = this.jsonResult.get(0);
-                    tags = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
-                    LOGGER.info("tags count: " + tags.size());
                     CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
                     LOGGER.info("Metric Time: " + CalendarObj.getTime().toString());
-                    uuid = UUID.fromString(tags.get("UUID"));
-                    tags.clear();
-
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
-                        if (Metric.getAsJsonObject().get("tags") != null) {
-                            tagsjson = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tagsjson.getClass());
-//                            tags = gson.fromJson(Metric.getAsJsonObject().get("tags").getAsJsonObject(), tags.getClass());
-                            for (Map.Entry<String, Object> tag : tagsjson.entrySet()) {
-                                if (tag.getValue().getClass().equals(String.class)) {
-                                    tags.put(tag.getKey(), (String) tag.getValue());
-                                }
-                                if (tag.getValue().getClass().equals(Double.class)) {
-                                    tags.put(tag.getKey(), Long.toString(Math.round((Double) tag.getValue())));
-                                }
-                            }
-                            tagsjson.clear();
-
-                            if (tags.get("alert_level") != null) {
-                                alert_level = tags.get("alert_level");
-                                p_weight = Integer.parseInt(alert_level);
-                            } else {
-                                alert_level = null;
-                                p_weight = 0;
-                            }
-
-//Disable check
-
-//                            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
-//                                weight = 0;
-//                                CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
-//                                houre = CalendarObj.get(Calendar.HOUR_OF_DAY);
-//                                LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-//                                value = Metric.getAsJsonObject().get("value").getAsDouble();
-//
-//                                s_metriq = Metric.getAsJsonObject().get("metric").getAsString();
-//                                if (s_metriq == null) {
-//                                    LOGGER.error("s_metriq is null");
-//                                }
-//                                if (tsdb == null) {
-//                                    LOGGER.error("tsdb is null");
-//                                }
-//                                while (this.tsdb == null) {
-//                                    try {
-//                                        this.client = new org.hbase.async.HBaseClient(clientconf);
-//                                        this.tsdb = new TSDB(
-//                                                this.client,
-//                                                openTsdbConfig);
-//                                    } catch (Exception e) {
-//                                        LOGGER.warn("OpenTSDB Connection fail in run");
-//                                        LOGGER.error("Exception: " + stackTrace(e));
-//                                    }
-//
-//                                }
-//
-//                                b_metric = tsdb.getUID(UniqueId.UniqueIdType.METRIC, s_metriq);
-//                                b_UUID = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("UUID").getAsString());
-//                                b_host = tsdb.getUID(UniqueId.UniqueIdType.TAGV, Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-//
-//                                qualifier = ArrayUtils.addAll(b_metric, b_UUID);
-//                                qualifier = ArrayUtils.addAll(qualifier, b_host);
-//                                basedate = CalendarObj.getTime();
-//                                
-//                                for (int j = 0; j < 7; j++) {
-//                                    CalendarObj.add(Calendar.DATE, -1);
-//                                    key = ByteBuffer.allocate(12).putInt(CalendarObj.get(Calendar.YEAR)).putInt(CalendarObj.get(Calendar.DAY_OF_YEAR)).putInt(CalendarObj.get(Calendar.HOUR_OF_DAY)).array();
-//                                    if (ItemsList.sizebykey(key) == 0) {                                        
-//                                        ItemsList.addObject(oddeyerulestable, key, client);
-//                                    }
-//                                    Item = ItemsList.get(key, qualifier);
-//                                    if (Item == null) {
-//                                        // Get Single calculated data 
-//                                        ItemsList.addObject(oddeyerulestable, key, qualifier, client);
-//                                        Item = ItemsList.get(key, qualifier);
-//                                    }
-//
-//                                    if (CalendarObj.get(Calendar.MINUTE) == 80) {
-//                                        if (Item == null) {
-//                                            // Calculate rule data
-//                                            ItemsList.addObject(oddeyerulestable, key, CalendarObj, Metric, client, tsdb);
-//                                            Item = ItemsList.get(key, qualifier);
-//                                        }
-//                                    }
-//                                    if (Item == null) {
-//                                        Item = new CacheItem(key, qualifier);
-//                                        ItemsList.addObject(Item);
-//                                        LOGGER.warn("No rule for "+CalendarObj.getTime()+" to check: " + basedate + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-//                                        continue;
-//                                    }
-//                                    if (p_weight != -1) {
-//                                        if (Item.getAvg() != null && Item.getDev() != null) {
-//                                            if (value > Item.getAvg() + Item.getDev()) {
-//                                                weight++;
-//                                            }
-//                                        }
-//                                        if (Item.getMax() != null) {
-//                                            if (value > Item.getMax()) {
-//                                                weight++;
-//                                            }
-//                                        }
-//                                    } else {
-//                                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-//                                    }
-//
-//                                    if (p_weight != -2) {
-//                                        if (Item.getMin() != null) {
-//                                            if (value < Item.getMin()) {
-//                                                weight++;
-//                                            }
-//                                        }
-//                                        if (Item.getAvg() != null && Item.getDev() != null) {
-//                                            if (value < Item.getAvg() - Item.getDev()) {
-//                                                weight++;
-//                                            }
-//                                        }
-//                                    } else {
-//                                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-//                                    }
-//
-//                                }
-//
-//                                tags.put("alert_level", Integer.toString(weight));
-//                            }
-
-                            // TODO Chage this
-//                            tagkslist = tagksmap.get(uuid);
-//                            if (tagkslist == null) {
-//                                tagkslist = new HashSet<>();
-//                            }
-//                            tagvslist = tagvsmap.get(uuid);
-//                            if (tagvslist == null) {
-//                                tagvslist = new HashSet<>();
-//                            }
-//                            for (HashMap.Entry<String, String> entry : tags.entrySet()) {
-//                                if (!tagkslist.contains(entry.getKey())) {
-//                                    final PutRequest putkey = new PutRequest(this.metatable, uuid.toString().getBytes(), "tagks".getBytes(), entry.getKey().getBytes(), Bytes.fromLong(System.currentTimeMillis()));
-//                                    this.client.put(putkey);
-//                                    tagkslist.add(entry.getKey());
-//                                    tagksmap.put(uuid, tagkslist);
-//                                }
-//
-//                                if (!tagvslist.contains((entry.getKey() + "/" + entry.getValue()))) {
-//                                    final PutRequest putvalue = new PutRequest(this.metatable, uuid.toString().getBytes(), "tagvs".getBytes(), (entry.getKey() + "/" + entry.getValue()).getBytes(), Bytes.fromLong(System.currentTimeMillis()));
-//                                    this.client.put(putvalue);
-//                                    tagvslist.add((entry.getKey() + "/" + entry.getValue()));
-//                                    tagvsmap.put(uuid, tagvslist);
-//                                }
-//
-//                            }
-//                            metriclist = metricsmap.get(uuid);
-//                            if (metriclist == null) {
-//                                metriclist = new HashSet<>();
-//                            }
-//                            if (!metriclist.contains(Metric.getAsJsonObject().get("metric").getAsString())) {
-//                                final PutRequest putmetric = new PutRequest(this.metatable, uuid.toString().getBytes(), "metrics".getBytes(), Metric.getAsJsonObject().get("metric").getAsString().getBytes(), Bytes.fromLong(System.currentTimeMillis()));
-//                                this.client.put(putmetric);
-//                                metriclist.add(Metric.getAsJsonObject().get("metric").getAsString());
-//                                metricsmap.put(uuid, metriclist);
-//                            }
-//
-                            tsdb.addPoint(Metric.getAsJsonObject().get("metric").getAsString(), Metric.getAsJsonObject().get("timestamp").getAsLong(), Metric.getAsJsonObject().get("value").getAsDouble(), tags);
-                            tags.clear();
+                        CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
+                        mtrsc = new OddeeyMetricMeta(Metric, tsdb);
+                        if (!mtrscList.contains(mtrsc)) {
+                            mtrscList.add(mtrsc);
+                            key = mtrsc.getKey();
+                            PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
+                            client.put(putvalue);
+                            LOGGER.info("Add metric Meta:" + mtrsc.getName());
                         }
-                        Metric = null;
-                        if (runtime.freeMemory() / mb < 100) {
-                            LOGGER.warn("Used Memory:" + (runtime.totalMemory() - runtime.freeMemory()) / mb);
-                            LOGGER.warn("Free Memory:" + (runtime.freeMemory()) / mb);
-                            tsdb.flush().joinUninterruptibly();
-                            runtime.gc();
-                            LOGGER.warn("After flush Used Memory:" + (runtime.totalMemory() - runtime.freeMemory()) / mb);
-                            LOGGER.warn("After flush Free Memory:" + (runtime.freeMemory()) / mb);
-
-                        }
-//                        runtime.gc();
+                        mtrsc.getTags().entrySet().stream().forEach((tag) -> {
+                            tags.put(tag.getKey(), tag.getValue().getValue());
+                        });
+                        d_value = Metric.getAsJsonObject().get("value").getAsDouble();
+                        tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
+                        this.collector.ack(input);
+                        LOGGER.debug("Add metric Value:" + mtrsc.getName());                        
                     }
-                    LOGGER.info(this.jsonResult.size() + " Metrics Write to dbase");
-                    this.collector.ack(input);
+                    LOGGER.debug("metric cache size:" + mtrscList.size());
+
                 }
             } catch (JsonSyntaxException ex) {
                 LOGGER.error("JsonSyntaxException: " + stackTrace(ex));
@@ -363,8 +205,6 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
 
-            oddeyerulestable = String.valueOf(conf.get("oddeyerulestable"));
-
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
             clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
@@ -380,6 +220,12 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     LOGGER.error("Exception: " + stackTrace(e));
                 }
 
+            }
+
+            try {
+                mtrscList = new OddeeyMetricMetaList(tsdb, this.metatable);
+            } catch (Exception ex) {
+                mtrscList = new OddeeyMetricMetaList();
             }
 
         } catch (IOException ex) {

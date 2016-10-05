@@ -4,7 +4,7 @@
   <groupId>co.oddeye.storm</groupId>
   <artifactId>KafkaHbaseStorm</artifactId>
   <name>KafkaHbaseStorm</name>
-  <version>0.7</version>
+  <version>0.8</version>
   <build>
     <plugins>
       <plugin>
