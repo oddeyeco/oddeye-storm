@@ -21,7 +21,7 @@ Topology:
     DisplayName: "KafkaHbaseTopology"
     NumWorkers: 3
     SpoutParallelism_hint: 3
-    TSDBMsgBoltParallelism_hint: 9
+    TSDBMsgBoltParallelism_hint: 6
     MsgBoltParallelism_hint: 1    
     MetaBoltParallelism_hint: 1    
     Debug: false

@@ -109,8 +109,20 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         } catch (Exception ex) {
             LOGGER.info("msg parse Exception" + ex.toString());
         }
-        HashMap<String, String> tags = new HashMap<>();
-        HashMap<String, Object> tagsjson = new HashMap<>();
+        HashMap<String, String> tags = new HashMap<>();       
+        while (this.tsdb == null) {
+            try {
+                this.client = new org.hbase.async.HBaseClient(clientconf);
+                this.tsdb = new TSDB(
+                        this.client,
+                        openTsdbConfig);
+            } catch (Exception e) {
+                LOGGER.warn("OpenTSDB Connection fail in run");
+                LOGGER.error("Exception: " + stackTrace(e));
+            }
+
+        }
+
         if (this.jsonResult != null) {
             try {
                 if (this.jsonResult.size() > 0) {
@@ -135,7 +147,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                         d_value = Metric.getAsJsonObject().get("value").getAsDouble();
                         tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
                         this.collector.ack(input);
-                        LOGGER.debug("Add metric Value:" + mtrsc.getName());                        
+                        LOGGER.debug("Add metric Value:" + mtrsc.getName());
                     }
                     LOGGER.debug("metric cache size:" + mtrscList.size());
 
