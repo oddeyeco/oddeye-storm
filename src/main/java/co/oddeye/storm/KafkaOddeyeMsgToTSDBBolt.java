@@ -8,6 +8,7 @@ package co.oddeye.storm;
 //import com.fasterxml.jackson.databind.ObjectMapper;
 import co.oddeye.cache.CacheItem;
 import co.oddeye.cache.CacheItemsList;
+import co.oddeye.core.MetriccheckRule;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import com.google.gson.Gson;
@@ -23,8 +24,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
-
 import java.util.Set;
 import java.util.UUID;
 import net.opentsdb.core.TSDB;
@@ -37,7 +36,6 @@ import org.apache.storm.topology.base.BaseRichBolt;
 //import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import net.opentsdb.utils.Config;
-import org.apache.commons.lang.ArrayUtils;
 import org.hbase.async.PutRequest;
 //import net.spy.memcached.MemcachedClient;
 
@@ -59,32 +57,22 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private org.hbase.async.HBaseClient client;
 
     private byte[] metatable;
-    private final HashMap<UUID, Set<String>> metricsmap = new HashMap<>();
-    private final HashMap<UUID, Set<String>> tagksmap = new HashMap<>();
-    private final HashMap<UUID, Set<String>> tagvsmap = new HashMap<>();
-    private int p_weight;
-    private String alert_level;
-    private double value;
-    private int weight;
-    private int houre;
-    private byte[] key;
-    private CacheItemsList ItemsList;
-    private byte[] b_metric;
-    private byte[] b_UUID;
-    private byte[] b_host;
-    private byte[] qualifier;
-    private String oddeyerulestable;
-    private String s_metriq;
+    private short p_weight;    
+    private int weight;    
+    private byte[] key;       
     private org.hbase.async.Config clientconf;
     private Config openTsdbConfig;
     private int mb;
-    private Runtime runtime;
-    private CacheItem Item;
-    private Date basedate;
     private OddeeyMetricMeta mtrsc;
     private OddeeyMetricMetaList mtrscList;
     private final byte[] family = "d".getBytes();
     private double d_value;
+    private JsonElement alert_level;
+    private Calendar CalendarObjRules;
+    private MetriccheckRule Rule;
+    private long metrictime;
+    private Calendar CalendarObj;
+    private Boolean DisableCheck;
 
     /**
      *
@@ -96,7 +84,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        final Calendar CalendarObj = Calendar.getInstance();
+        CalendarObj = Calendar.getInstance();
+        CalendarObjRules = Calendar.getInstance();
         Gson gson = new Gson();
         String msg = input.getString(0);
         LOGGER.debug("Start KafkaOddeyeMsgToTSDBBolt " + msg);
@@ -109,7 +98,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
         } catch (Exception ex) {
             LOGGER.info("msg parse Exception" + ex.toString());
         }
-        HashMap<String, String> tags = new HashMap<>();       
+        HashMap<String, String> tags = new HashMap<>();
         while (this.tsdb == null) {
             try {
                 this.client = new org.hbase.async.HBaseClient(clientconf);
@@ -128,24 +117,109 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
                     Metric = this.jsonResult.get(0);
-                    CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
-                    LOGGER.info("Metric Time: " + CalendarObj.getTime().toString());
+                    metrictime = Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000;
+                    CalendarObj.setTimeInMillis(metrictime);
+                    CalendarObjRules.setTime(new Date());
+                    CalendarObjRules.add(Calendar.HOUR, -1);
+
+                    LOGGER.info("Messge Time: " + CalendarObj.getTime().toString());
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
-                        CalendarObj.setTimeInMillis(Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000);
+                        metrictime = Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000;
+                        CalendarObj.setTimeInMillis(metrictime);
                         mtrsc = new OddeeyMetricMeta(Metric, tsdb);
-                        if (!mtrscList.contains(mtrsc)) {
-                            mtrscList.add(mtrsc);
+                        if (!mtrscList.containsKey(mtrsc.hashCode())) {
                             key = mtrsc.getKey();
                             PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
                             client.put(putvalue);
                             LOGGER.info("Add metric Meta:" + mtrsc.getName());
+                        } else {
+                            mtrsc = mtrscList.get(mtrsc.hashCode());
                         }
+                        d_value = Metric.getAsJsonObject().get("value").getAsDouble();
+                        alert_level = Metric.getAsJsonObject().get("tags").getAsJsonObject().get("alert_level");
+                        p_weight = 0;
+                        if (null != alert_level) {
+                            p_weight = Short.parseShort(alert_level.getAsString());
+                        }
+                        if (CalendarObjRules.getTimeInMillis() > CalendarObj.getTimeInMillis()) {
+                            p_weight = -4;
+                        }
+                        if (DisableCheck)
+                        {
+                            p_weight = -5;
+                        }
+                        
+                        if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
+                            weight = 0;
+                            CalendarObjRules.setTimeInMillis(metrictime);
+                            LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+                            for (int j = 0; j < 7; j++) {
+                                CalendarObjRules.add(Calendar.DATE, -1);
+
+                                try {
+                                    Rule = mtrsc.getRule(CalendarObjRules, metatable, client);
+                                } catch (Exception ex) {
+                                    LOGGER.warn("Rule exeption: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    LOGGER.warn("RuleExeption: " + stackTrace(ex));
+                                }
+                                if (Rule == null) {
+                                    LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    continue;
+                                }
+
+                                if (!Rule.isIsValidRule()) {
+                                    LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    continue;
+                                }
+//
+                                if (p_weight != -1) {
+                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                        if (d_value > Rule.getAvg() + Rule.getDev()) {
+                                            weight++;
+                                        }
+                                    }
+                                    if (Rule.getMax() != null) {
+                                        if (d_value > Rule.getMax()) {
+                                            weight++;
+                                        }
+                                    }
+                                } else {
+                                    LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                }
+
+                                if (p_weight != -2) {
+                                    if (Rule.getMin() != null) {
+                                        if (d_value < Rule.getMin()) {
+                                            weight++;
+                                        }
+                                    }
+                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                        if (d_value < Rule.getAvg() - Rule.getDev()) {
+                                            weight++;
+                                        }
+                                    }
+                                } else {
+                                    LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                }
+                                p_weight = (short) weight;
+                            }
+                        } else if (p_weight == -4) {
+                            LOGGER.warn("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        } else if (p_weight == -5) {
+                            LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        }
+                         else {
+                            LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        }
+                        tags.clear();
                         mtrsc.getTags().entrySet().stream().forEach((tag) -> {
                             tags.put(tag.getKey(), tag.getValue().getValue());
                         });
-                        d_value = Metric.getAsJsonObject().get("value").getAsDouble();
+                        tags.put("alert_level", Short.toString(p_weight));
+
                         tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
+                        mtrscList.set(mtrsc);
                         this.collector.ack(input);
                         LOGGER.debug("Add metric Value:" + mtrsc.getName());
                     }
@@ -158,10 +232,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             } catch (NumberFormatException ex) {
                 LOGGER.error("NumberFormatException: " + stackTrace(ex));
                 this.collector.fail(input);
-            } catch (Exception ex) {
-                LOGGER.error("Exception: " + stackTrace(ex));
-                this.collector.fail(input);
             }
+//            catch (Exception ex) {
+//                LOGGER.error("Exception: " + stackTrace(ex));
+//                this.collector.fail(input);
+//            }
             this.jsonResult = null;
         }
     }
@@ -194,20 +269,21 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     @Override
     public void prepare(java.util.Map map, TopologyContext topologyContext, OutputCollector i_collector) {
-        LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt");
+        LOGGER.warn("DoPrepare KafkaOddeyeMsgToTSDBBolt");
         collector = i_collector;
         parser = new JsonParser();
-        ItemsList = new CacheItemsList();
-
         mb = 1024 * 1024;
 
         //Getting the runtime reference from system
-        runtime = Runtime.getRuntime();
+//        runtime = Runtime.getRuntime();
 
         try {
 //            t_cache = new MemcachedClient(
 //                    new InetSocketAddress("192.168.10.60", 11211));
             //TODO do config
+            
+            DisableCheck = Boolean.valueOf(String.valueOf(conf.get("DisableCheck")));
+            
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
             openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
@@ -235,7 +311,9 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             }
 
             try {
+                LOGGER.warn("Start read meta in hbase");
                 mtrscList = new OddeeyMetricMetaList(tsdb, this.metatable);
+                LOGGER.warn("End read meta in hbase");
             } catch (Exception ex) {
                 mtrscList = new OddeeyMetricMetaList();
             }

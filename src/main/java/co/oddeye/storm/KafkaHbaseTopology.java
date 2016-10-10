@@ -21,12 +21,13 @@ import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.topology.TopologyBuilder;
 
-
 /**
  *
  * @author vahan
  */
 public class KafkaHbaseTopology {
+
+    private static String topologyname;
 
     public static void main(String[] args) {
         String Filename = args[0];
@@ -50,11 +51,10 @@ public class KafkaHbaseTopology {
 // Second argument is the topic name
 // Third argument is the ZooKeeper root for Kafka
 // Fourth argument is consumer group id
-        
+
         SpoutConfig kafkaConfig = new SpoutConfig(zkHosts,
                 String.valueOf(kafkaconf.get("tsdbtopic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKeyTSDB")));
-        
-        
+
 // Specify that the kafka messages are String        
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 //        kafkaConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
@@ -66,7 +66,7 @@ public class KafkaHbaseTopology {
 // set the kafka spout class
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
-/*
+        /*
         //Disable hbase bolts
         builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
                 new KafkaOddeyeMsgToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MsgBoltParallelism_hint"))))
@@ -76,15 +76,16 @@ public class KafkaHbaseTopology {
                 new KafkaOddeyeMetaToHbaseBolt(), Integer.parseInt(String.valueOf(tconf.get("MetaBoltParallelism_hint"))))
                 .fieldsGrouping("KafkaOddeyeMsgToHbaseBolt", new Fields("json"));
 //                .shuffleGrouping("KafkaOddeyeMsgToHbaseBolt");
-        */
+         */
 
         java.util.Map<String, Object> TSDBconfig = (java.util.Map<String, Object>) topologyconf.get("Tsdb");
-        
+        boolean CheckDisabled;
+        CheckDisabled = Boolean.valueOf(String.valueOf(tconf.get("DisableCheck")));
+
+        TSDBconfig.put("DisableCheck", Boolean.toString(CheckDisabled));
         builder.setBolt("KafkaOddeyeMsgToTSDBBolt",
                 new KafkaOddeyeMsgToTSDBBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("TSDBMsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
-        
-                
 
         Config conf = new Config();
         conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
@@ -92,7 +93,11 @@ public class KafkaHbaseTopology {
         conf.setDebug(Boolean.getBoolean(String.valueOf(tconf.get("Debug"))));
         try {
 // This statement submit the topology on remote cluster. // args[0] = name of topology StormSubmitter.
-            StormSubmitter.submitTopology("KafkaHbaseTopology", conf, builder.createTopology());
+            topologyname = String.valueOf(tconf.get("topologi.display.name"));
+            if (CheckDisabled) {
+                topologyname = topologyname + "_NoCheck";
+            }
+            StormSubmitter.submitTopology(topologyname, conf, builder.createTopology());
         } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException alreadyAliveException) {
             System.out.println(alreadyAliveException);
         }
