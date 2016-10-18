@@ -6,8 +6,6 @@
 package co.oddeye.storm;
 
 //import com.fasterxml.jackson.databind.ObjectMapper;
-import co.oddeye.cache.CacheItem;
-import co.oddeye.cache.CacheItemsList;
 import co.oddeye.core.MetriccheckRule;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
@@ -19,13 +17,12 @@ import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Set;
-import java.util.UUID;
 import net.opentsdb.core.TSDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +33,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 //import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import net.opentsdb.utils.Config;
+import org.apache.commons.lang.ArrayUtils;
 import org.hbase.async.PutRequest;
 //import net.spy.memcached.MemcachedClient;
 
@@ -57,6 +55,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private org.hbase.async.HBaseClient client;
 
     private byte[] metatable;
+    private byte[] errortable;
     private short p_weight;    
     private int weight;    
     private byte[] key;       
@@ -65,7 +64,9 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private int mb;
     private OddeeyMetricMeta mtrsc;
     private OddeeyMetricMetaList mtrscList;
-    private final byte[] family = "d".getBytes();
+    private final byte[] meta_family = "d".getBytes();
+    private final byte[] error_family = "d".getBytes();
+    
     private double d_value;
     private JsonElement alert_level;
     private Calendar CalendarObjRules;
@@ -130,7 +131,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                         mtrsc = new OddeeyMetricMeta(Metric, tsdb);
                         if (!mtrscList.containsKey(mtrsc.hashCode())) {
                             key = mtrsc.getKey();
-                            PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
+                            PutRequest putvalue = new PutRequest(metatable, key, meta_family, "n".getBytes(), key);
                             client.put(putvalue);
                             LOGGER.info("Add metric Meta:" + mtrsc.getName());
                         } else {
@@ -213,6 +214,16 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                             LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         }
                         tags.clear();
+                        
+                        if (p_weight>0)
+                        {
+                            key = mtrsc.getTags().get("UUID").getValueTSDBUID();                           
+                            key = ArrayUtils.addAll(key,ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.YEAR)).array());
+                            key = ArrayUtils.addAll(key,ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.DAY_OF_YEAR)).array());
+                            PutRequest putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(2).putShort(p_weight).array());
+                            client.put(putvalue);
+                        }
+                        
                         mtrsc.getTags().entrySet().stream().forEach((tag) -> {
                             tags.put(tag.getKey(), tag.getValue().getValue());
                         });
@@ -292,6 +303,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
+            this.errortable = String.valueOf(conf.get("errortable")).getBytes();
 
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);

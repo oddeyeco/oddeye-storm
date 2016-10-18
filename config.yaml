@@ -11,6 +11,7 @@ Kafka:
 Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
   metatable: test_oddeye-meta
+  errorstable: test_oddeye-errors
 #  oddeyerulestable: oddeyerules
   tsd.core.auto_create_metrics: true
   tsd.storage.enable_compaction: false
