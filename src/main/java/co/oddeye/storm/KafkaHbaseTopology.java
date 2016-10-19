@@ -87,6 +87,11 @@ public class KafkaHbaseTopology {
                 new KafkaOddeyeMsgToTSDBBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("TSDBMsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
 
+//        builder.setBolt("WarningProcessingBolt",
+//                new WarningProcessingBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WarningParallelism_hint"))))
+//                .shuffleGrouping("KafkaOddeyeMsgToTSDBBolt");
+        
+        
         Config conf = new Config();
         conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
         conf.put(Config.TOPOLOGY_DEBUG, true);

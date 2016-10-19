@@ -17,7 +17,6 @@ import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -33,7 +32,8 @@ import org.apache.storm.topology.base.BaseRichBolt;
 //import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import net.opentsdb.utils.Config;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 import org.hbase.async.PutRequest;
 //import net.spy.memcached.MemcachedClient;
 
@@ -55,18 +55,16 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     private org.hbase.async.HBaseClient client;
 
     private byte[] metatable;
-    private byte[] errortable;
-    private short p_weight;    
-    private int weight;    
-    private byte[] key;       
+    private short p_weight;
+    private int weight;
+    private byte[] key;
     private org.hbase.async.Config clientconf;
     private Config openTsdbConfig;
     private int mb;
     private OddeeyMetricMeta mtrsc;
     private OddeeyMetricMetaList mtrscList;
     private final byte[] meta_family = "d".getBytes();
-    private final byte[] error_family = "d".getBytes();
-    
+
     private double d_value;
     private JsonElement alert_level;
     private Calendar CalendarObjRules;
@@ -146,11 +144,10 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                         if (CalendarObjRules.getTimeInMillis() > CalendarObj.getTimeInMillis()) {
                             p_weight = -4;
                         }
-                        if (DisableCheck)
-                        {
+                        if (DisableCheck) {
                             p_weight = -5;
                         }
-                        
+
                         if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
                             weight = 0;
                             CalendarObjRules.setTimeInMillis(metrictime);
@@ -209,21 +206,10 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                             LOGGER.warn("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         } else if (p_weight == -5) {
                             LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                        }
-                         else {
+                        } else {
                             LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         }
                         tags.clear();
-                        
-                        if (p_weight>0)
-                        {
-                            key = mtrsc.getTags().get("UUID").getValueTSDBUID();                           
-                            key = ArrayUtils.addAll(key,ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.YEAR)).array());
-                            key = ArrayUtils.addAll(key,ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.DAY_OF_YEAR)).array());
-                            PutRequest putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(2).putShort(p_weight).array());
-                            client.put(putvalue);
-                        }
-                        
                         mtrsc.getTags().entrySet().stream().forEach((tag) -> {
                             tags.put(tag.getKey(), tag.getValue().getValue());
                         });
@@ -232,6 +218,23 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                         tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
                         mtrscList.set(mtrsc);
                         this.collector.ack(input);
+                        if (p_weight > 0) {
+                            try {
+                                LOGGER.info("Emit error metric " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
+                                this.collector.emit(input, new Values(mtrsc, p_weight, CalendarObj));
+//                                key = mtrsc.getTags().get("UUID").getValueTSDBUID();
+//                                key = ArrayUtils.addAll(key, ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.YEAR)).array());
+//                                key = ArrayUtils.addAll(key, ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.DAY_OF_YEAR)).array());
+//                                PutRequest putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(2).putShort(p_weight).array());
+//                                client.put(putvalue);
+//                                LOGGER.warn("End Put error " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
+                            } catch (Exception e) {
+                                LOGGER.error("Error Emit :" + mtrsc.getName() + " to date " + CalendarObj.getTime() + " tags " + mtrsc.getTags());
+                                LOGGER.error("JsonSyntaxException: " + stackTrace(e));
+                            }
+
+                        }
+
                         LOGGER.debug("Add metric Value:" + mtrsc.getName());
                     }
                     LOGGER.debug("metric cache size:" + mtrscList.size());
@@ -265,7 +268,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-//        declarer.declare(new Fields("json"));
+        declarer.declare(new Fields("metric", "weight", "calendar"));
     }
 
     @Override
@@ -287,14 +290,13 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
         //Getting the runtime reference from system
 //        runtime = Runtime.getRuntime();
-
         try {
 //            t_cache = new MemcachedClient(
 //                    new InetSocketAddress("192.168.10.60", 11211));
             //TODO do config
-            
+
             DisableCheck = Boolean.valueOf(String.valueOf(conf.get("DisableCheck")));
-            
+
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
             openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
@@ -303,7 +305,6 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
-            this.errortable = String.valueOf(conf.get("errortable")).getBytes();
 
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);

@@ -23,8 +23,7 @@ Topology:
     NumWorkers: 3
     SpoutParallelism_hint: 1
     TSDBMsgBoltParallelism_hint: 2
-    MsgBoltParallelism_hint: 1    
-    MetaBoltParallelism_hint: 1   
+    WarningParallelism_hint: 4
     Debug: false
     DisableCheck: false
     
