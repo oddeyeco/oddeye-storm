@@ -124,119 +124,132 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     LOGGER.info("Messge Time: " + CalendarObj.getTime().toString());
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
-                        metrictime = Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000;
-                        CalendarObj.setTimeInMillis(metrictime);
-                        mtrsc = new OddeeyMetricMeta(Metric, tsdb);
-                        if (!mtrscList.containsKey(mtrsc.hashCode())) {
-                            key = mtrsc.getKey();
-                            PutRequest putvalue = new PutRequest(metatable, key, meta_family, "n".getBytes(), key);
-                            client.put(putvalue);
-                            LOGGER.info("Add metric Meta:" + mtrsc.getName());
-                        } else {
-                            mtrsc = mtrscList.get(mtrsc.hashCode());
-                        }
-                        d_value = Metric.getAsJsonObject().get("value").getAsDouble();
-                        alert_level = Metric.getAsJsonObject().get("tags").getAsJsonObject().get("alert_level");
-                        p_weight = 0;
-                        if (null != alert_level) {
-                            p_weight = Short.parseShort(alert_level.getAsString());
-                        }
-                        if (CalendarObjRules.getTimeInMillis() > CalendarObj.getTimeInMillis()) {
-                            p_weight = -4;
-                        }
-                        if (DisableCheck) {
-                            p_weight = -5;
-                        }
-
-                        if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
-                            weight = 0;
-                            CalendarObjRules.setTimeInMillis(metrictime);
-                            LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-                            for (int j = 0; j < 7; j++) {
-                                CalendarObjRules.add(Calendar.DATE, -1);
-
-                                try {
-                                    Rule = mtrsc.getRule(CalendarObjRules, metatable, client);
-                                } catch (Exception ex) {
-                                    LOGGER.warn("Rule exeption: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    LOGGER.warn("RuleExeption: " + stackTrace(ex));
-                                }
-                                if (Rule == null) {
-                                    LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    continue;
-                                }
-
-                                if (!Rule.isIsValidRule()) {
-                                    LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    continue;
-                                }
-//
-                                if (p_weight != -1) {
-                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                        if (d_value > Rule.getAvg() + Rule.getDev()) {
-                                            weight++;
-                                        }
-                                    }
-                                    if (Rule.getMax() != null) {
-                                        if (d_value > Rule.getMax()) {
-                                            weight++;
-                                        }
-                                    }
-                                } else {
-                                    LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                }
-
-                                if (p_weight != -2) {
-                                    if (Rule.getMin() != null) {
-                                        if (d_value < Rule.getMin()) {
-                                            weight++;
-                                        }
-                                    }
-                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                        if (d_value < Rule.getAvg() - Rule.getDev()) {
-                                            weight++;
-                                        }
-                                    }
-                                } else {
-                                    LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                }
-                                p_weight = (short) weight;
+                        try {
+                            metrictime = Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000;
+                            CalendarObj.setTimeInMillis(metrictime);
+                            mtrsc = new OddeeyMetricMeta(Metric, tsdb);
+                            if (!mtrscList.containsKey(mtrsc.hashCode())) {
+                                key = mtrsc.getKey();
+                                PutRequest putvalue = new PutRequest(metatable, key, meta_family, "n".getBytes(), key);
+                                client.put(putvalue);
+                                LOGGER.info("Add metric Meta:" + mtrsc.getName());
+                            } else {
+                                mtrsc = mtrscList.get(mtrsc.hashCode());
                             }
-                        } else if (p_weight == -4) {
-                            LOGGER.warn("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                        } else if (p_weight == -5) {
-                            LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                        } else {
-                            LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                        }
-                        tags.clear();
-                        mtrsc.getTags().entrySet().stream().forEach((tag) -> {
-                            tags.put(tag.getKey(), tag.getValue().getValue());
-                        });
-                        tags.put("alert_level", Short.toString(p_weight));
+                            d_value = Metric.getAsJsonObject().get("value").getAsDouble();
+                            alert_level = Metric.getAsJsonObject().get("tags").getAsJsonObject().get("alert_level");
+                            p_weight = 0;
+                            if (null != alert_level) {
+                                p_weight = Short.parseShort(alert_level.getAsString());
+                            }
+                            if (CalendarObjRules.getTimeInMillis() > CalendarObj.getTimeInMillis()) {
+                                p_weight = -4;
+                            }
+                            if (DisableCheck) {
+                                p_weight = -5;
+                            }
 
-                        tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
-                        mtrscList.set(mtrsc);
-                        this.collector.ack(input);
-                        if (p_weight > 0) {
+                            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
+                                weight = 0;
+                                CalendarObjRules.setTimeInMillis(metrictime);
+                                LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
+                                for (int j = 0; j < 7; j++) {
+                                    CalendarObjRules.add(Calendar.DATE, -1);
+
+                                    try {
+                                        Rule = mtrsc.getRule(CalendarObjRules, metatable, client);
+                                    } catch (Exception ex) {
+                                        LOGGER.warn("Rule exeption: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                        LOGGER.warn("RuleExeption: " + stackTrace(ex));
+                                    }
+                                    if (Rule == null) {
+                                        LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                        continue;
+                                    }
+
+                                    if (!Rule.isIsValidRule()) {
+                                        LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                        continue;
+                                    }
+//
+                                    if (p_weight != -1) {
+                                        if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                            if (d_value > Rule.getAvg() + Rule.getDev()) {
+                                                weight++;
+                                            }
+                                        }
+                                        if (Rule.getMax() != null) {
+                                            if (d_value > Rule.getMax()) {
+                                                weight++;
+                                            }
+                                        }
+                                    } else {
+                                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    }
+
+                                    if (p_weight != -2) {
+                                        if (Rule.getMin() != null) {
+                                            if (d_value < Rule.getMin()) {
+                                                weight++;
+                                            }
+                                        }
+                                        if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                            if (d_value < Rule.getAvg() - Rule.getDev()) {
+                                                weight++;
+                                            }
+                                        }
+                                    } else {
+                                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    }
+                                    p_weight = (short) weight;
+                                }
+                            } else if (p_weight == -4) {
+                                LOGGER.warn("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            } else if (p_weight == -5) {
+                                LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            } else {
+                                LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            }
+                            tags.clear();
+                            mtrsc.getTags().entrySet().stream().forEach((tag) -> {
+                                tags.put(tag.getKey(), tag.getValue().getValue());
+                            });
+                            tags.put("alert_level", Short.toString(p_weight));
+
                             try {
-                                LOGGER.info("Emit error metric " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
-                                this.collector.emit(input, new Values(mtrsc, p_weight, CalendarObj));
+                                tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
+                            } catch (IllegalArgumentException e) {
+                                LOGGER.error("Exception: " + stackTrace(e));
+                                LOGGER.error("Wits input: " + Metric);
+                            }
+
+                            mtrscList.set(mtrsc);
+                            if (p_weight > 0) {
+                                try {
+                                    LOGGER.info("Emit error metric " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
+                                    this.collector.emit(new Values(mtrsc, p_weight, CalendarObj));
 //                                key = mtrsc.getTags().get("UUID").getValueTSDBUID();
 //                                key = ArrayUtils.addAll(key, ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.YEAR)).array());
 //                                key = ArrayUtils.addAll(key, ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.DAY_OF_YEAR)).array());
 //                                PutRequest putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(2).putShort(p_weight).array());
 //                                client.put(putvalue);
-//                                LOGGER.warn("End Put error " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
-                            } catch (Exception e) {
-                                LOGGER.error("Error Emit :" + mtrsc.getName() + " to date " + CalendarObj.getTime() + " tags " + mtrsc.getTags());
-                                LOGGER.error("JsonSyntaxException: " + stackTrace(e));
+                                    LOGGER.info("End Put error " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
+                                } catch (Exception e) {
+                                    LOGGER.error("Error Emit :" + mtrsc.getName() + " to date " + CalendarObj.getTime() + " tags " + mtrsc.getTags());
+                                    LOGGER.error("JsonSyntaxException: " + stackTrace(e));
+                                }
+
                             }
 
+                            LOGGER.debug("Add metric Value:" + mtrsc.getName());
+
+                        } catch (Exception e) {
+                            LOGGER.error("Exception: " + stackTrace(e));
+                            LOGGER.error("Wits Json: " + Metric);
                         }
 
-                        LOGGER.debug("Add metric Value:" + mtrsc.getName());
                     }
+                    this.collector.ack(input);
                     LOGGER.debug("metric cache size:" + mtrscList.size());
 
                 }
@@ -247,10 +260,6 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                 LOGGER.error("NumberFormatException: " + stackTrace(ex));
                 this.collector.fail(input);
             }
-//            catch (Exception ex) {
-//                LOGGER.error("Exception: " + stackTrace(ex));
-//                this.collector.fail(input);
-//            }
             this.jsonResult = null;
         }
     }

@@ -53,6 +53,7 @@ public class WarningProcessingBolt extends BaseRichBolt {
         weight = input.getShortByField("weight");
         calendarObj =(Calendar) input.getValueByField("calendar");
         LOGGER.info("Strat warning bolt input weight = " + weight+ " Date: "+calendarObj.getTime()+" metric Name:" + metric.getName() + " tags:"+ metric.getTags());        
+//        LOGGER.info("Strat warning bolt input weight = " + weight+ " Date: "+calendarObj.getTime());        
         
         this.collector.ack(input);
     }

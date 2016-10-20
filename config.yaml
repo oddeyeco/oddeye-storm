@@ -22,8 +22,9 @@ Topology:
     topologi.display.name: "KafkaHbaseTopology"
     NumWorkers: 3
     SpoutParallelism_hint: 1
-    TSDBMsgBoltParallelism_hint: 2
-    WarningParallelism_hint: 4
+    TSDBMsgBoltParallelism_hint: 6
+    WarningParallelism_hint: 12
     Debug: false
     DisableCheck: false
+    topology.message.timeout.secs: 300
     

@@ -57,6 +57,7 @@ public class KafkaHbaseTopology {
 
 // Specify that the kafka messages are String        
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
+//        kafkaConfig.
 //        kafkaConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
 // We want to consume all the first messages in
 // the topic every time we run the topology to
@@ -87,15 +88,16 @@ public class KafkaHbaseTopology {
                 new KafkaOddeyeMsgToTSDBBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("TSDBMsgBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
 
-//        builder.setBolt("WarningProcessingBolt",
-//                new WarningProcessingBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WarningParallelism_hint"))))
-//                .shuffleGrouping("KafkaOddeyeMsgToTSDBBolt");
+        builder.setBolt("WarningProcessingBolt",
+                new WarningProcessingBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WarningParallelism_hint"))))
+                .shuffleGrouping("KafkaOddeyeMsgToTSDBBolt");
         
         
         Config conf = new Config();
         conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
         conf.put(Config.TOPOLOGY_DEBUG, true);
         conf.setDebug(Boolean.getBoolean(String.valueOf(tconf.get("Debug"))));
+        conf.setMessageTimeoutSecs(Integer.parseInt(String.valueOf(tconf.get("topology.message.timeout.secs"))));
         try {
 // This statement submit the topology on remote cluster. // args[0] = name of topology StormSubmitter.
             topologyname = String.valueOf(tconf.get("topologi.display.name"));
