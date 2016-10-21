@@ -228,11 +228,6 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 try {
                                     LOGGER.info("Emit error metric " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
                                     this.collector.emit(new Values(mtrsc, p_weight, CalendarObj));
-//                                key = mtrsc.getTags().get("UUID").getValueTSDBUID();
-//                                key = ArrayUtils.addAll(key, ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.YEAR)).array());
-//                                key = ArrayUtils.addAll(key, ByteBuffer.allocate(2).putShort((short) CalendarObj.get(Calendar.DAY_OF_YEAR)).array());
-//                                PutRequest putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(2).putShort(p_weight).array());
-//                                client.put(putvalue);
                                     LOGGER.info("End Put error " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
                                 } catch (Exception e) {
                                     LOGGER.error("Error Emit :" + mtrsc.getName() + " to date " + CalendarObj.getTime() + " tags " + mtrsc.getTags());
