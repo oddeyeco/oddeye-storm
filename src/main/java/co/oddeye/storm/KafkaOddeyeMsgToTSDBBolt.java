@@ -116,10 +116,17 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
                     Metric = this.jsonResult.get(0);
-                    metrictime = Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000;
-                    CalendarObj.setTimeInMillis(metrictime);
-                    CalendarObjRules.setTime(new Date());
-                    CalendarObjRules.add(Calendar.HOUR, -1);
+                    try {
+                        metrictime = Metric.getAsJsonObject().get("timestamp").getAsLong() * 1000;
+                        CalendarObj.setTimeInMillis(metrictime);
+                        CalendarObjRules.setTime(new Date());
+                        CalendarObjRules.add(Calendar.HOUR, -1);
+                    } catch (Exception e) {
+                        LOGGER.error("Exception: " + stackTrace(e));
+                        LOGGER.error("Wits Json: " + Metric);
+                        this.collector.fail(input);
+                        return;
+                    }
 
                     LOGGER.info("Messge Time: " + CalendarObj.getTime().toString());
                     for (int i = 0; i < this.jsonResult.size(); i++) {
