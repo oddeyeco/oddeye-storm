@@ -260,10 +260,10 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                 }
             } catch (JsonSyntaxException ex) {
                 LOGGER.error("JsonSyntaxException: " + stackTrace(ex));
-                this.collector.fail(input);
+                this.collector.ack(input);
             } catch (NumberFormatException ex) {
                 LOGGER.error("NumberFormatException: " + stackTrace(ex));
-                this.collector.fail(input);
+                this.collector.ack(input);
             }
             this.jsonResult = null;
         }
