@@ -121,14 +121,15 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                         CalendarObj.setTimeInMillis(metrictime);
                         CalendarObjRules.setTime(new Date());
                         CalendarObjRules.add(Calendar.HOUR, -1);
+                        LOGGER.info("Messge Time: " + CalendarObj.getTime().toString());
                     } catch (Exception e) {
                         LOGGER.error("Exception: " + stackTrace(e));
-                        LOGGER.error("Wits Json: " + Metric);
-                        this.collector.fail(input);
-                        return;
+                        LOGGER.error("Wits First Metric: " + Metric);
+                        LOGGER.error("Wits Fullmesge: " + Metric);
+                        this.collector.ack(input);                        
                     }
 
-                    LOGGER.info("Messge Time: " + CalendarObj.getTime().toString());
+                    
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         try {
@@ -249,7 +250,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + stackTrace(e));
-                            LOGGER.error("Wits Json: " + Metric);
+                            LOGGER.error("Wits Metriq: " + Metric);
                         }
 
                     }
