@@ -151,9 +151,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                             }
                             if (CalendarObjRules.getTimeInMillis() > CalendarObj.getTimeInMillis()) {
                                 p_weight = -4;
+                                this.collector.ack(input);
                             }
                             if (DisableCheck) {
                                 p_weight = -5;
+                                this.collector.ack(input);
                             }
 
                             if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
