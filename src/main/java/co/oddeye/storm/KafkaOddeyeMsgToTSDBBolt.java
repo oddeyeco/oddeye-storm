@@ -231,6 +231,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                             } catch (IllegalArgumentException e) {
                                 LOGGER.error("Exception: " + stackTrace(e));
                                 LOGGER.error("Wits input: " + Metric);
+                                LOGGER.error("Wits Fullmesge: " + Metric);
                             }
 
                             mtrscList.set(mtrsc);
