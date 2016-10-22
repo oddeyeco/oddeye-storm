@@ -214,7 +214,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                     p_weight = (short) weight;
                                 }
                             } else if (p_weight == -4) {
-                                LOGGER.warn("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                             } else if (p_weight == -5) {
                                 LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                             } else {
