@@ -163,56 +163,56 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 weight = 0;
                                 CalendarObjRules.setTimeInMillis(metrictime);
                                 LOGGER.info(CalendarObj.getTime() + "-" + Metric.getAsJsonObject().get("metric").getAsString() + " " + Metric.getAsJsonObject().get("tags").getAsJsonObject().get("host").getAsString());
-                                for (int j = 0; j < 7; j++) {
-                                    CalendarObjRules.add(Calendar.DATE, -1);
-
-                                    try {
-                                        Rule = mtrsc.getRule(CalendarObjRules, metatable, client);
-                                    } catch (Exception ex) {
-                                        LOGGER.warn("Rule exeption: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                        LOGGER.warn("RuleExeption: " + stackTrace(ex));
-                                    }
-                                    if (Rule == null) {
-                                        LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                        continue;
-                                    }
-
-                                    if (!Rule.isIsValidRule()) {
-                                        LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                        continue;
-                                    }
+//                                for (int j = 0; j < 7; j++) {
+//                                    CalendarObjRules.add(Calendar.DATE, -1);
 //
-                                    if (p_weight != -1) {
-                                        if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                            if (d_value > Rule.getAvg() + Rule.getDev()) {
-                                                weight++;
-                                            }
-                                        }
-                                        if (Rule.getMax() != null) {
-                                            if (d_value > Rule.getMax()) {
-                                                weight++;
-                                            }
-                                        }
-                                    } else {
-                                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    }
-
-                                    if (p_weight != -2) {
-                                        if (Rule.getMin() != null) {
-                                            if (d_value < Rule.getMin()) {
-                                                weight++;
-                                            }
-                                        }
-                                        if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                            if (d_value < Rule.getAvg() - Rule.getDev()) {
-                                                weight++;
-                                            }
-                                        }
-                                    } else {
-                                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    }
-                                    p_weight = (short) weight;
-                                }
+//                                    try {
+//                                        Rule = mtrsc.getRule(CalendarObjRules, metatable, client);
+//                                    } catch (Exception ex) {
+//                                        LOGGER.warn("Rule exeption: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//                                        LOGGER.warn("RuleExeption: " + stackTrace(ex));
+//                                    }
+//                                    if (Rule == null) {
+//                                        LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//                                        continue;
+//                                    }
+//
+//                                    if (!Rule.isIsValidRule()) {
+//                                        LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//                                        continue;
+//                                    }
+////
+//                                    if (p_weight != -1) {
+//                                        if (Rule.getAvg() != null && Rule.getDev() != null) {
+//                                            if (d_value > Rule.getAvg() + Rule.getDev()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                        if (Rule.getMax() != null) {
+//                                            if (d_value > Rule.getMax()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                    } else {
+//                                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//                                    }
+//
+//                                    if (p_weight != -2) {
+//                                        if (Rule.getMin() != null) {
+//                                            if (d_value < Rule.getMin()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                        if (Rule.getAvg() != null && Rule.getDev() != null) {
+//                                            if (d_value < Rule.getAvg() - Rule.getDev()) {
+//                                                weight++;
+//                                            }
+//                                        }
+//                                    } else {
+//                                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//                                    }
+//                                    p_weight = (short) weight;
+//                                }
                             } else if (p_weight == -4) {
                                 LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                             } else if (p_weight == -5) {
