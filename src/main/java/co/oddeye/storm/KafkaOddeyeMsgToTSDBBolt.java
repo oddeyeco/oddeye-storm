@@ -9,7 +9,6 @@ package co.oddeye.storm;
 import co.oddeye.core.MetriccheckRule;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -47,12 +46,12 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
 //    private static final Logger LOGGER = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
     public static final Logger LOGGER = LoggerFactory.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
-    private TSDB tsdb = null;
+    private static TSDB tsdb = null;
 
     private JsonParser parser = null;
     private JsonArray jsonResult = null;
     private final java.util.Map<String, Object> conf;
-    private org.hbase.async.HBaseClient client;
+    private static org.hbase.async.HBaseClient client;
 
     private byte[] metatable;
     private short p_weight;
@@ -85,8 +84,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
     public void execute(Tuple input) {
         CalendarObj = Calendar.getInstance();
         CalendarObjRules = Calendar.getInstance();
-        Gson gson = new Gson();
         String msg = input.getString(0);
+        this.collector.ack(input);
         LOGGER.debug("Start KafkaOddeyeMsgToTSDBBolt " + msg);
         DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
         java.util.Date date = new java.util.Date();
@@ -98,11 +97,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             LOGGER.info("msg parse Exception" + ex.toString());
         }
         HashMap<String, String> tags = new HashMap<>();
-        while (this.tsdb == null) {
+        while (KafkaOddeyeMsgToTSDBBolt.tsdb == null) {
             try {
-                this.client = new org.hbase.async.HBaseClient(clientconf);
-                this.tsdb = new TSDB(
-                        this.client,
+                KafkaOddeyeMsgToTSDBBolt.client = new org.hbase.async.HBaseClient(clientconf);
+                KafkaOddeyeMsgToTSDBBolt.tsdb = new TSDB(
+                        KafkaOddeyeMsgToTSDBBolt.client,
                         openTsdbConfig);
             } catch (Exception e) {
                 LOGGER.warn("OpenTSDB Connection fail in run");
@@ -125,11 +124,10 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                     } catch (Exception e) {
                         LOGGER.error("Exception: " + stackTrace(e));
                         LOGGER.error("Wits First Metric: " + Metric);
-                        LOGGER.error("Wits Fullmesge: " + Metric);
-                        this.collector.ack(input);                        
+                        LOGGER.error("Wits Full message: " + msg);
+//                        this.collector.ack(input);
                     }
 
-                    
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         try {
@@ -140,7 +138,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 key = mtrsc.getKey();
                                 PutRequest putvalue = new PutRequest(metatable, key, meta_family, "n".getBytes(), key);
                                 client.put(putvalue);
-                                LOGGER.info("Add metric Meta:" + mtrsc.getName());
+                                LOGGER.warn("Add metric Meta to hbase:" + mtrsc.getName()+" tags " + mtrsc.getTags());
                             } else {
                                 mtrsc = mtrscList.get(mtrsc.hashCode());
                             }
@@ -152,11 +150,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                             }
                             if (CalendarObjRules.getTimeInMillis() > CalendarObj.getTimeInMillis()) {
                                 p_weight = -4;
-                                this.collector.ack(input);
+//                                this.collector.ack(input);
                             }
                             if (DisableCheck) {
                                 p_weight = -5;
-                                this.collector.ack(input);
+//                                this.collector.ack(input);
                             }
 
                             if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
@@ -230,8 +228,8 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
                             } catch (IllegalArgumentException e) {
                                 LOGGER.error("Exception: " + stackTrace(e));
-                                LOGGER.error("Wits input: " + Metric);
-                                LOGGER.error("Wits Fullmesge: " + Metric);
+                                LOGGER.error("Add point Wits Metric: " + Metric);
+                                LOGGER.error("Add point Wits Input: " + msg);
                             }
 
                             mtrscList.set(mtrsc);
@@ -251,20 +249,21 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + stackTrace(e));
-                            LOGGER.error("Wits Metriq: " + Metric);
+                            LOGGER.error("Exception Wits Metriq: " + Metric);
+                            LOGGER.error("Exception Wits Input: " + msg);
                         }
 
                     }
-                    this.collector.ack(input);
+//                    this.collector.ack(input);
                     LOGGER.debug("metric cache size:" + mtrscList.size());
 
                 }
             } catch (JsonSyntaxException ex) {
                 LOGGER.error("JsonSyntaxException: " + stackTrace(ex));
-                this.collector.ack(input);
+//                this.collector.ack(input);
             } catch (NumberFormatException ex) {
                 LOGGER.error("NumberFormatException: " + stackTrace(ex));
-                this.collector.ack(input);
+//                this.collector.ack(input);
             }
             this.jsonResult = null;
         }
@@ -325,11 +324,11 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
             clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
 
-            while (this.tsdb == null) {
+            while (KafkaOddeyeMsgToTSDBBolt.tsdb == null) {
                 try {
-                    this.client = new org.hbase.async.HBaseClient(clientconf);
-                    this.tsdb = new TSDB(
-                            this.client,
+                    KafkaOddeyeMsgToTSDBBolt.client = new org.hbase.async.HBaseClient(clientconf);
+                    KafkaOddeyeMsgToTSDBBolt.tsdb = new TSDB(
+                            KafkaOddeyeMsgToTSDBBolt.client,
                             openTsdbConfig);
                 } catch (Exception e) {
                     LOGGER.warn("OpenTSDB Connection fail in prepare");

@@ -6,7 +6,7 @@ Kafka:
    tsdbtopic: "oddeyetsdb"
    zkRoot: "/storm_oddeye"
    zkKey: "oddeye-staus"
-   zkKeyTSDB: "oddeye-stausTSDB"
+   zkKeyTSDB: "oddeye-TSDBstat"
    
 Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
