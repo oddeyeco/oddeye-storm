@@ -6,7 +6,6 @@
 package co.oddeye.storm;
 
 import co.oddeye.core.OddeeyMetricMeta;
-import static co.oddeye.storm.KafkaOddeyeMsgToTSDBBolt.LOGGER;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
@@ -41,7 +40,7 @@ public class WarningProcessingBolt extends BaseRichBolt {
     private Calendar calendarObj;
     private byte[] key;
     private Config clientconf;
-    private HBaseClient client;
+    private static HBaseClient client;
 
     public WarningProcessingBolt(java.util.Map config) {
         this.conf = config;
@@ -61,9 +60,9 @@ public class WarningProcessingBolt extends BaseRichBolt {
         clientconf = new org.hbase.async.Config();
         clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
         clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
-        while (this.client == null) {
+        while (WarningProcessingBolt.client == null) {
             try {
-                this.client = new org.hbase.async.HBaseClient(clientconf);
+                WarningProcessingBolt.client = new org.hbase.async.HBaseClient(clientconf);
             } catch (Exception e) {
                 LOGGER.warn("HBaseClient Connection fail in WarningProcessingBolt");
                 LOGGER.error("Exception: " + stackTrace(e));
