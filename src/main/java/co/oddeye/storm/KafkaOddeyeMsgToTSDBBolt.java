@@ -138,7 +138,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                 key = mtrsc.getKey();
                                 PutRequest putvalue = new PutRequest(metatable, key, meta_family, "n".getBytes(), key);
                                 client.put(putvalue);
-                                LOGGER.warn("Add metric Meta to hbase:" + mtrsc.getName()+" tags " + mtrsc.getTags());
+                                LOGGER.warn("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
                             } else {
                                 mtrsc = mtrscList.get(mtrsc.hashCode());
                             }
@@ -210,6 +210,14 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                         LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                                     }
                                     p_weight = (short) weight;
+                                }
+                            } else if (p_weight > 0) {
+                                if (d_value > p_weight) {
+                                    p_weight = 16;
+                                }
+                                else
+                                {
+                                   p_weight = 0; 
                                 }
                             } else if (p_weight == -4) {
                                 LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
