@@ -258,7 +258,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
 
                             try {
                                 tsdb.addPoint(mtrsc.getName(), CalendarObj.getTimeInMillis(), d_value, tags);
-                            } catch (IllegalArgumentException e) {
+                            } catch (Exception e) {
                                 LOGGER.error("Exception: " + stackTrace(e));
                                 LOGGER.error("Add point Wits Metric: " + Metric);
                                 LOGGER.error("Add point Wits Input: " + msg);
