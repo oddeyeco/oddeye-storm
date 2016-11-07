@@ -215,39 +215,39 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                                     if (p_weight != -2) {
                                         if (Rule.getMin() != null) {
                                             if (d_value < Rule.getMin()) {
-                                                weight = (short) (weight + weight_KF);
+                                                weight = (short) (weight - weight_KF);
                                             }
                                         }
                                         if (Rule.getAvg() != null && Rule.getDev() != null) {
                                             if (d_value < Rule.getAvg() - Rule.getDev()) {
-                                                weight = (short) (weight + weight_KF);
+                                                weight = (short) (weight - weight_KF);
                                             }
                                         }
                                     } else {
                                         LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                                     }
 
-                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                        if ((d_value < Rule.getAvg() + Rule.getDev()) && (d_value > Rule.getAvg() - Rule.getDev())) {
-                                            weight = (short) (weight + weight_D_KF);
-                                            if (weight < 0) {
-                                                weight = 0;
-                                            }
-                                        }
-                                    }
-                                    if (Rule.getMax() != null && Rule.getMin() != null) {
-                                        if ((d_value < Rule.getMax()) && (d_value > Rule.getMin())) {
-                                            weight = (short) (weight + weight_D_KF);
-                                            if (weight < 0) {
-                                                weight = 0;
-                                            }
-                                        }
-                                    }
+//                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
+//                                        if ((d_value < Rule.getAvg() + Rule.getDev()) && (d_value > Rule.getAvg() - Rule.getDev())) {
+//                                            weight = (short) (weight + weight_D_KF);
+//                                            if (weight < 0) {
+//                                                weight = 0;
+//                                            }
+//                                        }
+//                                    }
+//                                    if (Rule.getMax() != null && Rule.getMin() != null) {
+//                                        if ((d_value < Rule.getMax()) && (d_value > Rule.getMin())) {
+//                                            weight = (short) (weight + weight_D_KF);
+//                                            if (weight < 0) {
+//                                                weight = 0;
+//                                            }
+//                                        }
+//                                    }
 
                                 }
-                                if (weight < 0) {
-                                    weight = 0;
-                                }
+//                                if (weight < 0) {
+//                                    weight = 0;
+//                                }
                                 p_weight = (short) weight;
                             } else if (p_weight > 0) {
                                 if (d_value > p_weight) {
@@ -277,7 +277,7 @@ public class KafkaOddeyeMsgToTSDBBolt extends BaseRichBolt {
                             }
 
                             mtrscList.set(mtrsc);
-                            if (p_weight > 0) {
+                            if (0 != p_weight) {
                                 try {
                                     LOGGER.info("Emit error metric " + p_weight + " to date " + CalendarObj.getTime() + " For metric:" + mtrsc.getName());
                                     this.collector.emit(new Values(mtrsc, p_weight, CalendarObj));
