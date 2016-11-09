@@ -19,11 +19,14 @@ Tsdb:
   tsd.storage.hbase.uid_table: test_tsdb-uid
    
 Topology:    
-    topologi.display.name: "KafkaHbaseTopology"
+    topologi.display.name: "OddeyeTopology"
     NumWorkers: 3
     SpoutParallelism_hint: 1
-    TSDBMsgBoltParallelism_hint: 4
-    WarningParallelism_hint: 8
+    ParseMetricBoltParallelism_hint: 2
+    WriteToTSDBseriesParallelism_hint: 4   
+    CompareBoltParallelism_hint: 9
+#    TSDBMsgBoltParallelism_hint: 4
+#    WarningParallelism_hint: 8
     Debug: false
     DisableCheck: false
     topology.message.timeout.secs: 300

@@ -84,14 +84,22 @@ public class KafkaHbaseTopology {
         CheckDisabled = Boolean.valueOf(String.valueOf(tconf.get("DisableCheck")));
 
         TSDBconfig.put("DisableCheck", Boolean.toString(CheckDisabled));
-        builder.setBolt("KafkaOddeyeMsgToTSDBBolt",
-                new KafkaOddeyeMsgToTSDBBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("TSDBMsgBoltParallelism_hint"))))
+        
+        
+        
+        builder.setBolt("ParseMetricBolt",
+                new ParseMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
 
-        builder.setBolt("WarningProcessingBolt",
-                new WarningProcessingBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WarningParallelism_hint"))))
-                .shuffleGrouping("KafkaOddeyeMsgToTSDBBolt");
+        builder.setBolt("WriteToTSDBseries",
+                new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
+                .shuffleGrouping("ParseMetricBolt");
         
+        builder.setBolt("CompareBolt",
+                new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
+                .shuffleGrouping("ParseMetricBolt");
+
+
         
         Config conf = new Config();
         conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
