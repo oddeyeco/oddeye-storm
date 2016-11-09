@@ -12,9 +12,11 @@ import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 import net.opentsdb.utils.Config;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -57,6 +59,7 @@ public class CompareBolt extends BaseRichBolt {
 
     private byte[] errortable;
     private final byte[] error_family = "d".getBytes();
+    private OddeeyMetricMeta oldmtrc;
 
     /**
      *
@@ -127,25 +130,31 @@ public class CompareBolt extends BaseRichBolt {
                 values[0]=key;
                 values[1]=ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
                 putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);                
-                LOGGER.warn("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
+                LOGGER.info("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
             } else {
+                oldmtrc = mtrsc;
                 mtrsc = mtrscList.get(mtrsc.hashCode());
-                putvalue = new PutRequest(metatable, key, meta_family, "timestamp".getBytes(), ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array() );
+                if (!Arrays.equals(mtrsc.getKey(), key)) {
+                    LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
+                }                                      
+                putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, "timestamp".getBytes(), ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array() );
+                LOGGER.warn("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp "+ metric.getTimestamp());
             }
             globalFunctions.getClient(clientconf).put(putvalue);
-            CalendarObj.setTimeInMillis(metric.getTimestamp());
-            Rules = mtrsc.getRules(CalendarObj, 7, metatable, globalFunctions.getClient(clientconf));
+            
+//            CalendarObj.setTimeInMillis(metric.getTimestamp());
+//            Rules = mtrsc.getRules(CalendarObj, 7, metatable, globalFunctions.getClient(clientconf));
             String alert_level = metric.getTags().get("alert_level");
             short p_weight = 0;
             if (null != alert_level) {
                 p_weight = (short) Double.parseDouble(alert_level);
             }
 
-            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
+//            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
+            if (false) {    
                 weight = 0;
                 curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                 LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
-//                LOGGER.warn("value: " + String.format("%1$,.2f", metric.getValue()));
                 for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
                     Rule = RuleEntry.getValue();
                     if (Rule == null) {
