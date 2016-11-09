@@ -24,7 +24,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
 import org.hbase.async.PutRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +53,7 @@ public class CompareBolt extends BaseRichBolt {
     private MetriccheckRule Rule;
     private int local_DW;
     private int weight_KF;
-    private int weight_D_KF;
+//    private int weight_D_KF;
     private int devkef = 1;
 
     private byte[] errortable;
@@ -141,16 +140,16 @@ public class CompareBolt extends BaseRichBolt {
             }
             globalFunctions.getClient(clientconf).put(putvalue);
             
-//            CalendarObj.setTimeInMillis(metric.getTimestamp());
-//            Rules = mtrsc.getRules(CalendarObj, 7, metatable, globalFunctions.getClient(clientconf));
+            CalendarObj.setTimeInMillis(metric.getTimestamp());
+            Rules = mtrsc.getRules(CalendarObj, 7, metatable, globalFunctions.getClient(clientconf));
             String alert_level = metric.getTags().get("alert_level");
             short p_weight = 0;
             if (null != alert_level) {
                 p_weight = (short) Double.parseDouble(alert_level);
             }
 
-//            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
-            if (false) {    
+            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
+//            if (false) {    
                 weight = 0;
                 curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                 LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
@@ -178,10 +177,10 @@ public class CompareBolt extends BaseRichBolt {
                     local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
                     if (curent_DW == local_DW) {
                         weight_KF = 2;
-                        weight_D_KF = -1;
+//                        weight_D_KF = -1;
                     } else {
                         weight_KF = 1;
-                        weight_D_KF = 0;
+//                        weight_D_KF = 0;
                     }
 //                                        LOGGER.warn("Rule: " +Rule.toString());
                     if (p_weight != -1) {
