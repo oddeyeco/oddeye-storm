@@ -13,7 +13,6 @@ import co.oddeye.core.globalFunctions;
 import com.stumbleupon.async.Deferred;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -112,6 +111,7 @@ public class CalcRulesBolt extends BaseRichBolt {
             }
             CalendarObjRules.setTimeInMillis(metric.getTimestamp());
             CalendarObjRules.add(Calendar.HOUR, 1);
+            CalendarObjRules.add(Calendar.DATE, -1);
 
             Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
             needsave = false;

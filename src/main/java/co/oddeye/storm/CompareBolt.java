@@ -94,7 +94,7 @@ public class CompareBolt extends BaseRichBolt {
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
 
-//            CalendarObjRules = Calendar.getInstance();
+            CalendarObjRules = Calendar.getInstance();
             CalendarObj = Calendar.getInstance();
             try {
                 LOGGER.warn("Start read meta in hbase");
@@ -141,7 +141,9 @@ public class CompareBolt extends BaseRichBolt {
             globalFunctions.getClient(clientconf).put(putvalue);
             
             CalendarObj.setTimeInMillis(metric.getTimestamp());
-            Rules = mtrsc.getRules(CalendarObj, 7, metatable, globalFunctions.getClient(clientconf));
+            CalendarObjRules.setTimeInMillis(metric.getTimestamp());
+            CalendarObjRules.add(Calendar.DATE, -1);
+            Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
             String alert_level = metric.getTags().get("alert_level");
             short p_weight = 0;
             if (null != alert_level) {
@@ -237,6 +239,7 @@ public class CompareBolt extends BaseRichBolt {
 
                 putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(2).putShort(p_weight).array());
                 globalFunctions.getClient(clientconf).put(putvalue);
+                LOGGER.warn("Put Error" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
             }
         } catch (Exception ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));
