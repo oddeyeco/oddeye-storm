@@ -71,7 +71,6 @@ public class CompareBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         ofd.declare(new Fields("rule"));
     }
 
@@ -138,7 +137,7 @@ public class CompareBolt extends BaseRichBolt {
                     LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
                 }                                      
                 putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, "timestamp".getBytes(), ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array() );
-                LOGGER.warn("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp "+ metric.getTimestamp());
+                LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp "+ metric.getTimestamp());
             }
             globalFunctions.getClient(clientconf).put(putvalue);
             

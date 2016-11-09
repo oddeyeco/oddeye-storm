@@ -99,6 +99,9 @@ public class KafkaHbaseTopology {
                 new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
                 .shuffleGrouping("ParseMetricBolt");
 
+        builder.setBolt("CalcRulesBolt",
+                new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
+                .shuffleGrouping("ParseMetricBolt");
 
         
         Config conf = new Config();
