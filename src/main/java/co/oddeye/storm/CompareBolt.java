@@ -249,6 +249,7 @@ public class CompareBolt extends BaseRichBolt {
             }
             mtrscList.set(mtrsc);
             if (p_weight != 0) {
+                weight_per = weight_per/loop;
                 // TODO Karoxa hanel radzin bolt
                 key = mtrsc.getTags().get("UUID").getValueTSDBUID();
                 key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
