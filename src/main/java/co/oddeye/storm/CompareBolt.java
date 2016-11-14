@@ -152,13 +152,13 @@ public class CompareBolt extends BaseRichBolt {
             if (null != alert_level) {
                 p_weight = (short) Double.parseDouble(alert_level);
             }
-            weight_per= 0;
+            weight_per = 0;
             if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
 //            if (false) {    
-                weight = 0;                
+                weight = 0;
                 curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                 LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
-                for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {                    
+                for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
                     Rule = RuleEntry.getValue();
                     if (Rule == null) {
                         LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
@@ -228,7 +228,13 @@ public class CompareBolt extends BaseRichBolt {
                             }
                         }
                     } else {
-                        LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        if (CalendarObj.get(Calendar.SECOND) > 55) {
+                            LOGGER.warn("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        }
+                        else
+                        {
+                            LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        }
                     }
 
                 }
@@ -249,14 +255,14 @@ public class CompareBolt extends BaseRichBolt {
             }
             mtrscList.set(mtrsc);
             if (p_weight != 0) {
-                weight_per = weight_per/loop;
+                weight_per = weight_per / loop;
                 // TODO Karoxa hanel radzin bolt
                 key = mtrsc.getTags().get("UUID").getValueTSDBUID();
                 key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
 
                 putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(18).putShort(p_weight).putDouble(weight_per).putDouble(metric.getValue()).array());
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                LOGGER.warn("Put Error" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                LOGGER.info("Put Error" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
             }
         } catch (Exception ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));
