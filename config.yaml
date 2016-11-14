@@ -22,10 +22,10 @@ Topology:
     topologi.display.name: "OddeyeTopology"
     NumWorkers: 3
     SpoutParallelism_hint: 1
-    ParseMetricBoltParallelism_hint: 1
-    WriteToTSDBseriesParallelism_hint: 3   
+    ParseMetricBoltParallelism_hint: 2
+    WriteToTSDBseriesParallelism_hint: 6
     CompareBoltParallelism_hint: 6
-    CalcRulesBoltParallelism_hint: 3
+    CalcRulesBoltParallelism_hint: 6
 #    TSDBMsgBoltParallelism_hint: 4
 #    WarningParallelism_hint: 8
     Debug: false
