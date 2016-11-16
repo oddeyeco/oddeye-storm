@@ -116,7 +116,7 @@ public class CalcRulesBolt extends BaseRichBolt {
             Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
             needsave = false;
             final ArrayList<Deferred<DataPoints[]>> deferreds = new ArrayList<>();
-
+            mtrsc.clearCalcedRulesMap();
             for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
                 final MetriccheckRule l_Rule = RuleEntry.getValue();
                 Calendar CalObjRules = MetriccheckRule.QualifierToCalendar(l_Rule.getQualifier());
@@ -138,7 +138,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                 } else {
                     LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                     //+ "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue()
-                }                
+                }
                 try {
 
                     if (needsave) {
@@ -146,7 +146,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                         key = mtrsc.getKey();
                         byte[][] qualifiers;
                         byte[][] values;
-                        ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getRulesMap();
+                        ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getCalcedRulesMap();
                         qualifiers = new byte[rulesmap.size()][];
                         values = new byte[rulesmap.size()][];
                         int index = 0;
@@ -156,17 +156,22 @@ public class CalcRulesBolt extends BaseRichBolt {
                             values[index] = rule.getValue().getValues();
                             index++;
                         }
+                        try {
 
-                        if (qualifiers.length > 0) {
-                            PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);                            
-                            globalFunctions.getClient(clientconf).put(putvalue);
-                            
-                        } else {
-                            PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
-                            globalFunctions.getClient(clientconf).put(putvalue);
+                            if (qualifiers.length > 0) {
+                                PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
+                                globalFunctions.getClient(clientconf).put(putvalue);
+
+                            } else {
+                                PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
+                                globalFunctions.getClient(clientconf).put(putvalue);
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("catch In Put " + globalFunctions.stackTrace(e));
                         }
+
                     }
-                    
+
                 } catch (Exception e) {
                     LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
                 }

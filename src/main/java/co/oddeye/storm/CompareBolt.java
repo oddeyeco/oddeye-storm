@@ -148,12 +148,12 @@ public class CompareBolt extends BaseRichBolt {
             CalendarObjRules.add(Calendar.DATE, -1);
             Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
             String alert_level = metric.getTags().get("alert_level");
-            short p_weight = 0;
+            short input_weight = 0;
             if (null != alert_level) {
-                p_weight = (short) Double.parseDouble(alert_level);
+                input_weight = (short) Double.parseDouble(alert_level);
             }
             weight_per = 0;
-            if ((alert_level == null) || ((p_weight < 1) && (p_weight > -3))) {
+            if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
 //            if (false) {    
                 weight = 0;
                 curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
@@ -199,7 +199,7 @@ public class CompareBolt extends BaseRichBolt {
                         }
                     }
 
-                    if (p_weight != -1) {
+                    if (input_weight != -1) {
                         if (Rule.getAvg() != null && Rule.getDev() != null) {
                             if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
                                 weight = (short) (weight + weight_KF);
@@ -212,10 +212,10 @@ public class CompareBolt extends BaseRichBolt {
                             }
                         }
                     } else {
-                        LOGGER.info("Check Up Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                     }
 
-                    if (p_weight != -2) {
+                    if (input_weight != -2) {
                         if (Rule.getMin() != null) {
                             if (metric.getValue() < Rule.getMin()) {
                                 weight = (short) (weight - weight_KF);
@@ -228,41 +228,39 @@ public class CompareBolt extends BaseRichBolt {
                             }
                         }
                     } else {
-                        if (CalendarObj.get(Calendar.SECOND) > 55) {
-                            LOGGER.warn("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                        }
-                        else
-                        {
-                            LOGGER.info("Check Down Disabled : Withs weight" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                        }
+                        LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                     }
 
                 }
 
-                p_weight = (short) weight;
-            } else if (p_weight > 0) {
-                if (metric.getValue() > p_weight) {
-                    p_weight = 16;
+//                p_weight = (short) weight;
+            } else if (input_weight > 0) {
+                if (metric.getValue() > input_weight) {
+                    weight = 16;
                 } else {
-                    p_weight = 0;
+                    weight = 0;
                 }
-            } else if (p_weight == -4) {
+            } else if (input_weight == -4) {
                 LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-            } else if (p_weight == -5) {
+            } else if (input_weight == -5) {
                 LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
             } else {
                 LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
             }
             mtrscList.set(mtrsc);
-            if (p_weight != 0) {
+            if (weight != 0) {
                 weight_per = weight_per / loop;
-                // TODO Karoxa hanel radzin bolt
+                // TODO Karoxa hanel aradzin bolt
                 key = mtrsc.getTags().get("UUID").getValueTSDBUID();
                 key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
 
-                putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(18).putShort(p_weight).putDouble(weight_per).putDouble(metric.getValue()).array());
+                putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(18).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).array());
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                LOGGER.info("Put Error" + p_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                if (CalendarObj.get(Calendar.SECOND) > 55) {
+                    LOGGER.warn("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                } else {
+                    LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                }
             }
         } catch (Exception ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));
