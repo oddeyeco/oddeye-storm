@@ -153,12 +153,14 @@ public class CompareBolt extends BaseRichBolt {
                 input_weight = (short) Double.parseDouble(alert_level);
             }
             weight_per = 0;
+            loop = 0;
             if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
 //            if (false) {    
                 weight = 0;
                 curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                 LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
                 for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
+                    loop++;
                     Rule = RuleEntry.getValue();
                     if (Rule == null) {
                         LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
@@ -177,8 +179,7 @@ public class CompareBolt extends BaseRichBolt {
                     if (Rule.isHasNotData()) {
                         LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         continue;
-                    }
-                    loop = 1;
+                    }                    
 //                                        LOGGER.warn("Rule: " + Rule);
                     local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
                     if (curent_DW == local_DW) {
