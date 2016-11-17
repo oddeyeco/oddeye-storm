@@ -154,9 +154,9 @@ public class CompareBolt extends BaseRichBolt {
             }
             weight_per = 0;
             loop = 0;
+            weight = 0;
             if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
-//            if (false) {    
-                weight = 0;
+//            if (false) {                    
                 curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                 LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
                 for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
