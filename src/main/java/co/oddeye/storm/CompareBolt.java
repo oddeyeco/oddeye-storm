@@ -12,6 +12,7 @@ import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
@@ -24,6 +25,8 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.hbase.async.GetRequest;
+import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +57,7 @@ public class CompareBolt extends BaseRichBolt {
     private int local_DW;
     private int weight_KF;
 //    private int weight_D_KF;
-    private int devkef = 1;
+    private final int devkef = 1;
 
     private byte[] errortable;
     private final byte[] error_family = "d".getBytes();
@@ -123,22 +126,44 @@ public class CompareBolt extends BaseRichBolt {
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
             PutRequest putvalue;
             key = mtrsc.getKey();
+            GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
+            ArrayList<KeyValue> Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
+            for (KeyValue Regression : Regressiondata) {
+                if (Arrays.equals(Regression.qualifier(), "Regression".getBytes())) {
+                    mtrsc.setSerializedRegression(Regression.value());
+                }
+            }
+            mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
+            byte[][] qualifiers;
+            byte[][] values;
+
             if (!mtrscList.containsKey(mtrsc.hashCode())) {
-                byte[][] qualifiers = new byte[2][];
-                byte[][] values = new byte[2][];
+                qualifiers = new byte[3][];
+                values = new byte[3][];
                 qualifiers[0] = "n".getBytes();
                 qualifiers[1] = "timestamp".getBytes();
+                qualifiers[2] = "Regression".getBytes();
                 values[0] = key;
                 values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                values[2] = mtrsc.getSerializedRegression();
                 putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                 LOGGER.info("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
             } else {
                 oldmtrc = mtrsc;
                 mtrsc = mtrscList.get(mtrsc.hashCode());
+                mtrsc.setRegression(oldmtrc.getRegression());                                
                 if (!Arrays.equals(mtrsc.getKey(), key)) {
                     LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
                 }
-                putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, "timestamp".getBytes(), ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array());
+                
+                qualifiers = new byte[2][];
+                values = new byte[2][];
+                
+                qualifiers[0] = "timestamp".getBytes();
+                qualifiers[1] = "Regression".getBytes();                
+                values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                values[1] = mtrsc.getSerializedRegression();                
+                putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
                 LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
             }
             globalFunctions.getSecindaryclient(clientconf).put(putvalue);
@@ -179,7 +204,7 @@ public class CompareBolt extends BaseRichBolt {
                     if (Rule.isHasNotData()) {
                         LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         continue;
-                    }                    
+                    }
 //                                        LOGGER.warn("Rule: " + Rule);
                     local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
                     if (curent_DW == local_DW) {
@@ -251,11 +276,16 @@ public class CompareBolt extends BaseRichBolt {
             mtrscList.set(mtrsc);
             if (weight != 0) {
                 weight_per = weight_per / loop;
+                double predict_value = mtrsc.getRegression().predict(CalendarObj.getTimeInMillis());
+                double predict_value_per = 0;
+                if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
+                    predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
+                }
                 // TODO Karoxa hanel aradzin bolt
                 key = mtrsc.getTags().get("UUID").getValueTSDBUID();
                 key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
 
-                putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(18).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).array());
+                putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 if (CalendarObj.get(Calendar.SECOND) > 55) {
                     LOGGER.warn("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
