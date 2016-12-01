@@ -5,7 +5,6 @@
  */
 package co.oddeye.storm;
 
-import co.oddeye.core.OddeeyMetric;
 import java.util.Map;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
