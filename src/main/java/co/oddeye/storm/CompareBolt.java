@@ -126,18 +126,18 @@ public class CompareBolt extends BaseRichBolt {
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
             PutRequest putvalue;
             key = mtrsc.getKey();
-            GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
-            ArrayList<KeyValue> Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
-            for (KeyValue Regression : Regressiondata) {
-                if (Arrays.equals(Regression.qualifier(), "Regression".getBytes())) {
-                    mtrsc.setSerializedRegression(Regression.value());
-                }
-            }
-            mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
             byte[][] qualifiers;
             byte[][] values;
 
             if (!mtrscList.containsKey(mtrsc.hashCode())) {
+                GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
+                ArrayList<KeyValue> Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
+                for (KeyValue Regression : Regressiondata) {
+                    if (Arrays.equals(Regression.qualifier(), "Regression".getBytes())) {
+                        mtrsc.setSerializedRegression(Regression.value());
+                    }
+                }
+                mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
                 qualifiers = new byte[3][];
                 values = new byte[3][];
                 qualifiers[0] = "n".getBytes();
@@ -151,18 +151,19 @@ public class CompareBolt extends BaseRichBolt {
             } else {
                 oldmtrc = mtrsc;
                 mtrsc = mtrscList.get(mtrsc.hashCode());
-                mtrsc.setRegression(oldmtrc.getRegression());                                
+                mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
+//                mtrsc.setRegression(oldmtrc.getRegression());
                 if (!Arrays.equals(mtrsc.getKey(), key)) {
                     LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
                 }
-                
+
                 qualifiers = new byte[2][];
                 values = new byte[2][];
-                
+
                 qualifiers[0] = "timestamp".getBytes();
-                qualifiers[1] = "Regression".getBytes();                
+                qualifiers[1] = "Regression".getBytes();
                 values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                values[1] = mtrsc.getSerializedRegression();                
+                values[1] = mtrsc.getSerializedRegression();
                 putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
                 LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
             }
@@ -287,11 +288,11 @@ public class CompareBolt extends BaseRichBolt {
 
                 putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                if (CalendarObj.get(Calendar.SECOND) > 55) {
-                    LOGGER.warn("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                } else {
-                    LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                }
+//                if (CalendarObj.get(Calendar.SECOND) > 55) {
+//                    LOGGER.warn("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//                } else {
+                LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//                }
             }
         } catch (Exception ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));

@@ -97,12 +97,16 @@ public class KafkaHbaseTopology {
         
         builder.setBolt("CompareBolt",
                 new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
-                .shuffleGrouping("ParseMetricBolt");
+                .customGrouping("ParseMetricBolt",new MerticGrouper());
 
         builder.setBolt("CalcRulesBolt",
                 new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
-                .shuffleGrouping("ParseMetricBolt");
+                .customGrouping("ParseMetricBolt",new MerticGrouper());
 
+        builder.setBolt("TestBolt",
+                new TestBolt(), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
+                .customGrouping("ParseMetricBolt",new MerticGrouper());
+        
         
         Config conf = new Config();
         conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
