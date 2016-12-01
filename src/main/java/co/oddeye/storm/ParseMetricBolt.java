@@ -63,6 +63,26 @@ public class ParseMetricBolt extends BaseRichBolt {
                         Metric = this.jsonResult.get(i);
                         try {
                             final OddeeyMetric mtrsc = new OddeeyMetric(Metric);
+                            if (mtrsc.getName() == null) {
+                                LOGGER.warn("mtrsc.getName()==null " + Metric);
+                                LOGGER.warn("mtrsc.getName()==null " + msg);
+                                continue;
+                            }
+                            if (mtrsc.getTimestamp() == null) {
+                                LOGGER.warn("mtrsc.getTimestamp()==null " + Metric);
+                                LOGGER.warn("mtrsc.getTimestamp()==null " + msg);
+                                continue;
+                            }                            
+                            if (mtrsc.getValue() == null) {
+                                LOGGER.warn("mtrsc.getValue()==null " + Metric);
+                                LOGGER.warn("mtrsc.getValue()==null " + msg);
+                                continue;
+                            } 
+                            if (mtrsc.getTSDBTags() == null) {
+                                LOGGER.warn("mtrsc.getTSDBTags()==null " + Metric);
+                                LOGGER.warn("mtrsc.getTSDBTags()==null " + msg);
+                                continue;
+                            }                                                                                                                 
                             collector.emit(new Values(mtrsc));
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + globalFunctions.stackTrace(e));

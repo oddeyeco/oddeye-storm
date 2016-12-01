@@ -39,7 +39,8 @@ public class TestBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+        LOGGER.warn("getFields count = "  + tuple.getFields().size());
+//        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
         collector.ack(tuple);
     }
     
