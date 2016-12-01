@@ -105,7 +105,8 @@ public class KafkaHbaseTopology {
 
 //        builder.setBolt("TestBolt",
 //                new TestBolt(), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
-//                .customGrouping("ParseMetricBolt",new MerticGrouper()).customGrouping("KafkaSpout",new MerticGrouper());
+//                .customGrouping("ParseMetricBolt",new MerticGrouper())
+//                .allGrouping("KafkaSpout");
         
         
         Config conf = new Config();
