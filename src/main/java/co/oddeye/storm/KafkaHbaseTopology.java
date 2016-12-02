@@ -6,6 +6,7 @@
 package co.oddeye.storm;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
@@ -36,7 +37,7 @@ public class KafkaHbaseTopology {
             Yaml yaml = new Yaml();
             java.util.Map rs = (java.util.Map) yaml.load(new InputStreamReader(new FileInputStream(Filename)));
             topologyconf.putAll(rs);
-        } catch (Exception e) {
+        } catch (FileNotFoundException e) {
             System.out.println(e);
         }
 
@@ -91,6 +92,10 @@ public class KafkaHbaseTopology {
                 new ParseMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
 
+        builder.setBolt("ParseSpecialMetricBolt",
+                new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
+                .shuffleGrouping("KafkaSpout");        
+        
         builder.setBolt("WriteToTSDBseries",
                 new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
                 .shuffleGrouping("ParseMetricBolt");
@@ -105,7 +110,7 @@ public class KafkaHbaseTopology {
 
 //        builder.setBolt("TestBolt",
 //                new TestBolt(), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
-//                .customGrouping("ParseMetricBolt",new MerticGrouper())
+//                .customGrouping("ParseMetricBolt",new MerticGrouper());
 //                .allGrouping("KafkaSpout");
         
         
