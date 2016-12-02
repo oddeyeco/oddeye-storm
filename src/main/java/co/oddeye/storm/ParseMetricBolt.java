@@ -61,6 +61,10 @@ public class ParseMetricBolt extends BaseRichBolt {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
+                        if (Metric.getAsJsonObject().get("specialTag") != null && Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
+                            LOGGER.warn("Welcom special tag");
+                            continue;
+                        }
                         try {
                             final OddeeyMetric mtrsc = new OddeeyMetric(Metric);
                             if (mtrsc.getName() == null) {
@@ -72,17 +76,17 @@ public class ParseMetricBolt extends BaseRichBolt {
                                 LOGGER.warn("mtrsc.getTimestamp()==null " + Metric);
                                 LOGGER.warn("mtrsc.getTimestamp()==null " + msg);
                                 continue;
-                            }                            
+                            }
                             if (mtrsc.getValue() == null) {
                                 LOGGER.warn("mtrsc.getValue()==null " + Metric);
                                 LOGGER.warn("mtrsc.getValue()==null " + msg);
                                 continue;
-                            } 
+                            }
                             if (mtrsc.getTSDBTags() == null) {
                                 LOGGER.warn("mtrsc.getTSDBTags()==null " + Metric);
                                 LOGGER.warn("mtrsc.getTSDBTags()==null " + msg);
                                 continue;
-                            }                                                                                                                 
+                            }
                             collector.emit(new Values(mtrsc));
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + globalFunctions.stackTrace(e));
