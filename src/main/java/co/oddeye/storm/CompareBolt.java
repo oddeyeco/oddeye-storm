@@ -5,6 +5,7 @@
  */
 package co.oddeye.storm;
 
+import co.oddeye.core.AlertLevel;
 import co.oddeye.core.MetriccheckRule;
 import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
@@ -15,7 +16,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Map;
+import java.util.TreeMap;
 import net.opentsdb.utils.Config;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.ArrayUtils;
@@ -25,6 +28,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.hbase.async.GetRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
@@ -76,7 +80,7 @@ public class CompareBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
-        ofd.declare(new Fields("rule"));
+        ofd.declare(new Fields("mtrsc","metric"));
     }
 
     @Override
@@ -122,7 +126,6 @@ public class CompareBolt extends BaseRichBolt {
     public void execute(Tuple tuple) {
         try {
             OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
-            collector.ack(tuple);
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
             PutRequest putvalue;
             key = mtrsc.getKey();
@@ -274,8 +277,10 @@ public class CompareBolt extends BaseRichBolt {
             } else {
                 LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
             }
-            mtrscList.set(mtrsc);
+
             if (weight != 0) {
+                final AlertLevel AlertLevel = new AlertLevel();
+
                 weight_per = weight_per / loop;
                 double predict_value = mtrsc.getRegression().predict(CalendarObj.getTimeInMillis());
                 double predict_value_per = 0;
@@ -287,15 +292,76 @@ public class CompareBolt extends BaseRichBolt {
                 key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
 
                 putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
+                mtrsc.getLevelList().add(AlertLevel.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
 //                if (CalendarObj.get(Calendar.SECOND) > 55) {
 //                    LOGGER.warn("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
 //                } else {
                 LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
 //                }
+            } else {
+                mtrsc.getLevelList().add(-1);
             }
+            if (mtrsc.getLevelList().size() > 10) {
+                mtrsc.getLevelList().remove(0);
+            }
+
+            if (Collections.max(mtrsc.getLevelList()) > -1) {
+                Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
+                for (Integer e : mtrsc.getLevelList()) {
+                    if (e > -1) {
+                        for (int j = e; j >= 0; j--) {
+                            Integer counter = Errormap.get(j);
+                            if (counter != null) {
+                                counter++;
+                            } else {
+                                counter = 1;
+                            }
+
+                            Errormap.put(j, counter);
+                        }
+
+                    }
+                }
+                if (!Errormap.isEmpty()) {
+                    boolean setlevel = false;
+                    for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
+                        if (item.getValue() > 4) {
+                            mtrsc.getErrorState().setLevel(item.getKey());
+                            setlevel = true;
+                            break;
+                        }
+
+                    }
+                    if (!setlevel) {
+                        mtrsc.getErrorState().setLevel(mtrsc.getErrorState().getLevel());
+                    }
+
+                }
+                CalendarObj.setTimeInMillis(metric.getTimestamp());
+                if (mtrsc.getErrorState().getState()>-1)
+                {
+                    collector.emit(new Values(mtrsc,metric));
+                }
+//                System.out.println(" Time:" + CalendarObj.getTime() + Errormap + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host") + "::" + mtrsc.getErrorState());
+//                                        System.out.println(mtrsc.getErrorState());
+
+//                                        collector.emit(mtrsc, metric.getTimestamp());
+            } else {
+                if (mtrsc.getErrorState().getLevel() != -1) {
+                    mtrsc.getErrorState().setLevel(-1);
+                    collector.emit(new Values(mtrsc,metric));
+//                    System.out.println("************ Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host"));
+//                    System.out.println("-1 Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host") + "::" + mtrsc.getErrorState());
+                }
+            }
+
+//            mtrsc.getLevelList().
+            mtrscList.set(mtrsc);
+            collector.ack(tuple);
         } catch (Exception ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));
+            collector.ack(tuple);
         }
     }
 }
