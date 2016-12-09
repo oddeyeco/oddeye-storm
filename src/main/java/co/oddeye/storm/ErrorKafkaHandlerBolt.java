@@ -1,0 +1,90 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package co.oddeye.storm;
+
+import co.oddeye.core.OddeeyMetric;
+import co.oddeye.core.OddeeyMetricMeta;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.util.Map;
+import java.util.Properties;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author vahan
+ */
+public class ErrorKafkaHandlerBolt extends BaseRichBolt {
+
+    protected OutputCollector collector;
+
+//    private static final Logger LOGGER = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ErrorKafkaHandlerBolt.class);
+    private final Properties conf;
+    private final String topic;
+    private KafkaProducer<String, String> producer;
+    private Gson gson;
+
+    /**
+     *
+     * @param config
+     * @param s_topic
+     */
+    public ErrorKafkaHandlerBolt(Properties config, String s_topic) {
+        this.conf = config;
+        this.topic = s_topic;
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector oc) {
+        collector = oc;
+        producer = new KafkaProducer<>(conf);
+        gson = new Gson();
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void execute(Tuple tuple) {
+//        LOGGER.warn("getFields count = " + tuple.getFields().size());
+        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+        OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
+        if (mtrsc.getErrorState().getState() != 1) {
+//            String msg = "{\"hash\":" + mtrsc.hashCode() + ",\"UUID\":\"" + mtrsc.getTags().get("UUID") + "\",\"level\":" + mtrsc.getErrorState().getLevel() + ",\"action\":" + mtrsc.getErrorState().getState() + ",\"time\":" + metric.getTimestamp() + "}";
+            JsonObject jsonResult = new JsonObject();
+            jsonResult.addProperty("hash", mtrsc.hashCode());
+            jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
+            jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
+            jsonResult.addProperty("action", mtrsc.getErrorState().getState());
+            jsonResult.addProperty("time", metric.getTimestamp());
+            JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
+            jsonResult.add("starttimes", starttimes);
+            JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
+            jsonResult.add("endtimes", endtimes);
+
+            final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
+            producer.send(data);
+            LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
+        }
+
+//        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+        collector.ack(tuple);
+    }
+
+}

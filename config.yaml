@@ -1,12 +1,17 @@
 ## YAML Template.
 ---
 Kafka:
-   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181" 
+   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"    
    topic: "oddeye"
    tsdbtopic: "oddeyetsdb"
    zkRoot: "/storm_oddeye"
    zkKey: "oddeye-staus"
    zkKeyTSDB: "oddeye-TSDBstat"
+   
+ErrorKafka:
+    bootstrap.servers: "node0.netangels.net:9092,node1.netangels.net:9092,node2.netangels.net:9092" 
+    topic: "errors"
+    
    
 Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
@@ -26,6 +31,7 @@ Topology:
     WriteToTSDBseriesParallelism_hint: 6
     CompareBoltParallelism_hint: 6
     CalcRulesBoltParallelism_hint: 6
+    ErrorKafkaHandlerParallelism_hint: 3
 #    TSDBMsgBoltParallelism_hint: 4
 #    WarningParallelism_hint: 8
     Debug: false

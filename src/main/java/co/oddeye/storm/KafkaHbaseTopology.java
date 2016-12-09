@@ -8,6 +8,7 @@ package co.oddeye.storm;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.util.Properties;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -85,35 +86,47 @@ public class KafkaHbaseTopology {
         CheckDisabled = Boolean.valueOf(String.valueOf(tconf.get("DisableCheck")));
 
         TSDBconfig.put("DisableCheck", Boolean.toString(CheckDisabled));
-        
-        
-        
+
         builder.setBolt("ParseMetricBolt",
                 new ParseMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
 
         builder.setBolt("ParseSpecialMetricBolt",
                 new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
-                .shuffleGrouping("KafkaSpout");        
-        
+                .shuffleGrouping("KafkaSpout");
+
         builder.setBolt("WriteToTSDBseries",
                 new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
                 .shuffleGrouping("ParseMetricBolt");
-        
+
         builder.setBolt("CompareBolt",
                 new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
-                .customGrouping("ParseMetricBolt",new MerticGrouper());
+                .customGrouping("ParseMetricBolt", new MerticGrouper());
 
         builder.setBolt("CalcRulesBolt",
                 new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
-                .customGrouping("ParseMetricBolt",new MerticGrouper());
+                .customGrouping("ParseMetricBolt", new MerticGrouper());
+
+        java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");
+        Properties props = new Properties();
+        props.put("bootstrap.servers", String.valueOf(errorKafkaConf.get("bootstrap.servers")));
+        props.put("acks", "all");
+        props.put("retries", 0);
+        props.put("batch.size", 16384);
+        props.put("linger.ms", 1);
+        props.put("buffer.memory", 33554432);
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+        String topic = String.valueOf(errorKafkaConf.get("topic"));
+        builder.setBolt("ErrorKafkaHandlerBolt",
+                new ErrorKafkaHandlerBolt(props,topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
+                .shuffleGrouping("CompareBolt");
 
 //        builder.setBolt("TestBolt",
 //                new TestBolt(), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
 //                .customGrouping("ParseMetricBolt",new MerticGrouper());
 //                .allGrouping("KafkaSpout");
-        
-        
         Config conf = new Config();
         conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
         conf.put(Config.TOPOLOGY_DEBUG, true);

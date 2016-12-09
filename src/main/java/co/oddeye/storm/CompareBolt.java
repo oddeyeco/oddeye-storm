@@ -327,14 +327,14 @@ public class CompareBolt extends BaseRichBolt {
                     boolean setlevel = false;
                     for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
                         if (item.getValue() > 4) {
-                            mtrsc.getErrorState().setLevel(item.getKey());
+                            mtrsc.getErrorState().setLevel(item.getKey(),metric.getTimestamp());
                             setlevel = true;
                             break;
                         }
 
                     }
                     if (!setlevel) {
-                        mtrsc.getErrorState().setLevel(mtrsc.getErrorState().getLevel());
+                        mtrsc.getErrorState().setLevel(mtrsc.getErrorState().getLevel(),metric.getTimestamp());
                     }
 
                 }
@@ -349,7 +349,7 @@ public class CompareBolt extends BaseRichBolt {
 //                                        collector.emit(mtrsc, metric.getTimestamp());
             } else {
                 if (mtrsc.getErrorState().getLevel() != -1) {
-                    mtrsc.getErrorState().setLevel(-1);
+                    mtrsc.getErrorState().setLevel(-1,metric.getTimestamp());
                     collector.emit(new Values(mtrsc,metric));
 //                    System.out.println("************ Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host"));
 //                    System.out.println("-1 Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host") + "::" + mtrsc.getErrorState());
