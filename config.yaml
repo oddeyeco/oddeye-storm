@@ -32,6 +32,7 @@ Topology:
     CompareBoltParallelism_hint: 6
     CalcRulesBoltParallelism_hint: 6
     ErrorKafkaHandlerParallelism_hint: 3
+    CheckSpecialErrorBoltParallelism_hint: 3
 #    TSDBMsgBoltParallelism_hint: 4
 #    WarningParallelism_hint: 8
     Debug: false

@@ -62,7 +62,7 @@ public class ParseMetricBolt extends BaseRichBolt {
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         if (Metric.getAsJsonObject().get("specialTag") != null && Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
-                            LOGGER.warn("Welcom special tag");
+                            LOGGER.info("Welcom special tag:"+Metric.toString());
                             continue;
                         }
                         try {
@@ -88,6 +88,9 @@ public class ParseMetricBolt extends BaseRichBolt {
                                 continue;
                             }
                             collector.emit(new Values(mtrsc));
+                            
+                            
+                            
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + globalFunctions.stackTrace(e));
                             LOGGER.error("Exception Wits Metriq: " + Metric);

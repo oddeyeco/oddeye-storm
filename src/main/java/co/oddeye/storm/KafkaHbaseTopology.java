@@ -91,10 +91,6 @@ public class KafkaHbaseTopology {
                 new ParseMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
 
-        builder.setBolt("ParseSpecialMetricBolt",
-                new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
-                .shuffleGrouping("KafkaSpout");
-
         builder.setBolt("WriteToTSDBseries",
                 new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
                 .shuffleGrouping("ParseMetricBolt");
@@ -107,6 +103,15 @@ public class KafkaHbaseTopology {
                 new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
                 .customGrouping("ParseMetricBolt", new MerticGrouper());
 
+        builder.setBolt("ParseSpecialMetricBolt",
+                new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
+                .shuffleGrouping("KafkaSpout");
+       
+        builder.setBolt("CheckSpecialErrorBolt",
+                new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
+                .customGrouping("ParseSpecialMetricBolt", new MerticGrouper());
+        
+        
         java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");
         Properties props = new Properties();
         props.put("bootstrap.servers", String.valueOf(errorKafkaConf.get("bootstrap.servers")));
@@ -121,7 +126,8 @@ public class KafkaHbaseTopology {
         String topic = String.valueOf(errorKafkaConf.get("topic"));
         builder.setBolt("ErrorKafkaHandlerBolt",
                 new ErrorKafkaHandlerBolt(props,topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
-                .shuffleGrouping("CompareBolt");
+                .shuffleGrouping("CompareBolt")
+                .shuffleGrouping("CheckSpecialErrorBolt");
 
 //        builder.setBolt("TestBolt",
 //                new TestBolt(), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))

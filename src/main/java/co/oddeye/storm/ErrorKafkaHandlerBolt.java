@@ -7,6 +7,7 @@ package co.oddeye.storm;
 
 import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
+import co.oddeye.core.OddeeysSpecialMetric;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -72,8 +73,13 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
             jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             jsonResult.addProperty("action", mtrsc.getErrorState().getState());
-            jsonResult.addProperty("time", metric.getTimestamp());
+            jsonResult.addProperty("time", metric.getTimestamp());            
             JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
+            if (metric instanceof OddeeysSpecialMetric) {
+                OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
+                jsonResult.addProperty("message", Specmetric.getMessage());
+                LOGGER.warn(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));    
+            }            
             jsonResult.add("starttimes", starttimes);
             JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
             jsonResult.add("endtimes", endtimes);
