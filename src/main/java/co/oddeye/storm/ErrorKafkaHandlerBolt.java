@@ -65,11 +65,17 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
     public void execute(Tuple tuple) {
 //        LOGGER.warn("getFields count = " + tuple.getFields().size());
         Long time = null;
+
         if (tuple.getFields().contains("time")) {
             time = (Long) tuple.getValueByField("time");
         }
+
         OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
         OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
+
+        if (tuple.getSourceComponent().equals("CheckLastTimeBolt")&&(!mtrsc.getName().equals("host_alive"))) {
+            LOGGER.warn(tuple.getSourceComponent() + " " + mtrsc.getName() + " Host " + mtrsc.getTags().get("host").getValue() + " State" + mtrsc.getErrorState().getState());
+        }
         if (mtrsc.getErrorState().getState() != 1) {
 //            String msg = "{\"hash\":" + mtrsc.hashCode() + ",\"UUID\":\"" + mtrsc.getTags().get("UUID") + "\",\"level\":" + mtrsc.getErrorState().getLevel() + ",\"action\":" + mtrsc.getErrorState().getState() + ",\"time\":" + metric.getTimestamp() + "}";
             JsonObject jsonResult = new JsonObject();
@@ -93,7 +99,12 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.add("starttimes", starttimes);
             JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
             jsonResult.add("endtimes", endtimes);
+            jsonResult.addProperty("source", tuple.getSourceComponent());
 
+            if (time != null) {
+
+                LOGGER.warn("time Handler: " + jsonResult.toString());
+            }
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
             producer.send(data);
 

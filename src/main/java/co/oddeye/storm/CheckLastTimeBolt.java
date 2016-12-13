@@ -13,6 +13,7 @@ import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import net.opentsdb.utils.Config;
 import org.apache.storm.task.OutputCollector;
@@ -95,12 +96,14 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                 mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
                 if (mtrscList.get(mtrsc.hashCode()) == null) {
                     mtrscList.set(mtrsc);
+                } else {
+                    mtrsc = mtrscList.get(mtrsc.hashCode());
                 }
 
                 if (metric instanceof OddeeysSpecialMetric) {
                     LOGGER.info("OddeeysSpecialMetric: Name:" + metric.getName() + " tags:" + metric.getTags());
                     lastTimeSpecialMap.put(mtrsc.hashCode(), metric.getTimestamp());
-
+                    mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                 } else {
                     LOGGER.info(" Name:" + metric.getName() + " tags:" + metric.getTags());
                     lastTimeLiveMap.put(mtrsc.hashCode(), metric.getTimestamp());
@@ -108,32 +111,38 @@ public class CheckLastTimeBolt extends BaseRichBolt {
             } catch (Exception ex) {
                 LOGGER.error(globalFunctions.stackTrace(ex));
             }
-
+            mtrscList.set(mtrsc);
             // Todo Fix last time
         } else if (input.getSourceComponent().equals("TimerSpout")) {
             LOGGER.info("Start sheduler");
-            for (Map.Entry<Integer, Long> lastTime : lastTimeSpecialMap.entrySet()) {
-                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {                    
+
+            for (Iterator<Map.Entry<Integer, Long>> it = lastTimeSpecialMap.entrySet().iterator(); it.hasNext();) {
+                Map.Entry<Integer, Long> lastTime = it.next();
+                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {
                     mtrsc = mtrscList.get(lastTime.getKey());
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey());
                     } else {
                         LOGGER.warn("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
-                        mtrsc.getErrorState().setLevel(-1, -1);
-                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));                        
-                    }                    
+                        mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
+                        it.remove();
+                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
+
+                    }
                 }
             }
 
-            for (Map.Entry<Integer, Long> lastTime : lastTimeLiveMap.entrySet()) {
+            for (Iterator<Map.Entry<Integer, Long>> it = lastTimeLiveMap.entrySet().iterator(); it.hasNext();) {
+                Map.Entry<Integer, Long> lastTime = it.next();
                 if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {
                     mtrsc = mtrscList.get(lastTime.getKey());
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey());
                     } else {
                         LOGGER.warn("start Live error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
-                        mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, 0);
-                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));                        
+                        mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
+                        it.remove();
+                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
                     }
                 } else {
                     LOGGER.info("end Live error" + (System.currentTimeMillis() - lastTime.getValue()));
@@ -141,13 +150,16 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey() + " mtrscList " + mtrscList.size());
                     } else {
-                        mtrsc.getErrorState().setLevel(-1, -1);
+                        mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
                     }
                 }
             }
-
+            if (mtrsc != null) {
+                mtrscList.set(mtrsc);
+            }
         }
+
         //ToDo Check last time
         collector.ack(input);
     }
