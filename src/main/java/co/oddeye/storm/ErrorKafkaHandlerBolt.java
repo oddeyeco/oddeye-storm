@@ -64,6 +64,10 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
 //        LOGGER.warn("getFields count = " + tuple.getFields().size());
+        Long time = null;
+        if (tuple.getFields().contains("time")) {
+            time = (Long) tuple.getValueByField("time");
+        }
         OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
         OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
         if (mtrsc.getErrorState().getState() != 1) {
@@ -73,20 +77,27 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
             jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             jsonResult.addProperty("action", mtrsc.getErrorState().getState());
-            jsonResult.addProperty("time", metric.getTimestamp());            
             JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
-            if (metric instanceof OddeeysSpecialMetric) {
-                OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
-                jsonResult.addProperty("message", Specmetric.getMessage());
-                LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));    
-            }            
+
+            if (metric != null) {
+                jsonResult.addProperty("time", metric.getTimestamp());
+                if (metric instanceof OddeeysSpecialMetric) {
+                    OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
+                    jsonResult.addProperty("message", Specmetric.getMessage());
+                    LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
+                }
+            }
+            if (time != null) {
+                jsonResult.addProperty("time", time);
+            }
             jsonResult.add("starttimes", starttimes);
             JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
             jsonResult.add("endtimes", endtimes);
 
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
             producer.send(data);
-            LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
+
+            LOGGER.info(jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
         }
 
 //        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");

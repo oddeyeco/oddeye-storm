@@ -69,6 +69,7 @@ public class KafkaHbaseTopology {
 // set the kafka spout class
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
+        builder.setSpout("TimerSpout", new TimerSpout(), 1);
         /*
         //Disable hbase bolts
         builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
@@ -118,8 +119,9 @@ public class KafkaHbaseTopology {
                 .shuffleGrouping("ParseMetricBolt");
 
         builder.setBolt("CheckLastTimeBolt",
-                new CheckLastTimeBolt(), Integer.parseInt(String.valueOf(tconf.get("CheckLastTimeBoltParallelism_hint"))))
-                .customGrouping("FilterForLastTimeBolt", new MerticGrouper());
+                new CheckLastTimeBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckLastTimeBoltParallelism_hint"))))
+                .customGrouping("FilterForLastTimeBolt", new MerticGrouper())
+                .allGrouping("TimerSpout");
         
         
         java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");

@@ -127,6 +127,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
             mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, metric.getTimestamp());
 
             collector.emit(new Values(mtrsc, metric));
+            
             mtrscList.set(mtrsc);
         } catch (Exception ex) {
             LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));

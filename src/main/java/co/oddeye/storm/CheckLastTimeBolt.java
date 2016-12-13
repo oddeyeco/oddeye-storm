@@ -5,14 +5,26 @@
  */
 package co.oddeye.storm;
 
+import co.oddeye.core.AlertLevel;
 import co.oddeye.core.OddeeyMetric;
+import co.oddeye.core.OddeeyMetricMeta;
+import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.OddeeysSpecialMetric;
+import co.oddeye.core.globalFunctions;
+import static co.oddeye.storm.CheckSpecialErrorBolt.LOGGER;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.opentsdb.utils.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -23,15 +35,58 @@ public class CheckLastTimeBolt extends BaseRichBolt {
 
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CheckLastTimeBolt.class);
     private OutputCollector collector;
+    private Map<Integer, Long> lastTimeLiveMap = new HashMap<>();
+    private Map<Integer, Long> lastTimeSpecialMap = new HashMap<>();
+    private final Map conf;
+    private Config openTsdbConfig;
+    private org.hbase.async.Config clientconf;
+    private byte[] metatable;
+    private OddeeyMetricMetaList mtrscList;
+    private OddeeyMetricMeta mtrsc;
+
+    public CheckLastTimeBolt(java.util.Map config) {
+        this.conf = config;
+    }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        declarer.declare(new Fields("mtrsc", "metric", "time"));
     }
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector oc) {
         collector = oc;
+
+        try {
+            String quorum = String.valueOf(conf.get("zkHosts"));
+            openTsdbConfig = new net.opentsdb.utils.Config(true);
+            openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
+            openTsdbConfig.overrideConfig("tsd.storage.enable_compaction", String.valueOf(conf.get("tsd.storage.enable_compaction")));
+            openTsdbConfig.overrideConfig("tsd.storage.hbase.data_table", String.valueOf(conf.get("tsd.storage.hbase.data_table")));
+            openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
+
+            clientconf = new org.hbase.async.Config();
+            clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
+            clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
+            globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
+//            CalendarObjRules = Calendar.getInstance();
+
+            this.metatable = String.valueOf(conf.get("metatable")).getBytes();
+
+            try {
+                LOGGER.warn("Start read meta in hbase");
+                mtrscList = new OddeeyMetricMetaList(globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), this.metatable);
+                LOGGER.warn("End read meta in hbase" + mtrscList.size());
+            } catch (Exception ex) {
+                mtrscList = new OddeeyMetricMetaList();
+            }
+
+        } catch (IOException ex) {
+            LOGGER.error("OpenTSDB config execption : should not be here !!!");
+        } catch (Exception ex) {
+            LOGGER.error("OpenTSDB config execption : " + ex.toString());
+        }
+        LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt Finish");
     }
 
     @Override
@@ -39,12 +94,62 @@ public class CheckLastTimeBolt extends BaseRichBolt {
 
         if (input.getSourceComponent().equals("FilterForLastTimeBolt")) {
             OddeeyMetric metric = (OddeeyMetric) input.getValueByField("metric");
-            if (metric instanceof OddeeysSpecialMetric) {
-                LOGGER.warn("OddeeysSpecialMetric: Name:" + metric.getName() + " tags:" + metric.getTags());
-            } else {
-                LOGGER.info(" Name:" + metric.getName() + " tags:" + metric.getTags());
+            try {
+                mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
+                if (mtrscList.get(mtrsc.hashCode()) == null) {
+                    mtrscList.set(mtrsc);
+                }
+
+                if (metric instanceof OddeeysSpecialMetric) {
+                    LOGGER.info("OddeeysSpecialMetric: Name:" + metric.getName() + " tags:" + metric.getTags());
+                    lastTimeSpecialMap.put(mtrsc.hashCode(), metric.getTimestamp());
+
+                } else {
+                    LOGGER.info(" Name:" + metric.getName() + " tags:" + metric.getTags());
+                    lastTimeLiveMap.put(mtrsc.hashCode(), metric.getTimestamp());
+                }
+            } catch (Exception ex) {
+                LOGGER.error(globalFunctions.stackTrace(ex));
             }
+
             // Todo Fix last time
+        } else if (input.getSourceComponent().equals("TimerSpout")) {
+            LOGGER.info("Start sheduler");
+            for (Map.Entry<Integer, Long> lastTime : lastTimeSpecialMap.entrySet()) {
+                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {                    
+                    mtrsc = mtrscList.get(lastTime.getKey());
+                    if (mtrsc == null) {
+                        LOGGER.warn("Metric not found " + lastTime.getKey());
+                    } else {
+                        LOGGER.warn("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+                        mtrsc.getErrorState().setLevel(-1, -1);
+                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));                        
+                    }                    
+                }
+            }
+
+            for (Map.Entry<Integer, Long> lastTime : lastTimeLiveMap.entrySet()) {
+                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {
+                    mtrsc = mtrscList.get(lastTime.getKey());
+                    if (mtrsc == null) {
+                        LOGGER.warn("Metric not found " + lastTime.getKey());
+                    } else {
+                        LOGGER.warn("start Live error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+                        mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, 0);
+                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));                        
+                    }
+                } else {
+                    LOGGER.info("end Live error" + (System.currentTimeMillis() - lastTime.getValue()));
+                    mtrsc = mtrscList.get(lastTime.getKey());
+                    if (mtrsc == null) {
+                        LOGGER.warn("Metric not found " + lastTime.getKey() + " mtrscList " + mtrscList.size());
+                    } else {
+                        mtrsc.getErrorState().setLevel(-1, -1);
+                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
+                    }
+                }
+            }
+
         }
         //ToDo Check last time
         collector.ack(input);
