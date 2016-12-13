@@ -11,12 +11,9 @@ import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
-import static co.oddeye.storm.CheckSpecialErrorBolt.LOGGER;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.opentsdb.utils.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -35,8 +32,8 @@ public class CheckLastTimeBolt extends BaseRichBolt {
 
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CheckLastTimeBolt.class);
     private OutputCollector collector;
-    private Map<Integer, Long> lastTimeLiveMap = new HashMap<>();
-    private Map<Integer, Long> lastTimeSpecialMap = new HashMap<>();
+    private final Map<Integer, Long> lastTimeLiveMap = new HashMap<>();
+    private final Map<Integer, Long> lastTimeSpecialMap = new HashMap<>();
     private final Map conf;
     private Config openTsdbConfig;
     private org.hbase.async.Config clientconf;

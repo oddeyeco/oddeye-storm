@@ -139,7 +139,8 @@ public class KafkaHbaseTopology {
         builder.setBolt("ErrorKafkaHandlerBolt",
                 new ErrorKafkaHandlerBolt(props,topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
                 .shuffleGrouping("CompareBolt")
-                .shuffleGrouping("CheckSpecialErrorBolt");
+                .shuffleGrouping("CheckSpecialErrorBolt")
+                .shuffleGrouping("CheckLastTimeBolt");
 
 //        builder.setBolt("TestBolt",
 //                new TestBolt(), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))

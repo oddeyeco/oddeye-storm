@@ -39,10 +39,10 @@ public class TimerSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         try {
-            LOGGER.warn("outputCollector.start");
+            LOGGER.debug("outputCollector.start");
             Thread.sleep(60000);
             outputCollector.emit(new Values(System.currentTimeMillis()));
-            LOGGER.warn("outputCollector.emit");
+            LOGGER.debug("outputCollector.emit");
         } catch (InterruptedException ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));
         }
