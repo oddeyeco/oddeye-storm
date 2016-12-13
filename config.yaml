@@ -17,6 +17,7 @@ Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
   metatable: test_oddeye-meta
   errorstable: test_oddeye-errors
+  errorstable: test_oddeye-error-history
 #  oddeyerulestable: oddeyerules
   tsd.core.auto_create_metrics: true
   tsd.storage.enable_compaction: false
@@ -33,6 +34,8 @@ Topology:
     CalcRulesBoltParallelism_hint: 6
     ErrorKafkaHandlerParallelism_hint: 3
     CheckSpecialErrorBoltParallelism_hint: 3
+    FilterForLastTimeBoltParallelism_hint: 3
+    CheckLastTimeBoltParallelism_hint: 6
 #    TSDBMsgBoltParallelism_hint: 4
 #    WarningParallelism_hint: 8
     Debug: false

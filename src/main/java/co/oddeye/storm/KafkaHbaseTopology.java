@@ -110,6 +110,16 @@ public class KafkaHbaseTopology {
         builder.setBolt("CheckSpecialErrorBolt",
                 new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
                 .customGrouping("ParseSpecialMetricBolt", new MerticGrouper());
+
+
+        builder.setBolt("FilterForLastTimeBolt",
+                new FilterForLastTimeBolt(), Integer.parseInt(String.valueOf(tconf.get("FilterForLastTimeBoltParallelism_hint"))))
+                .shuffleGrouping("ParseSpecialMetricBolt")
+                .shuffleGrouping("ParseMetricBolt");
+
+        builder.setBolt("CheckLastTimeBolt",
+                new CheckLastTimeBolt(), Integer.parseInt(String.valueOf(tconf.get("CheckLastTimeBoltParallelism_hint"))))
+                .customGrouping("FilterForLastTimeBolt", new MerticGrouper());
         
         
         java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");

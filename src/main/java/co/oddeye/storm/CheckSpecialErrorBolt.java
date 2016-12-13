@@ -13,10 +13,8 @@ import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Map;
 import net.opentsdb.utils.Config;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -33,7 +31,7 @@ import org.slf4j.LoggerFactory;
  */
 public class CheckSpecialErrorBolt extends BaseRichBolt {
 
-    public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CalcRulesBolt.class);
+    public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CheckSpecialErrorBolt.class);
     private OutputCollector collector;
     private Config openTsdbConfig;
     private org.hbase.async.Config clientconf;
@@ -93,20 +91,20 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         try {
-            OddeeyMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
-            collector.ack(input);
+            OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
             PutRequest putvalue;
-            
             key = mtrsc.getKey();
             if (!mtrscList.containsKey(mtrsc.hashCode())) {
                 mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
-                qualifiers = new byte[2][];
-                values = new byte[2][];
+                qualifiers = new byte[3][];
+                values = new byte[3][];
                 qualifiers[0] = "n".getBytes();
                 qualifiers[1] = "timestamp".getBytes();
+                qualifiers[2] = "Special".getBytes();
                 values[0] = key;
                 values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                values[2] = new byte[]{1};
                 putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
             } else {
 //                oldmtrc = mtrsc;
@@ -121,19 +119,19 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
                 putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
                 LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
-            }            
+            }
             globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-            
+
             mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
-            
+
             mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, metric.getTimestamp());
-            
-            collector.emit(new Values(mtrsc,metric));
+
+            collector.emit(new Values(mtrsc, metric));
             mtrscList.set(mtrsc);
         } catch (Exception ex) {
             LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
         }
-
+        collector.ack(input);
     }
 
 }

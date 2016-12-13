@@ -78,7 +78,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             if (metric instanceof OddeeysSpecialMetric) {
                 OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
                 jsonResult.addProperty("message", Specmetric.getMessage());
-                LOGGER.warn(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));    
+                LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));    
             }            
             jsonResult.add("starttimes", starttimes);
             JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
