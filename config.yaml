@@ -1,8 +1,7 @@
 ## YAML Template.
 ---
 Kafka:
-   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"    
-   topic: "oddeye"
+   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"       
    tsdbtopic: "oddeyetsdb"
    zkRoot: "/storm_oddeye"
    zkKey: "oddeye-staus"
@@ -18,14 +17,13 @@ Tsdb:
   metatable: test_oddeye-meta
   errorstable: test_oddeye-errors
   errorshistorytable: test_oddeye-error-history
-#  oddeyerulestable: oddeyerules
   tsd.core.auto_create_metrics: true
   tsd.storage.enable_compaction: false
   tsd.storage.hbase.data_table: test_tsdb
   tsd.storage.hbase.uid_table: test_tsdb-uid
    
 Topology:    
-    topologi.display.name: "OddeyeTopology"
+    topologi.display.name: "OddeyeTimeSeriesTopology"
     NumWorkers: 3
     SpoutParallelism_hint: 1
     ParseMetricBoltParallelism_hint: 2

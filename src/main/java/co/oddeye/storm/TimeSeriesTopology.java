@@ -27,7 +27,7 @@ import org.apache.storm.topology.TopologyBuilder;
  *
  * @author vahan
  */
-public class KafkaHbaseTopology {
+public class TimeSeriesTopology {
 
     private static String topologyname;
 
