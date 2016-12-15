@@ -13,6 +13,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.storm.task.OutputCollector;
@@ -80,6 +81,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
 //            String msg = "{\"hash\":" + mtrsc.hashCode() + ",\"UUID\":\"" + mtrsc.getTags().get("UUID") + "\",\"level\":" + mtrsc.getErrorState().getLevel() + ",\"action\":" + mtrsc.getErrorState().getState() + ",\"time\":" + metric.getTimestamp() + "}";
             JsonObject jsonResult = new JsonObject();
             jsonResult.addProperty("hash", mtrsc.hashCode());
+            jsonResult.addProperty("key", Hex.encodeHexString(mtrsc.getKey()));
             jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
             jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             jsonResult.addProperty("action", mtrsc.getErrorState().getState());

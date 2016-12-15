@@ -118,7 +118,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
 
             for (Iterator<Map.Entry<Integer, Long>> it = lastTimeSpecialMap.entrySet().iterator(); it.hasNext();) {
                 Map.Entry<Integer, Long> lastTime = it.next();
-                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {
+                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 2) {
                     mtrsc = mtrscList.get(lastTime.getKey());
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey());
