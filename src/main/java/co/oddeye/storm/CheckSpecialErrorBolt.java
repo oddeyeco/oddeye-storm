@@ -107,12 +107,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 values[2] = new byte[]{1};
                 putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
             } else {
-//                oldmtrc = mtrsc;
                 mtrsc = mtrscList.get(mtrsc.hashCode());
-//                if (!Arrays.equals(mtrsc.getKey(), key)) {
-//                    LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
-//                }
-
                 qualifiers = new byte[1][];
                 values = new byte[1][];
                 qualifiers[0] = "timestamp".getBytes();
@@ -122,9 +117,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
             }
             globalFunctions.getSecindaryclient(clientconf).put(putvalue);
 
-            mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
+//            mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
 
-            mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, metric.getTimestamp());
+            mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getType()), metric.getTimestamp());
 
             collector.emit(new Values(mtrsc, metric));
             

@@ -53,19 +53,18 @@ public class ParseSpecialMetricBolt extends BaseRichBolt {
         try {
             this.jsonResult = (JsonArray) this.parser.parse(msg);
         } catch (JsonSyntaxException ex) {
-            LOGGER.info("msg parse Exception" + ex.toString());
+            LOGGER.error("msg parse Exception" + ex.toString());
         }
         if (this.jsonResult != null) {
             try {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
-                    for (int i = 0; i < this.jsonResult.size(); i++) {
+                    for (int i = 0; i < this.jsonResult.size(); i++) {                       
                         Metric = this.jsonResult.get(i);
+                        LOGGER.debug("Emit metric " + Metric.toString());
                         if (Metric.getAsJsonObject().get("specialTag") == null) {
-                            LOGGER.debug("Welcom NOT special tag");
                             continue;
                         } else if (!Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
-                            LOGGER.debug("Welcom NOT special tag");
                             continue;
                         }
                         try {
@@ -90,6 +89,7 @@ public class ParseSpecialMetricBolt extends BaseRichBolt {
                                 LOGGER.warn("mtrsc.getTSDBTags()==null " + msg);
                                 continue;
                             }
+                            LOGGER.debug("Emit metric " + mtrsc.getName()+" host"+mtrsc.getTags().get("host"));
                             collector.emit(new Values(mtrsc));
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + globalFunctions.stackTrace(e));

@@ -48,6 +48,7 @@ public class ParseMetricBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String msg = input.getString(0);
+        LOGGER.debug("Start messge:" + msg);
         this.collector.ack(input);
         JsonElement Metric;
         try {

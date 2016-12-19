@@ -74,7 +74,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
         OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
 
-        if (tuple.getSourceComponent().equals("CheckLastTimeBolt")&&(!mtrsc.getName().equals("host_alive"))) {
+        if (!tuple.getSourceComponent().equals("CompareBolt")&&(!mtrsc.getName().equals("host_alive"))) {
             LOGGER.warn(tuple.getSourceComponent() + " " + mtrsc.getName() + " Host " + mtrsc.getTags().get("host").getValue() + " State" + mtrsc.getErrorState().getState());
         }
         if (mtrsc.getErrorState().getState() != 1) {
