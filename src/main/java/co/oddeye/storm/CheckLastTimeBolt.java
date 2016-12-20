@@ -111,7 +111,13 @@ public class CheckLastTimeBolt extends BaseRichBolt {
             } catch (Exception ex) {
                 LOGGER.error(globalFunctions.stackTrace(ex));
             }
-            mtrscList.set(mtrsc);
+            if (mtrsc != null) {
+                mtrscList.set(mtrsc);
+            }
+            else
+            {
+                LOGGER.warn("mtrsc is null "+metric.getName()+" tags:"+metric.getTags());
+            }
             // Todo Fix last time
         } else if (input.getSourceComponent().equals("TimerSpout")) {
             LOGGER.info("Start sheduler");

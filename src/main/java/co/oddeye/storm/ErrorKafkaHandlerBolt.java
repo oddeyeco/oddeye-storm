@@ -74,9 +74,9 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
         OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
 
-        if (!tuple.getSourceComponent().equals("CompareBolt")&&(!mtrsc.getName().equals("host_alive"))) {
-            LOGGER.warn(tuple.getSourceComponent() + " " + mtrsc.getName() + " Host " + mtrsc.getTags().get("host").getValue() + " State" + mtrsc.getErrorState().getState());
-        }
+//        if (!tuple.getSourceComponent().equals("CompareBolt")&&(!mtrsc.getName().equals("host_alive"))) {
+//            LOGGER.warn(tuple.getSourceComponent() + " " + mtrsc.getName() + " Host " + mtrsc.getTags().get("host").getValue() + " State" + mtrsc.getErrorState().getState());
+//        }
         if (mtrsc.getErrorState().getState() != 1) {
 //            String msg = "{\"hash\":" + mtrsc.hashCode() + ",\"UUID\":\"" + mtrsc.getTags().get("UUID") + "\",\"level\":" + mtrsc.getErrorState().getLevel() + ",\"action\":" + mtrsc.getErrorState().getState() + ",\"time\":" + metric.getTimestamp() + "}";
             JsonObject jsonResult = new JsonObject();
@@ -103,10 +103,9 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.add("endtimes", endtimes);
             jsonResult.addProperty("source", tuple.getSourceComponent());
 
-            if (time != null) {
-
-                LOGGER.warn("time Handler: " + jsonResult.toString());
-            }
+//            if (time != null) {
+//                LOGGER.warn("time in null: " + jsonResult.toString());
+//            }
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
             producer.send(data);
 

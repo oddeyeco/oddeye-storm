@@ -52,7 +52,12 @@ public class ParseMetricBolt extends BaseRichBolt {
         this.collector.ack(input);
         JsonElement Metric;
         try {
-            this.jsonResult = (JsonArray) this.parser.parse(msg);
+            if (this.parser.parse(msg).isJsonArray()) {
+                this.jsonResult = this.parser.parse(msg).getAsJsonArray();
+            } else {
+                this.jsonResult = null;
+                LOGGER.error("not array:" + msg);
+            }
         } catch (JsonSyntaxException ex) {
             LOGGER.info("msg parse Exception" + ex.toString());
         }
@@ -63,7 +68,7 @@ public class ParseMetricBolt extends BaseRichBolt {
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         if (Metric.getAsJsonObject().get("specialTag") != null && Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
-                            LOGGER.info("Welcom special tag:"+Metric.toString());
+                            LOGGER.info("Welcom special tag:" + Metric.toString());
                             continue;
                         }
                         try {
@@ -89,9 +94,7 @@ public class ParseMetricBolt extends BaseRichBolt {
                                 continue;
                             }
                             collector.emit(new Values(mtrsc));
-                            
-                            
-                            
+
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + globalFunctions.stackTrace(e));
                             LOGGER.error("Exception Wits Metriq: " + Metric);
