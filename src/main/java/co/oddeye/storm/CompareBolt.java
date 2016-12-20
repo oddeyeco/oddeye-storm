@@ -360,7 +360,7 @@ public class CompareBolt extends BaseRichBolt {
             mtrscList.set(mtrsc);
             collector.ack(tuple);
         } catch (Exception ex) {
-            LOGGER.error("In bib try:"+globalFunctions.stackTrace(ex)+tuple.getValueByField("metric"));
+            LOGGER.error("In big try:"+globalFunctions.stackTrace(ex)+tuple.getValueByField("metric"));
             collector.ack(tuple);
         }
     }
