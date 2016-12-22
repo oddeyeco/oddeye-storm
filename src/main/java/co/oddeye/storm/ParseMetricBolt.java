@@ -11,6 +11,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import java.util.Date;
 import java.util.Map;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -27,11 +28,12 @@ import org.slf4j.LoggerFactory;
  * @author vahan
  */
 public class ParseMetricBolt extends BaseRichBolt {
-
+//co.oddeye.storm.ParseMetricBolt
     protected OutputCollector collector;
     public static final Logger LOGGER = LoggerFactory.getLogger(ParseMetricBolt.class);
     private JsonParser parser = null;
     private JsonArray jsonResult = null;
+    private Date date;
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
@@ -48,8 +50,7 @@ public class ParseMetricBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String msg = input.getString(0);
-        LOGGER.debug("Start messge:" + msg);
-        this.collector.ack(input);
+        LOGGER.debug("Start messge:" + msg);        
         JsonElement Metric;
         try {
             if (this.parser.parse(msg).isJsonArray()) {
@@ -93,6 +94,8 @@ public class ParseMetricBolt extends BaseRichBolt {
                                 LOGGER.warn("mtrsc.getTSDBTags()==null " + msg);
                                 continue;
                             }
+                            date = new Date(mtrsc.getTimestamp());
+                            LOGGER.trace("Time "+date+" Metris: " + mtrsc.getName()+" Host: "+mtrsc.getTags().get("host"));
                             collector.emit(new Values(mtrsc));
 
                         } catch (Exception e) {
@@ -111,7 +114,8 @@ public class ParseMetricBolt extends BaseRichBolt {
 //                this.collector.ack(input);
             }
             this.jsonResult = null;
-        }
+        }        
+        this.collector.ack(input);
     }
 
 }

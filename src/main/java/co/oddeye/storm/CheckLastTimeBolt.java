@@ -112,11 +112,12 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                 LOGGER.error(globalFunctions.stackTrace(ex));
             }
             if (mtrsc != null) {
-                mtrscList.set(mtrsc);
-            }
-            else
-            {
-                LOGGER.warn("mtrsc is null "+metric.getName()+" tags:"+metric.getTags());
+                mtrsc = mtrscList.set(mtrsc);
+                if (mtrsc == null) {
+                    LOGGER.warn("mtrsc is veri null " + metric.getName() + " tags:" + metric.getTags());
+                }
+            } else {
+                LOGGER.warn("mtrsc is null " + metric.getName() + " tags:" + metric.getTags());
             }
             // Todo Fix last time
         } else if (input.getSourceComponent().equals("TimerSpout")) {
@@ -129,7 +130,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey());
                     } else {
-                        LOGGER.warn("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+                        LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
                         mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
                         it.remove();
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
@@ -145,7 +146,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey());
                     } else {
-                        LOGGER.warn("start Live error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+                        LOGGER.info("start Live error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                         it.remove();
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
