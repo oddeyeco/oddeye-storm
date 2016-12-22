@@ -186,7 +186,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                                             globalFunctions.getClient(clientconf).put(putvalue);
                                         }
                                     } catch (Exception e) {
-                                        LOGGER.error("catch In Put " + globalFunctions.stackTrace(e));
+                                        LOGGER.error("catch In Put " + globalFunctions.stackTrace(e)+" qualifiers "+qualifiers+"values"+values);
                                     }
 
                                 }
