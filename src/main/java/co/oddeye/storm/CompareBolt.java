@@ -174,6 +174,10 @@ public class CompareBolt extends BaseRichBolt {
                 } else {
                     oldmtrc = mtrsc;
                     mtrsc = mtrscList.get(mtrsc.hashCode());
+//                    if (mtrsc.getRegression().getN()>100)
+//                    {                        
+//                        mtrsc.getRegression().clear();                        
+//                    }                    
                     mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
 //                mtrsc.setRegression(oldmtrc.getRegression());
                     if (!Arrays.equals(mtrsc.getKey(), key)) {
