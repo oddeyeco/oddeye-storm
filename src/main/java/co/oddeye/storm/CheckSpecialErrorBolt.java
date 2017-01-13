@@ -85,11 +85,14 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
         } catch (Exception ex) {
             LOGGER.error("OpenTSDB config execption : " + ex.toString());
         }
-        LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt Finish");
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt Finish");
+        }
     }
 
     @Override
-    public void execute(Tuple input) {
+    public void execute(Tuple input
+    ) {
         try {
             OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
@@ -113,16 +116,19 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 qualifiers[0] = "timestamp".getBytes();
                 values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
                 putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
-                LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
+                }
             }
             globalFunctions.getSecindaryclient(clientconf).put(putvalue);
 
-//            mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
-
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() +" Newlevel:" + AlertLevel.getPyName(metric.getType()) + "Tags:" + mtrsc.getTags());
+            }
             mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getType()), metric.getTimestamp());
 
             collector.emit(new Values(mtrsc, metric));
-            
+
             mtrscList.set(mtrsc);
         } catch (Exception ex) {
             LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));

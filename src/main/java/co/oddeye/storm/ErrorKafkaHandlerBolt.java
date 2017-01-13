@@ -74,11 +74,10 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
         OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
 
-//        if (!tuple.getSourceComponent().equals("CompareBolt")&&(!mtrsc.getName().equals("host_alive"))) {
-//            LOGGER.warn(tuple.getSourceComponent() + " " + mtrsc.getName() + " Host " + mtrsc.getTags().get("host").getValue() + " State" + mtrsc.getErrorState().getState());
-//        }
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " level:" + mtrsc.getErrorState().getLevel() + "Tags:" + mtrsc.getTags());
+        }
         if (mtrsc.getErrorState().getState() != 1) {
-//            String msg = "{\"hash\":" + mtrsc.hashCode() + ",\"UUID\":\"" + mtrsc.getTags().get("UUID") + "\",\"level\":" + mtrsc.getErrorState().getLevel() + ",\"action\":" + mtrsc.getErrorState().getState() + ",\"time\":" + metric.getTimestamp() + "}";
             JsonObject jsonResult = new JsonObject();
             jsonResult.addProperty("hash", mtrsc.hashCode());
             jsonResult.addProperty("key", Hex.encodeHexString(mtrsc.getKey()));
@@ -92,7 +91,9 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
                 if (metric instanceof OddeeysSpecialMetric) {
                     OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
                     jsonResult.addProperty("message", Specmetric.getMessage());
-                    LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
+                    }
                 }
             }
             if (time != null) {
@@ -102,14 +103,11 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
             jsonResult.add("endtimes", endtimes);
             jsonResult.addProperty("source", tuple.getSourceComponent());
-
-//            if (time != null) {
-//                LOGGER.warn("time in null: " + jsonResult.toString());
-//            }
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
             producer.send(data);
-
-            LOGGER.info(jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
+            }
         }
 
 //        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
