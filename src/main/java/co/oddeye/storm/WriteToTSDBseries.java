@@ -27,10 +27,11 @@ public class WriteToTSDBseries extends BaseRichBolt {
     protected OutputCollector collector;
 
 //    private static final Logger LOGGER = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
-    public static final Logger LOGGER = LoggerFactory.getLogger(WriteToTSDBseries.class);  
-    private final java.util.Map<String, Object> conf;        
+    public static final Logger LOGGER = LoggerFactory.getLogger(WriteToTSDBseries.class);
+    private final java.util.Map<String, Object> conf;
     private org.hbase.async.Config clientconf;
-    private Config openTsdbConfig;    
+    private Config openTsdbConfig;
+
     /**
      *
      * @param config
@@ -47,7 +48,7 @@ public class WriteToTSDBseries extends BaseRichBolt {
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
         LOGGER.warn("DoPrepare WriteToTSDBseries");
-        collector = oc;                
+        collector = oc;
 
         try {
             String quorum = String.valueOf(conf.get("zkHosts"));
@@ -74,7 +75,9 @@ public class WriteToTSDBseries extends BaseRichBolt {
     public void execute(Tuple tuple) {
         collector.ack(tuple);
         OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
-        globalFunctions.getTSDB(openTsdbConfig, clientconf).addPoint(metric.getName(), metric.getTimestamp(), metric.getValue(), metric.getTSDBTags());
+        if (!metric.getName().equals("host_absent")) {
+            globalFunctions.getTSDB(openTsdbConfig, clientconf).addPoint(metric.getName(), metric.getTimestamp(), metric.getValue(), metric.getTSDBTags());
+        }
+
     }
 }
-

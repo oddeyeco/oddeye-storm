@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ParseMetricBolt extends BaseRichBolt {
 //co.oddeye.storm.ParseMetricBolt
+
     protected OutputCollector collector;
     public static final Logger LOGGER = LoggerFactory.getLogger(ParseMetricBolt.class);
     private JsonParser parser = null;
@@ -50,7 +51,7 @@ public class ParseMetricBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         String msg = input.getString(0);
-        LOGGER.debug("Start messge:" + msg);        
+        LOGGER.debug("Start messge:" + msg);
         JsonElement Metric;
         try {
             if (this.parser.parse(msg).isJsonArray()) {
@@ -95,8 +96,13 @@ public class ParseMetricBolt extends BaseRichBolt {
                                 continue;
                             }
                             date = new Date(mtrsc.getTimestamp());
-                            LOGGER.trace("Time "+date+" Metris: " + mtrsc.getName()+" Host: "+mtrsc.getTags().get("host"));
+                            LOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));
                             collector.emit(new Values(mtrsc));
+                            if (mtrsc.getName().equals("host_alive")) {
+                                Metric.getAsJsonObject().addProperty("metric", "host_absent");
+                                final OddeeyMetric mtrsc2 = new OddeeyMetric(Metric);
+                                collector.emit(new Values(mtrsc2));
+                            }
 
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + globalFunctions.stackTrace(e));
@@ -114,7 +120,7 @@ public class ParseMetricBolt extends BaseRichBolt {
 //                this.collector.ack(input);
             }
             this.jsonResult = null;
-        }        
+        }
         this.collector.ack(input);
     }
 

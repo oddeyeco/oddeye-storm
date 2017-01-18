@@ -103,110 +103,111 @@ public class CalcRulesBolt extends BaseRichBolt {
         try {
             OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
             collector.ack(tuple);
-
-            if (metric != null) {
-                OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
-                if (mtrscList == null) {
-                    LOGGER.error("Es anasunucjun@ vonca null darel");
+            if (!metric.getName().equals("host_absent")) {
+                if (metric != null) {
+                    OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
+                    if (mtrscList == null) {
+                        LOGGER.error("Es anasunucjun@ vonca null darel");
+                        try {
+                            LOGGER.warn("Start read meta in hbase");
+                            mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+                            LOGGER.warn("End read meta in hbase");
+                        } catch (Exception ex) {
+                            mtrscList = new OddeeyMetricMetaList();
+                        }
+                    }
+                    Integer code = 0;
                     try {
-                        LOGGER.warn("Start read meta in hbase");
-                        mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
-                        LOGGER.warn("End read meta in hbase");
+                        code = mtrsc.hashCode();
                     } catch (Exception ex) {
-                        mtrscList = new OddeeyMetricMetaList();
+                        LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
                     }
-                }
-                Integer code = 0;
-                try {
-                    code = mtrsc.hashCode();
-                } catch (Exception ex) {
-                    LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
-                }
 
-                if (code != 0) {
-                    if (mtrscList.containsKey(mtrsc.hashCode())) {
-                        mtrsc = mtrscList.get(mtrsc.hashCode());
-                    }
-                    try {
-                        CalendarObjRules.setTimeInMillis(metric.getTimestamp());
-                        CalendarObjRules.add(Calendar.HOUR, 1);
-                        CalendarObjRules.add(Calendar.DATE, -1);
+                    if (code != 0) {
+                        if (mtrscList.containsKey(mtrsc.hashCode())) {
+                            mtrsc = mtrscList.get(mtrsc.hashCode());
+                        }
+                        try {
+                            CalendarObjRules.setTimeInMillis(metric.getTimestamp());
+                            CalendarObjRules.add(Calendar.HOUR, 1);
+                            CalendarObjRules.add(Calendar.DATE, -1);
 
-                        Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
-                        needsave = false;
-                        final ArrayList<Deferred<DataPoints[]>> deferreds = new ArrayList<>();
-                        mtrsc.clearCalcedRulesMap();
-                        for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
-                            final MetriccheckRule l_Rule = RuleEntry.getValue();
-                            Calendar CalObjRules = MetriccheckRule.QualifierToCalendar(l_Rule.getQualifier());
-                            Calendar CalObjRulesEnd = (Calendar) CalObjRules.clone();
-                            CalObjRulesEnd.add(Calendar.HOUR, 1);
-                            CalObjRulesEnd.add(Calendar.MILLISECOND, -1);
-                            if ((!l_Rule.isIsValidRule()) && (!l_Rule.isHasNotData())) {
+                            Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
+                            needsave = false;
+                            final ArrayList<Deferred<DataPoints[]>> deferreds = new ArrayList<>();
+                            mtrsc.clearCalcedRulesMap();
+                            for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
+                                final MetriccheckRule l_Rule = RuleEntry.getValue();
+                                Calendar CalObjRules = MetriccheckRule.QualifierToCalendar(l_Rule.getQualifier());
+                                Calendar CalObjRulesEnd = (Calendar) CalObjRules.clone();
+                                CalObjRulesEnd.add(Calendar.HOUR, 1);
+                                CalObjRulesEnd.add(Calendar.MILLISECOND, -1);
+                                if ((!l_Rule.isIsValidRule()) && (!l_Rule.isHasNotData())) {
 
-                                ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
+                                    ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
 
-                                deferreds.addAll(rule_deferreds);
-                            }
-                            if (deferreds.size() > 0) {
-                                needsave = true;
-                                starttime = System.currentTimeMillis();
-                                Deferred.groupInOrder(deferreds).joinUninterruptibly();
-                                endtime = System.currentTimeMillis() - starttime;
-                                LOGGER.info("Rule joinUninterruptibly " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
-                            } else {
-                                LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                //+ "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue()
-                            }
-                            try {
+                                    deferreds.addAll(rule_deferreds);
+                                }
+                                if (deferreds.size() > 0) {
+                                    needsave = true;
+                                    starttime = System.currentTimeMillis();
+                                    Deferred.groupInOrder(deferreds).joinUninterruptibly();
+                                    endtime = System.currentTimeMillis() - starttime;
+                                    LOGGER.info("Rule joinUninterruptibly " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                                } else {
+                                    LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    //+ "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue()
+                                }
+                                try {
 
-                                if (needsave) {
+                                    if (needsave) {
 
-                                    key = mtrsc.getKey();
-                                    byte[][] qualifiers;
-                                    byte[][] values;
-                                    ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getCalcedRulesMap();
-                                    qualifiers = new byte[rulesmap.size()][];
-                                    values = new byte[rulesmap.size()][];
-                                    int index = 0;
+                                        key = mtrsc.getKey();
+                                        byte[][] qualifiers;
+                                        byte[][] values;
+                                        ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getCalcedRulesMap();
+                                        qualifiers = new byte[rulesmap.size()][];
+                                        values = new byte[rulesmap.size()][];
+                                        int index = 0;
 
-                                    for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
-                                        qualifiers[index] = rule.getValue().getQualifier();
-                                        values[index] = rule.getValue().getValues();
-                                        index++;
-                                    }
-                                    try {
-
-                                        if (qualifiers.length > 0) {
-                                            PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
-                                            globalFunctions.getClient(clientconf).put(putvalue);
-
-                                        } else {
-                                            PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
-                                            globalFunctions.getClient(clientconf).put(putvalue);
+                                        for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
+                                            qualifiers[index] = rule.getValue().getQualifier();
+                                            values[index] = rule.getValue().getValues();
+                                            index++;
                                         }
-                                    } catch (Exception e) {
-                                        LOGGER.error("catch In Put " + globalFunctions.stackTrace(e)+" qualifiers "+qualifiers+"values"+values);
+                                        try {
+
+                                            if (qualifiers.length > 0) {
+                                                PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
+                                                globalFunctions.getClient(clientconf).put(putvalue);
+
+                                            } else {
+                                                PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
+                                                globalFunctions.getClient(clientconf).put(putvalue);
+                                            }
+                                        } catch (Exception e) {
+                                            LOGGER.error("catch In Put " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
+                                        }
+
                                     }
 
+                                } catch (Exception e) {
+                                    LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
                                 }
 
-                            } catch (Exception e) {
-                                LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
+                                mtrscList.set(mtrsc);
                             }
-
-                            mtrscList.set(mtrsc);
+                        } catch (Exception ex) {
+                            LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
                         }
-                    } catch (Exception ex) {
-                        LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
+                    } else {
+                        LOGGER.error("code is 0: ");
                     }
                 } else {
-                    LOGGER.error("code is 0: ");
+                    LOGGER.error("metric is null: ");
+                    LOGGER.error(tuple.getFields().size() + "");
+                    LOGGER.error(tuple.getValueByField("metric").toString());
                 }
-            } else {
-                LOGGER.error("metric is null: ");
-                LOGGER.error(tuple.getFields().size() + "");
-                LOGGER.error(tuple.getValueByField("metric").toString());
             }
         } catch (Exception ex) {
             LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));

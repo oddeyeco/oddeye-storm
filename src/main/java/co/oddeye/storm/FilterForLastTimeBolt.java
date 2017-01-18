@@ -45,7 +45,7 @@ public class FilterForLastTimeBolt extends BaseRichBolt {
 
         if (metric instanceof OddeeyMetric) {
             OddeeyMetric tmp_metric = (OddeeyMetric) metric;
-            if (tmp_metric.getName().equals("host_alive"))
+            if (tmp_metric.getName().equals("host_absent"))
             {
                 collector.emit(new Values(metric));
             }

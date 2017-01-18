@@ -141,24 +141,20 @@ public class CheckLastTimeBolt extends BaseRichBolt {
 
             for (Iterator<Map.Entry<Integer, Long>> it = lastTimeLiveMap.entrySet().iterator(); it.hasNext();) {
                 Map.Entry<Integer, Long> lastTime = it.next();
-                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {
-                    mtrsc = mtrscList.get(lastTime.getKey());
-                    if (mtrsc == null) {
-                        LOGGER.warn("Metric not found " + lastTime.getKey());
-                    } else {
+                mtrsc = mtrscList.get(lastTime.getKey());
+                if (mtrsc == null) {
+                    LOGGER.warn("Metric not found " + lastTime.getKey());
+                } else {
+                    if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {
                         LOGGER.info("start Live error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
-                        it.remove();
+//                        it.remove();
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
-                    }
-                } else {
-                    LOGGER.info("end Live error" + (System.currentTimeMillis() - lastTime.getValue()));
-                    mtrsc = mtrscList.get(lastTime.getKey());
-                    if (mtrsc == null) {
-                        LOGGER.warn("Metric not found " + lastTime.getKey() + " mtrscList " + mtrscList.size());
                     } else {
+                        LOGGER.info("end Live error" + (System.currentTimeMillis() - lastTime.getValue()));
                         mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
+
                     }
                 }
             }
