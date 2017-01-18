@@ -100,25 +100,39 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     mtrsc = mtrscList.get(mtrsc.hashCode());
                 }
 
+//                if (mtrsc != null) {
+//                    mtrsc = mtrscList.set(mtrsc);
+//                    if (mtrsc == null) {
+//                        LOGGER.warn("mtrsc is vori null " + metric.getName() + " tags:" + metric.getTags());
+//                    }
+//                } else {
+//                    LOGGER.warn("mtrsc is null " + metric.getName() + " tags:" + metric.getTags());
+//                }
                 if (metric instanceof OddeeysSpecialMetric) {
-                    LOGGER.info("OddeeysSpecialMetric: Name:" + metric.getName() + " tags:" + metric.getTags());
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("OddeeysSpecialMetric: Name:" + metric.getName() + " tags:" + metric.getTags());
+                    }
                     lastTimeSpecialMap.put(mtrsc.hashCode(), metric.getTimestamp());
                     mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                 } else {
-                    LOGGER.info(" Name:" + metric.getName() + " tags:" + metric.getTags());
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Add to lastTimeLiveMap Name:" + metric.getName() + " tags:" + metric.getTags());
+                    }
                     lastTimeLiveMap.put(mtrsc.hashCode(), metric.getTimestamp());
+                    mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("end Live error" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getState());
+                    }
+                    LOGGER.warn("end Live error" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getState());
+                    if (mtrsc.getErrorState().getState() != 1) {
+                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
+                    }
+
                 }
             } catch (Exception ex) {
                 LOGGER.error(globalFunctions.stackTrace(ex));
             }
-            if (mtrsc != null) {
-                mtrsc = mtrscList.set(mtrsc);
-                if (mtrsc == null) {
-                    LOGGER.warn("mtrsc is veri null " + metric.getName() + " tags:" + metric.getTags());
-                }
-            } else {
-                LOGGER.warn("mtrsc is null " + metric.getName() + " tags:" + metric.getTags());
-            }
+
             // Todo Fix last time
         } else if (input.getSourceComponent().equals("TimerSpout")) {
             LOGGER.info("Start sheduler");
@@ -130,7 +144,9 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey());
                     } else {
-                        LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+                        }
                         mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
                         it.remove();
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
@@ -145,22 +161,20 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                 if (mtrsc == null) {
                     LOGGER.warn("Metric not found " + lastTime.getKey());
                 } else {
-                    if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 5) {
-                        LOGGER.info("start Live error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
-                        mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
-//                        it.remove();
+                    if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 3) {
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("start Live error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+                        }
+                        mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, lastTime.getValue());
+                        it.remove();
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
-                    } else {
-                        LOGGER.info("end Live error" + (System.currentTimeMillis() - lastTime.getValue()));
-                        mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
-                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
-
                     }
                 }
+                if (mtrsc != null) {
+                    mtrscList.set(mtrsc);
+                }
             }
-            if (mtrsc != null) {
-                mtrscList.set(mtrsc);
-            }
+
         }
 
         //ToDo Check last time

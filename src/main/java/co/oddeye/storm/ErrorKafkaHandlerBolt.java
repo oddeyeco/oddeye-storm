@@ -11,6 +11,7 @@ import co.oddeye.core.OddeeysSpecialMetric;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.Calendar;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.codec.binary.Hex;
@@ -84,6 +85,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
             jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             jsonResult.addProperty("action", mtrsc.getErrorState().getState());
+            jsonResult.addProperty("type", "Regular");
             JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
 
             if (metric != null) {
@@ -91,10 +93,18 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
                 if (metric instanceof OddeeysSpecialMetric) {
                     OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
                     jsonResult.addProperty("message", Specmetric.getMessage());
+                    jsonResult.addProperty("type", "Special");
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
                     }
                 }
+            }
+            if (mtrsc.getName().equals("host_absent"))
+            {
+                Calendar cal = Calendar.getInstance();
+                cal.setTimeInMillis(mtrsc.getErrorState().getTime());
+                jsonResult.addProperty("message", "Host Absent by " +cal.getTime());
+                jsonResult.addProperty("type", "Special");
             }
             if (time != null) {
                 jsonResult.addProperty("time", time);
@@ -103,10 +113,10 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
             jsonResult.add("endtimes", endtimes);
             jsonResult.addProperty("source", tuple.getSourceComponent());
-            final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
+            final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());                                    
             producer.send(data);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
+                LOGGER.info("Send Data:"+jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
             }
         }
 
