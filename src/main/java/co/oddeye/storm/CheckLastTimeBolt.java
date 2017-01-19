@@ -123,7 +123,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("end Live error" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getState());
                     }
-                    LOGGER.warn("end Live error" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getState());
+//                    LOGGER.warn("end Live error" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getState());
                     if (mtrsc.getErrorState().getState() != 1) {
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
                     }
