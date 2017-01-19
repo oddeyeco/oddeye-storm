@@ -11,6 +11,8 @@ import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -29,6 +31,8 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import com.google.gson.JsonObject;
+import java.util.logging.Level;
 import org.hbase.async.GetRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
@@ -69,6 +73,8 @@ public class CompareBolt extends BaseRichBolt {
     private double tmp_weight_per;
     private int loop;
     private double weight_per;
+    private JsonParser parser = null;
+    private JsonObject jsonResult = null;
 
     /**
      *
@@ -87,7 +93,7 @@ public class CompareBolt extends BaseRichBolt {
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
         LOGGER.warn("DoPrepare WriteToTSDBseries");
         collector = oc;
-
+        parser = new JsonParser();
         try {
             errortable = String.valueOf(conf.get("errorstable")).getBytes();
             String quorum = String.valueOf(conf.get("zkHosts"));
@@ -124,259 +130,285 @@ public class CompareBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        try {
-            OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
-            OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
-            PutRequest putvalue;
-            key = mtrsc.getKey();
-            byte[][] qualifiers;
-            byte[][] values;
-
+        if (tuple.getSourceComponent().equals("kafkaSemsphoreSpot")) {
+            LOGGER.warn("message from kafkaSemsphoreSpot" + tuple.getString(0));
             collector.ack(tuple);
-            if (mtrscList == null) {
-                LOGGER.error("Es anasunucjun@ vonca null darel");
-                try {
-                    LOGGER.warn("Start read meta in hbase");
-                    mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
-                    LOGGER.warn("End read meta in hbase");
-                } catch (Exception ex) {
-                    mtrscList = new OddeeyMetricMetaList();
+            jsonResult = this.parser.parse(tuple.getString(0)).getAsJsonObject();
+            if (jsonResult.get("action").getAsString().equals("resetregresion")) {
+                final String uuid = jsonResult.get("UUID").getAsString();
+                final int hash = jsonResult.get("hash").getAsInt();
+                if (mtrscList.containsKey(hash)) {
+                    try {
+                        final OddeeyMetricMeta mtrsc = mtrscList.get(hash);
+                        mtrsc.getRegression().clear();
+                        
+                        byte[] qualifier = "Regression".getBytes();
+                        byte[] value = mtrsc.getSerializedRegression();
+                        PutRequest putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifier, value);
+                        globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                        mtrscList.set(mtrsc);
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(CompareBolt.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
-            Integer code = 0;
+        }
+
+        if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
             try {
-                code = mtrsc.hashCode();
-            } catch (Exception ex) {
-                LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
-            }
+                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+                OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
+                PutRequest putvalue;
+                key = mtrsc.getKey();
+                byte[][] qualifiers;
+                byte[][] values;
 
-            if (code != 0) {
-                if (!mtrscList.containsKey(code)) {
-                    GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
-                    ArrayList<KeyValue> Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
-                    for (KeyValue Regression : Regressiondata) {
-                        if (Arrays.equals(Regression.qualifier(), "Regression".getBytes())) {
-                            mtrsc.setSerializedRegression(Regression.value());
-                        }
+                collector.ack(tuple);
+                if (mtrscList == null) {
+                    LOGGER.error("Es anasunucjun@ vonca null darel");
+                    try {
+                        LOGGER.warn("Start read meta in hbase");
+                        mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+                        LOGGER.warn("End read meta in hbase");
+                    } catch (Exception ex) {
+                        mtrscList = new OddeeyMetricMetaList();
                     }
-                    mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
-                    qualifiers = new byte[3][];
-                    values = new byte[3][];
-                    qualifiers[0] = "n".getBytes();
-                    qualifiers[1] = "timestamp".getBytes();
-                    qualifiers[2] = "Regression".getBytes();
-                    values[0] = key;
-                    values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                    values[2] = mtrsc.getSerializedRegression();
-                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-                    LOGGER.info("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
-                } else {
-                    oldmtrc = mtrsc;
-                    mtrsc = mtrscList.get(mtrsc.hashCode());
-                    mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
-                    if (!Arrays.equals(mtrsc.getKey(), key)) {
-                        LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
-                    }
-
-                    qualifiers = new byte[2][];
-                    values = new byte[2][];
-
-                    qualifiers[0] = "timestamp".getBytes();
-                    qualifiers[1] = "Regression".getBytes();
-                    values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                    values[1] = mtrsc.getSerializedRegression();
-                    putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
-                    LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
                 }
-                globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                Integer code = 0;
+                try {
+                    code = mtrsc.hashCode();
+                } catch (Exception ex) {
+                    LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+                }
 
-                if (!metric.getName().equals("host_absent")) {
-
-                    CalendarObj.setTimeInMillis(metric.getTimestamp());
-                    CalendarObjRules.setTimeInMillis(metric.getTimestamp());
-                    CalendarObjRules.add(Calendar.DATE, -1);
-                    Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
-                    String alert_level = metric.getTags().get("alert_level");
-                    short input_weight = 0;
-                    if (null != alert_level) {
-                        input_weight = (short) Double.parseDouble(alert_level);
-                    }
-                    weight_per = 0;
-                    loop = 0;
-                    weight = 0;
-                    if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
-//            if (false) {                    
-                        curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
-                        LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
-                        for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
-                            loop++;
-                            Rule = RuleEntry.getValue();
-                            if (Rule == null) {
-                                LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                continue;
+                if (code != 0) {
+                    if (!mtrscList.containsKey(code)) {
+                        GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
+                        ArrayList<KeyValue> Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
+                        for (KeyValue Regression : Regressiondata) {
+                            if (Arrays.equals(Regression.qualifier(), "Regression".getBytes())) {
+                                mtrsc.setSerializedRegression(Regression.value());
                             }
-
-                            CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
-
-                            if (!Rule.isIsValidRule()) {
-                                LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                continue;
-                            }
-                            if (Rule.isHasNotData()) {
-                                LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                continue;
-                            }
-                            local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
-                            if (curent_DW == local_DW) {
-                                weight_KF = 2;
-
-                            } else {
-                                weight_KF = 1;
-                            }
-                            if (Rule.getAvg() != null) {
-
-                                if ((Rule.getAvg() != 0) && (metric.getValue() != 0)) {
-                                    tmp_weight_per = (metric.getValue() - Rule.getAvg()) / Rule.getAvg() * 100;
-                                } else {
-                                    if (metric.getValue() == 0) {
-                                    }
-                                    tmp_weight_per = 0;
-                                }
-                            }
-
-                            if (input_weight != -1) {
-                                if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                    if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
-                                        weight = (short) (weight + weight_KF);
-                                        weight_per = weight_per + tmp_weight_per;
-                                    }
-                                }
-                                if (Rule.getMax() != null) {
-                                    if (metric.getValue() > Rule.getMax()) {
-                                        weight = (short) (weight + weight_KF);
-                                    }
-                                }
-                            } else {
-                                LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                            }
-
-                            if (input_weight != -2) {
-                                if (Rule.getMin() != null) {
-                                    if (metric.getValue() < Rule.getMin()) {
-                                        weight = (short) (weight - weight_KF);
-                                        weight_per = weight_per + tmp_weight_per;
-                                    }
-                                }
-                                if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                    if (metric.getValue() < Rule.getAvg() - devkef * Rule.getDev()) {
-                                        weight = (short) (weight - weight_KF);
-                                    }
-                                }
-                            } else {
-                                LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                            }
-
                         }
+                        mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
+                        qualifiers = new byte[3][];
+                        values = new byte[3][];
+                        qualifiers[0] = "n".getBytes();
+                        qualifiers[1] = "timestamp".getBytes();
+                        qualifiers[2] = "Regression".getBytes();
+                        values[0] = key;
+                        values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                        values[2] = mtrsc.getSerializedRegression();
+                        putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
+                        LOGGER.info("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
+                    } else {
+                        oldmtrc = mtrsc;
+                        mtrsc = mtrscList.get(mtrsc.hashCode());
+                        mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
+                        if (!Arrays.equals(mtrsc.getKey(), key)) {
+                            LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
+                        }
+
+                        qualifiers = new byte[2][];
+                        values = new byte[2][];
+
+                        qualifiers[0] = "timestamp".getBytes();
+                        qualifiers[1] = "Regression".getBytes();
+                        values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                        values[1] = mtrsc.getSerializedRegression();
+                        putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
+                        LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
+                    }
+                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+
+                    if (!metric.getName().equals("host_absent")) {
+
+                        CalendarObj.setTimeInMillis(metric.getTimestamp());
+                        CalendarObjRules.setTimeInMillis(metric.getTimestamp());
+                        CalendarObjRules.add(Calendar.DATE, -1);
+                        Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
+                        String alert_level = metric.getTags().get("alert_level");
+                        short input_weight = 0;
+                        if (null != alert_level) {
+                            input_weight = (short) Double.parseDouble(alert_level);
+                        }
+                        weight_per = 0;
+                        loop = 0;
+                        weight = 0;
+                        if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
+//            if (false) {                    
+                            curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
+                            LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
+                            for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
+                                loop++;
+                                Rule = RuleEntry.getValue();
+                                if (Rule == null) {
+                                    LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    continue;
+                                }
+
+                                CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
+
+                                if (!Rule.isIsValidRule()) {
+                                    LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    continue;
+                                }
+                                if (Rule.isHasNotData()) {
+                                    LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    continue;
+                                }
+                                local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
+                                if (curent_DW == local_DW) {
+                                    weight_KF = 2;
+
+                                } else {
+                                    weight_KF = 1;
+                                }
+                                if (Rule.getAvg() != null) {
+
+                                    if ((Rule.getAvg() != 0) && (metric.getValue() != 0)) {
+                                        tmp_weight_per = (metric.getValue() - Rule.getAvg()) / Rule.getAvg() * 100;
+                                    } else {
+                                        if (metric.getValue() == 0) {
+                                        }
+                                        tmp_weight_per = 0;
+                                    }
+                                }
+
+                                if (input_weight != -1) {
+                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                        if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
+                                            weight = (short) (weight + weight_KF);
+                                            weight_per = weight_per + tmp_weight_per;
+                                        }
+                                    }
+                                    if (Rule.getMax() != null) {
+                                        if (metric.getValue() > Rule.getMax()) {
+                                            weight = (short) (weight + weight_KF);
+                                        }
+                                    }
+                                } else {
+                                    LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                }
+
+                                if (input_weight != -2) {
+                                    if (Rule.getMin() != null) {
+                                        if (metric.getValue() < Rule.getMin()) {
+                                            weight = (short) (weight - weight_KF);
+                                            weight_per = weight_per + tmp_weight_per;
+                                        }
+                                    }
+                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                        if (metric.getValue() < Rule.getAvg() - devkef * Rule.getDev()) {
+                                            weight = (short) (weight - weight_KF);
+                                        }
+                                    }
+                                } else {
+                                    LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                }
+
+                            }
 
 //                p_weight = (short) weight;
-                    } else if (input_weight > 0) {
-                        if (metric.getValue() > input_weight) {
-                            weight = 16;
+                        } else if (input_weight > 0) {
+                            if (metric.getValue() > input_weight) {
+                                weight = 16;
+                            } else {
+                                weight = 0;
+                            }
+                        } else if (input_weight == -4) {
+                            LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        } else if (input_weight == -5) {
+                            LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         } else {
-                            weight = 0;
+                            LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         }
-                    } else if (input_weight == -4) {
-                        LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                    } else if (input_weight == -5) {
-                        LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                    } else {
-                        LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                    }
 
-                    if (weight != 0) {
-                        final AlertLevel AlertLevel = new AlertLevel();
+                        if (weight != 0) {
+                            final AlertLevel AlertLevel = new AlertLevel();
 
-                        weight_per = weight_per / loop;
-                        double predict_value = mtrsc.getRegression().predict(CalendarObj.getTimeInMillis());
-                        double predict_value_per = 0;
-                        if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
-                            predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
-                        }
-                        // TODO Karoxa hanel aradzin bolt
-                        key = mtrsc.getTags().get("UUID").getValueTSDBUID();
-                        key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
+                            weight_per = weight_per / loop;
+                            double predict_value = mtrsc.getRegression().predict(CalendarObj.getTimeInMillis());
+                            double predict_value_per = 0;
+                            if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
+                                predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
+                            }
+                            // TODO Karoxa hanel aradzin bolt
+                            key = mtrsc.getTags().get("UUID").getValueTSDBUID();
+                            key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
 
-                        putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
-                        mtrsc.getLevelList().add(AlertLevel.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
-                        globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                            putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
+                            mtrsc.getLevelList().add(AlertLevel.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
+                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
 //                if (CalendarObj.get(Calendar.SECOND) > 55) {
 //                    LOGGER.warn("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
 //                } else {
-                        LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
 //                }
-                    } else {
-                        mtrsc.getLevelList().add(-1);
-                    }
-                    if (mtrsc.getLevelList().size() > 10) {
-                        mtrsc.getLevelList().remove(0);
-                    }
+                        } else {
+                            mtrsc.getLevelList().add(-1);
+                        }
+                        if (mtrsc.getLevelList().size() > 10) {
+                            mtrsc.getLevelList().remove(0);
+                        }
 
-                    if (Collections.max(mtrsc.getLevelList()) > -1) {
-                        Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
-                        for (Integer e : mtrsc.getLevelList()) {
-                            if (e > -1) {
-                                for (int j = e; j >= 0; j--) {
-                                    Integer counter = Errormap.get(j);
-                                    if (counter != null) {
-                                        counter++;
-                                    } else {
-                                        counter = 1;
+                        if (Collections.max(mtrsc.getLevelList()) > -1) {
+                            Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
+                            for (Integer e : mtrsc.getLevelList()) {
+                                if (e > -1) {
+                                    for (int j = e; j >= 0; j--) {
+                                        Integer counter = Errormap.get(j);
+                                        if (counter != null) {
+                                            counter++;
+                                        } else {
+                                            counter = 1;
+                                        }
+
+                                        Errormap.put(j, counter);
                                     }
 
-                                    Errormap.put(j, counter);
+                                }
+                            }
+                            if (!Errormap.isEmpty()) {
+                                boolean setlevel = false;
+                                for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
+                                    if (item.getValue() > 4) {
+                                        mtrsc.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                        setlevel = true;
+                                        break;
+                                    }
+
+                                }
+                                if (!setlevel) {
+                                    mtrsc.getErrorState().setLevel(mtrsc.getErrorState().getLevel(), metric.getTimestamp());
                                 }
 
                             }
-                        }
-                        if (!Errormap.isEmpty()) {
-                            boolean setlevel = false;
-                            for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
-                                if (item.getValue() > 4) {
-                                    mtrsc.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
-                                    setlevel = true;
-                                    break;
-                                }
-
+                            CalendarObj.setTimeInMillis(metric.getTimestamp());
+                            if (mtrsc.getErrorState().getState() > -1) {
+                                collector.emit(new Values(mtrsc, metric));
                             }
-                            if (!setlevel) {
-                                mtrsc.getErrorState().setLevel(mtrsc.getErrorState().getLevel(), metric.getTimestamp());
-                            }
-
-                        }
-                        CalendarObj.setTimeInMillis(metric.getTimestamp());
-                        if (mtrsc.getErrorState().getState() > -1) {
-                            collector.emit(new Values(mtrsc, metric));
-                        }
 //                System.out.println(" Time:" + CalendarObj.getTime() + Errormap + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host") + "::" + mtrsc.getErrorState());
 //                                        System.out.println(mtrsc.getErrorState());
 
 //                                        collector.emit(mtrsc, metric.getTimestamp());
-                    } else {
-                        if (mtrsc.getErrorState().getLevel() != -1) {
-                            mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
-                            collector.emit(new Values(mtrsc, metric));
+                        } else {
+                            if (mtrsc.getErrorState().getLevel() != -1) {
+                                mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
+                                collector.emit(new Values(mtrsc, metric));
 //                    System.out.println("************ Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host"));
 //                    System.out.println("-1 Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host") + "::" + mtrsc.getErrorState());
+                            }
                         }
-                    }
 
 //            mtrsc.getLevelList().
-                    mtrscList.set(mtrsc);
+                        mtrscList.set(mtrsc);
+                    }
                 }
-            }
-        } catch (Exception ex) {
-            LOGGER.error("In big try:" + globalFunctions.stackTrace(ex) + tuple.getValueByField("metric"));
+            } catch (Exception ex) {
+                LOGGER.error("In big try:" + globalFunctions.stackTrace(ex) + tuple.getValueByField("metric"));
 
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 ---
 Kafka:
    zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"       
-   tsdbtopic: "oddeyetsdb"
+   tsdbtopic: "oddeyetsdb"   
    zkRoot: "/storm_oddeye"
    zkKey: "oddeye-staus"
    zkKeyTSDB: "oddeye-TSDBstat"
@@ -10,7 +10,12 @@ Kafka:
 ErrorKafka:
     bootstrap.servers: "node0.netangels.net:9092,node1.netangels.net:9092,node2.netangels.net:9092" 
     topic: "errors"
-    
+
+KafkaSemaphore:
+   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"       
+   topic: "semaphore"   
+   zkRoot: "/semaphore_oddeye"
+   zkKey: "semaphore-staus"       
    
 Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
@@ -26,6 +31,7 @@ Topology:
     topologi.display.name: "OddeyeTimeSeriesTopology"
     NumWorkers: 3
     SpoutParallelism_hint: 1
+    SpoutSemaphoreParallelism_hint: 1
     ParseMetricBoltParallelism_hint: 2
     WriteToTSDBseriesParallelism_hint: 6
     CompareBoltParallelism_hint: 6

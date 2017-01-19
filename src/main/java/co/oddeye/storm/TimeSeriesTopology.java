@@ -43,6 +43,7 @@ public class TimeSeriesTopology {
         }
 
         java.util.Map<String, Object> kafkaconf = (java.util.Map<String, Object>) topologyconf.get("Kafka");
+        java.util.Map<String, Object> kafkasemaphoreconf = (java.util.Map<String, Object>) topologyconf.get("KafkaSemaphore");
         java.util.Map<String, Object> tconf = (java.util.Map<String, Object>) topologyconf.get("Topology");
 
         TopologyBuilder builder = new TopologyBuilder();
@@ -70,6 +71,15 @@ public class TimeSeriesTopology {
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
         builder.setSpout("TimerSpout", new TimerSpout(), 1);
+        // Semsphore bolt
+        
+        BrokerHosts zkSemsphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
+        SpoutConfig kafkaSemsphoreConfig = new SpoutConfig(zkSemsphoreHosts,
+                String.valueOf(kafkasemaphoreconf.get("topic")), String.valueOf(kafkasemaphoreconf.get("zkRoot")), String.valueOf(kafkasemaphoreconf.get("zkKey")));
+        kafkaSemsphoreConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
+        builder.setSpout("kafkaSemsphoreSpot", new KafkaSpout(kafkaSemsphoreConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutSemaphoreParallelism_hint"))));        
+        
+        
         /*
         //Disable hbase bolts
         builder.setBolt("KafkaOddeyeMsgToHbaseBolt",
@@ -98,7 +108,8 @@ public class TimeSeriesTopology {
 
         builder.setBolt("CompareBolt",
                 new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
-                .customGrouping("ParseMetricBolt", new MerticGrouper());
+                .customGrouping("ParseMetricBolt", new MerticGrouper())
+                .allGrouping("kafkaSemsphoreSpot");
 
         builder.setBolt("CalcRulesBolt",
                 new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
