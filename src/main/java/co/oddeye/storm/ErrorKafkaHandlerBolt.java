@@ -85,7 +85,11 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
             jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             jsonResult.addProperty("action", mtrsc.getErrorState().getState());
-            jsonResult.addProperty("type", "Regular");
+            if (tuple.getSourceComponent().equals("CheckLastTimeBolt")) {
+                jsonResult.addProperty("type", "Special");
+            } else {
+                jsonResult.addProperty("type", "Regular");
+            }
             JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
 
             if (metric != null) {
@@ -99,11 +103,10 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
                     }
                 }
             }
-            if (mtrsc.getName().equals("host_absent"))
-            {
+            if (mtrsc.getName().equals("host_absent")) {
                 Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(mtrsc.getErrorState().getTime());
-                jsonResult.addProperty("message", "Host Absent by " +cal.getTime());
+                jsonResult.addProperty("message", "Host Absent by " + cal.getTime());
                 jsonResult.addProperty("type", "Special");
             }
             if (time != null) {
@@ -113,10 +116,14 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
             jsonResult.add("endtimes", endtimes);
             jsonResult.addProperty("source", tuple.getSourceComponent());
-            final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());                                    
+            final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
             producer.send(data);
+//            if (metric != null) {
+//                LOGGER.warn("Source:" + tuple.getSourceComponent() + " Name:" + metric.getName() + " spec:" + Boolean.toString((metric instanceof OddeeysSpecialMetric))+" data:"+jsonResult.toString());
+//            }
+
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Send Data:"+jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
+                LOGGER.info("Send Data:" + jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
             }
         }
 

@@ -128,6 +128,14 @@ public class CalcRulesBolt extends BaseRichBolt {
                             mtrsc = mtrscList.get(mtrsc.hashCode());
                         }
                         try {
+                            if (metric == null) {
+                                LOGGER.warn("Metric Null Hash:" + code);
+                            }
+
+                            if (metric.getTimestamp() == null) {
+                                LOGGER.warn("Metric getTimestamp Null Hash:" + code);
+                            }
+
                             CalendarObjRules.setTimeInMillis(metric.getTimestamp());
                             CalendarObjRules.add(Calendar.HOUR, 1);
                             CalendarObjRules.add(Calendar.DATE, -1);
