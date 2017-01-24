@@ -71,13 +71,13 @@ public class TimeSeriesTopology {
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
         builder.setSpout("TimerSpout", new TimerSpout(), 1);
-        // Semsphore bolt
+        // Semaphore bolt
         
-        BrokerHosts zkSemsphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
-        SpoutConfig kafkaSemsphoreConfig = new SpoutConfig(zkSemsphoreHosts,
+        BrokerHosts zkSemaphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
+        SpoutConfig kafkaSemaphoreConfig = new SpoutConfig(zkSemaphoreHosts,
                 String.valueOf(kafkasemaphoreconf.get("topic")), String.valueOf(kafkasemaphoreconf.get("zkRoot")), String.valueOf(kafkasemaphoreconf.get("zkKey")));
-        kafkaSemsphoreConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
-        builder.setSpout("kafkaSemsphoreSpot", new KafkaSpout(kafkaSemsphoreConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutSemaphoreParallelism_hint"))));        
+        kafkaSemaphoreConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
+        builder.setSpout("kafkaSemaphoreSpot", new KafkaSpout(kafkaSemaphoreConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutSemaphoreParallelism_hint"))));        
         
         
         /*
@@ -109,7 +109,7 @@ public class TimeSeriesTopology {
         builder.setBolt("CompareBolt",
                 new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
                 .customGrouping("ParseMetricBolt", new MerticGrouper())
-                .allGrouping("kafkaSemsphoreSpot");
+                .allGrouping("kafkaSemaphoreSpot");
 
         builder.setBolt("CalcRulesBolt",
                 new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))

@@ -6,7 +6,6 @@
 package co.oddeye.storm;
 
 import co.oddeye.core.AlertLevel;
-import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.OddeeysSpecialMetric;

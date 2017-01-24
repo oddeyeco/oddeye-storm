@@ -99,15 +99,6 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                 } else {
                     mtrsc = mtrscList.get(mtrsc.hashCode());
                 }
-
-//                if (mtrsc != null) {
-//                    mtrsc = mtrscList.set(mtrsc);
-//                    if (mtrsc == null) {
-//                        LOGGER.warn("mtrsc is vori null " + metric.getName() + " tags:" + metric.getTags());
-//                    }
-//                } else {
-//                    LOGGER.warn("mtrsc is null " + metric.getName() + " tags:" + metric.getTags());
-//                }
                 if (metric instanceof OddeeysSpecialMetric) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("OddeeysSpecialMetric: Name:" + metric.getName() + " tags:" + metric.getTags());
@@ -123,9 +114,8 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("end Live error" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getState());
                     }
-//                    LOGGER.warn("end Live error" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getState());
                     if (mtrsc.getErrorState().getState() != 1) {
-                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
+                        collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
                     }
 
                 }
@@ -133,7 +123,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                 LOGGER.error(globalFunctions.stackTrace(ex));
             }
 
-            // Todo Fix last time
+        // Todo Fix last time
         } else if (input.getSourceComponent().equals("TimerSpout")) {
             LOGGER.info("Start sheduler");
 

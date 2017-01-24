@@ -11,7 +11,6 @@ import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -130,8 +129,10 @@ public class CompareBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        if (tuple.getSourceComponent().equals("kafkaSemsphoreSpot")) {
-            LOGGER.warn("message from kafkaSemsphoreSpot" + tuple.getString(0));
+        if (tuple.getSourceComponent().equals("kafkaSemaphoreSpot")) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("message from kafkaSemaphoreSpot" + tuple.getString(0));
+            }
             collector.ack(tuple);
             jsonResult = this.parser.parse(tuple.getString(0)).getAsJsonObject();
             if (jsonResult.get("action").getAsString().equals("resetregresion")) {
@@ -141,7 +142,7 @@ public class CompareBolt extends BaseRichBolt {
                     try {
                         final OddeeyMetricMeta mtrsc = mtrscList.get(hash);
                         mtrsc.getRegression().clear();
-                        
+
                         byte[] qualifier = "Regression".getBytes();
                         byte[] value = mtrsc.getSerializedRegression();
                         PutRequest putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifier, value);
@@ -235,8 +236,7 @@ public class CompareBolt extends BaseRichBolt {
                         weight_per = 0;
                         loop = 0;
                         weight = 0;
-                        if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
-//            if (false) {                    
+                        if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {           
                             curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                             LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
                             for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
@@ -250,11 +250,15 @@ public class CompareBolt extends BaseRichBolt {
                                 CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
 
                                 if (!Rule.isIsValidRule()) {
-                                    LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    if (LOGGER.isInfoEnabled()) {
+                                        LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    }
                                     continue;
                                 }
                                 if (Rule.isHasNotData()) {
-                                    LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    if (LOGGER.isInfoEnabled()) {
+                                        LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    }
                                     continue;
                                 }
                                 local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
@@ -288,7 +292,9 @@ public class CompareBolt extends BaseRichBolt {
                                         }
                                     }
                                 } else {
-                                    LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    if (LOGGER.isInfoEnabled()) {
+                                        LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                    }
                                 }
 
                                 if (input_weight != -2) {
@@ -317,11 +323,15 @@ public class CompareBolt extends BaseRichBolt {
                                 weight = 0;
                             }
                         } else if (input_weight == -4) {
-                            LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            if (LOGGER.isInfoEnabled()) {
+                                LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            }
                         } else if (input_weight == -5) {
                             LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         } else {
-                            LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            if (LOGGER.isInfoEnabled()) {
+                                LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            }
                         }
 
                         if (weight != 0) {
@@ -340,11 +350,9 @@ public class CompareBolt extends BaseRichBolt {
                             putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
                             mtrsc.getLevelList().add(AlertLevel.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
                             globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-//                if (CalendarObj.get(Calendar.SECOND) > 55) {
-//                    LOGGER.warn("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-//                } else {
-                            LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-//                }
+                            if (LOGGER.isInfoEnabled()) {
+                                LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            }
                         } else {
                             mtrsc.getLevelList().add(-1);
                         }
@@ -388,16 +396,10 @@ public class CompareBolt extends BaseRichBolt {
                             if (mtrsc.getErrorState().getState() > -1) {
                                 collector.emit(new Values(mtrsc, metric));
                             }
-//                System.out.println(" Time:" + CalendarObj.getTime() + Errormap + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host") + "::" + mtrsc.getErrorState());
-//                                        System.out.println(mtrsc.getErrorState());
-
-//                                        collector.emit(mtrsc, metric.getTimestamp());
                         } else {
                             if (mtrsc.getErrorState().getLevel() != -1) {
                                 mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
                                 collector.emit(new Values(mtrsc, metric));
-//                    System.out.println("************ Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host"));
-//                    System.out.println("-1 Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host") + "::" + mtrsc.getErrorState());
                             }
                         }
 
