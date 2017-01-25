@@ -53,14 +53,13 @@ public class CompareBolt extends BaseRichBolt {
     private Config openTsdbConfig;
     private OddeeyMetricMetaList mtrscList;
     private final byte[] meta_family = "d".getBytes();
-    private byte[] metatable;
+    private final byte[] metatable;
     private byte[] key;
     private Calendar CalendarObjRules;
-    private Calendar CalendarObj;
-    private Map<String, MetriccheckRule> Rules;
+    private final Calendar CalendarObj;
+
     private int weight;
     private int curent_DW;
-    private MetriccheckRule Rule;
     private int local_DW;
     private int weight_KF;
 //    private int weight_D_KF;
@@ -68,7 +67,7 @@ public class CompareBolt extends BaseRichBolt {
 
     private byte[] errortable;
     private final byte[] error_family = "d".getBytes();
-    private OddeeyMetricMeta oldmtrc;
+//    private OddeeyMetricMeta oldmtrc;
     private double tmp_weight_per;
     private int loop;
     private double weight_per;
@@ -81,6 +80,9 @@ public class CompareBolt extends BaseRichBolt {
      */
     public CompareBolt(java.util.Map config) {
         this.conf = config;
+        this.metatable = String.valueOf(this.conf.get("metatable")).getBytes();
+        CalendarObjRules = Calendar.getInstance();
+        CalendarObj = Calendar.getInstance();
     }
 
     @Override
@@ -107,10 +109,6 @@ public class CompareBolt extends BaseRichBolt {
             clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
             globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
 
-            this.metatable = String.valueOf(conf.get("metatable")).getBytes();
-
-            CalendarObjRules = Calendar.getInstance();
-            CalendarObj = Calendar.getInstance();
             try {
                 LOGGER.warn("Start read meta in hbase");
                 mtrscList = new OddeeyMetricMetaList(globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), this.metatable);
@@ -157,10 +155,10 @@ public class CompareBolt extends BaseRichBolt {
 
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
             try {
-                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
-                OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
+                final OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+                final OddeeyMetricMeta mtrscinput = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
                 PutRequest putvalue;
-                key = mtrsc.getKey();
+                key = mtrscinput.getKey();
                 byte[][] qualifiers;
                 byte[][] values;
 
@@ -177,13 +175,14 @@ public class CompareBolt extends BaseRichBolt {
                 }
                 Integer code = 0;
                 try {
-                    code = mtrsc.hashCode();
+                    code = mtrscinput.hashCode();
                 } catch (Exception ex) {
                     LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
                 }
-
+                final OddeeyMetricMeta mtrsc;
                 if (code != 0) {
                     if (!mtrscList.containsKey(code)) {
+                        mtrsc = mtrscinput;
                         GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
                         ArrayList<KeyValue> Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
                         for (KeyValue Regression : Regressiondata) {
@@ -203,11 +202,11 @@ public class CompareBolt extends BaseRichBolt {
                         putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                         LOGGER.info("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
                     } else {
-                        oldmtrc = mtrsc;
-                        mtrsc = mtrscList.get(mtrsc.hashCode());
+//                        oldmtrc = mtrsc;
+                        mtrsc = mtrscList.get(mtrscinput.hashCode());
                         mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
                         if (!Arrays.equals(mtrsc.getKey(), key)) {
-                            LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + oldmtrc.getName() + " tags " + oldmtrc.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
+                            LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + mtrscinput.getName() + " tags " + mtrscinput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
                         }
 
                         qualifiers = new byte[2][];
@@ -227,8 +226,8 @@ public class CompareBolt extends BaseRichBolt {
                         CalendarObj.setTimeInMillis(metric.getTimestamp());
                         CalendarObjRules.setTimeInMillis(metric.getTimestamp());
                         CalendarObjRules.add(Calendar.DATE, -1);
-                        Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
-                        String alert_level = metric.getTags().get("alert_level");
+                        final Map<String, MetriccheckRule> Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
+                        final String alert_level = metric.getTags().get("alert_level");
                         short input_weight = 0;
                         if (null != alert_level) {
                             input_weight = (short) Double.parseDouble(alert_level);
@@ -236,12 +235,12 @@ public class CompareBolt extends BaseRichBolt {
                         weight_per = 0;
                         loop = 0;
                         weight = 0;
-                        if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {           
+                        if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
                             curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                             LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
                             for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
                                 loop++;
-                                Rule = RuleEntry.getValue();
+                                final MetriccheckRule Rule = RuleEntry.getValue();
                                 if (Rule == null) {
                                     LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                                     continue;
@@ -402,11 +401,11 @@ public class CompareBolt extends BaseRichBolt {
                                 collector.emit(new Values(mtrsc, metric));
                             }
                         }
-
-//            mtrsc.getLevelList().
                         mtrscList.set(mtrsc);
                     }
                 }
+            } catch (RuntimeException ex) {
+                LOGGER.error("RuntimeException In big try:" + globalFunctions.stackTrace(ex) + tuple.getValueByField("metric"));
             } catch (Exception ex) {
                 LOGGER.error("In big try:" + globalFunctions.stackTrace(ex) + tuple.getValueByField("metric"));
 

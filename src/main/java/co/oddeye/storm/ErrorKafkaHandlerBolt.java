@@ -72,8 +72,8 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             time = (Long) tuple.getValueByField("time");
         }
 
-        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
-        OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
+        final OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+        final OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " level:" + mtrsc.getErrorState().getLevel() + "Tags:" + mtrsc.getTags());

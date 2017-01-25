@@ -179,39 +179,37 @@ public class CalcRulesBolt extends BaseRichBolt {
                                         int index = 0;
 
                                         for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
-                                            if (rule.getValue().getQualifier()==null)
-                                            {
+                                            if (rule.getValue().getQualifier() == null) {
                                                 qualifiers[index] = "null".getBytes();
                                                 LOGGER.error("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
-                                            }
-                                            else
-                                            {
+                                            } else {
                                                 qualifiers[index] = rule.getValue().getQualifier();
                                             }
-                                            if (rule.getValue().getValues() == null)
-                                            {
+                                            if (rule.getValue().getValues() == null) {
                                                 values[index] = "null".getBytes();
                                                 LOGGER.error("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
-                                            }
-                                            else
-                                            {
+                                            } else {
                                                 values[index] = rule.getValue().getValues();
                                             }
-                                            
+
                                             index++;
                                         }
-                                        try {
 
-                                            if (qualifiers.length > 0) {
+                                        if (qualifiers.length > 0) {
+                                            try {
                                                 PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                                                 globalFunctions.getClient(clientconf).put(putvalue);
-
-                                            } else {
+                                            } catch (Exception e) {
+                                                LOGGER.error("catch In Multi qualifiers " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
+                                            }
+                                        } else {
+                                            try {
                                                 PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
                                                 globalFunctions.getClient(clientconf).put(putvalue);
+                                            } catch (Exception e) {
+                                                LOGGER.error("catch In Single qualifiers " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
                                             }
-                                        } catch (Exception e) {
-                                            LOGGER.error("catch In Put " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
+
                                         }
 
                                     }
