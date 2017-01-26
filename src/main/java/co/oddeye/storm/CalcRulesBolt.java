@@ -200,7 +200,9 @@ public class CalcRulesBolt extends BaseRichBolt {
                                                 PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                                                 globalFunctions.getClient(clientconf).put(putvalue);
                                             } catch (Exception e) {
-                                                LOGGER.error("catch In Multi qualifiers " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
+                                                LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + qualifiers + "values" + values);
+                                                LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
+                                                
                                             }
                                         } else {
                                             try {
