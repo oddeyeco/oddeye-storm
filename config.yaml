@@ -36,7 +36,7 @@ Topology:
     WriteToTSDBseriesParallelism_hint: 6
     CompareBoltParallelism_hint: 6
     CalcRulesBoltParallelism_hint: 6
-    ErrorKafkaHandlerParallelism_hint: 3
+    ErrorKafkaHandlerParallelism_hint: 6
     CheckSpecialErrorBoltParallelism_hint: 3
     FilterForLastTimeBoltParallelism_hint: 3
     CheckLastTimeBoltParallelism_hint: 6

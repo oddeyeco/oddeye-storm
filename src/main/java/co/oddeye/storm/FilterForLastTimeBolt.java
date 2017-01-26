@@ -39,9 +39,9 @@ public class FilterForLastTimeBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple input) {
         Object metric = input.getValueByField("metric");
-        if (metric instanceof OddeeysSpecialMetric) {            
-            collector.emit(new Values(metric));
-        }
+//        if (metric instanceof OddeeysSpecialMetric) {            
+//            collector.emit(new Values(metric));
+//        }
 
         if (metric instanceof OddeeyMetric) {
             OddeeyMetric tmp_metric = (OddeeyMetric) metric;

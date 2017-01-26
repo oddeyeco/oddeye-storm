@@ -76,8 +76,10 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         final OddeeyMetricMeta mtrsc = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " level:" + mtrsc.getErrorState().getLevel() + "Tags:" + mtrsc.getTags());
+//        if (mtrsc.getName().equals("host_absent")) {
+            LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() +" Time:"+mtrsc.getErrorState().getTime()+ " level:" + mtrsc.getErrorState().getLevel() + "Tags:" + mtrsc.getTags()+" Source:"+tuple.getSourceComponent());
         }
+        
         if (mtrsc.getErrorState().getState() != 1) {
             JsonObject jsonResult = new JsonObject();
             jsonResult.addProperty("hash", mtrsc.hashCode());
@@ -117,6 +119,9 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.add("endtimes", endtimes);
             jsonResult.addProperty("source", tuple.getSourceComponent());
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
+            if (mtrsc.getName().equals("host_absent")) {
+                LOGGER.warn("Kafka data:" + jsonResult.toString());
+            }
             producer.send(data);
 //            if (metric != null) {
 //                LOGGER.warn("Source:" + tuple.getSourceComponent() + " Name:" + metric.getName() + " spec:" + Boolean.toString((metric instanceof OddeeysSpecialMetric))+" data:"+jsonResult.toString());
