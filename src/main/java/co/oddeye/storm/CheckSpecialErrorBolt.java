@@ -130,14 +130,16 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     }
                 }
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                lastTimeSpecialMap.put(mtrsc.hashCode(), mtrsc.getLasttime());
 
+                if (AlertLevel.getPyName(metric.getType()) != -1) {
+                    lastTimeSpecialMap.put(mtrsc.hashCode(), metric.getTimestamp());
+                }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getType()) + "Tags:" + mtrsc.getTags());
                 }
                 mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getType()), metric.getTimestamp());
 
-                collector.emit(new Values(mtrsc, metric,System.currentTimeMillis()));
+                collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
 
                 mtrscList.set(mtrsc);
             } catch (Exception ex) {
@@ -152,9 +154,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     if (mtrsc == null) {
                         LOGGER.warn("Metric not found " + lastTime.getKey());
                     } else {
-//                        if (LOGGER.isInfoEnabled()) {
-                            LOGGER.warn("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
-//                        }
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " count:" + lastTimeSpecialMap.size());
+                        }
                         mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
                         it.remove();
                         collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
