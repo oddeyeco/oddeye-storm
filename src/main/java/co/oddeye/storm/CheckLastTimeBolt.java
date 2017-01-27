@@ -113,7 +113,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     mtrscList.set(mtrsctmp);
 //                    LOGGER.warn("Add metric to list" + System.currentTimeMillis() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " State:" + mtrsc.getErrorState().getLevel());
                 }
-                final OddeeyMetricMeta mtrsc = mtrscList.get(mtrsctmp.hashCode()).clone();
+                final OddeeyMetricMeta mtrsc = mtrscList.get(mtrsctmp.hashCode());
 //                if (metric instanceof OddeeysSpecialMetric) {
 //                    if (LOGGER.isDebugEnabled()) {
 //                        LOGGER.debug("OddeeysSpecialMetric: Name:" + metric.getName() + " tags:" + metric.getTags());
@@ -185,12 +185,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
                     }
                 }
                 if (mtrsc != null) {
-                    try {
-                        mtrscList.set(mtrsc.clone());
-                    } catch (CloneNotSupportedException ex) {
-                        LOGGER.error(globalFunctions.stackTrace(ex));
-
-                    }
+                    mtrscList.set(mtrsc);
                 }
             }
 

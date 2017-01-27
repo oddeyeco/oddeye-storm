@@ -77,9 +77,9 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
 
         if (LOGGER.isDebugEnabled()) {
 //        if (mtrsc.getName().equals("host_absent")) {
-            LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() +" Time:"+mtrsc.getErrorState().getTime()+ " level:" + mtrsc.getErrorState().getLevel() + "Tags:" + mtrsc.getTags()+" Source:"+tuple.getSourceComponent());
+            LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Time:" + mtrsc.getErrorState().getTime() + " level:" + mtrsc.getErrorState().getLevel() + "Tags:" + mtrsc.getTags() + " Source:" + tuple.getSourceComponent());
         }
-        
+
         if (mtrsc.getErrorState().getState() != 1) {
             JsonObject jsonResult = new JsonObject();
             jsonResult.addProperty("hash", mtrsc.hashCode());
@@ -90,8 +90,14 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             if (tuple.getSourceComponent().equals("CheckLastTimeBolt")) {
                 jsonResult.addProperty("type", "Special");
             } else {
-                jsonResult.addProperty("type", "Regular");
+                if (mtrsc.isSpecial()) {
+                    jsonResult.addProperty("type", "Special");
+                } else {
+                    jsonResult.addProperty("type", "Regular");
+                }
+
             }
+//            LOGGER.warn(mtrsc.isSpecial() + " Name:" + mtrsc.getName());
             JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
 
             if (metric != null) {
@@ -119,9 +125,11 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.add("endtimes", endtimes);
             jsonResult.addProperty("source", tuple.getSourceComponent());
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
-            if (mtrsc.getName().equals("host_absent")) {
-                LOGGER.warn("Kafka data:" + jsonResult.toString());
-            }
+//            if (mtrsc.isSpecial()) {
+//                if (!mtrsc.getName().equals("host_absent")) {
+//                    LOGGER.warn("Kafka data:" + jsonResult.toString());
+//                }
+//            }
             producer.send(data);
 //            if (metric != null) {
 //                LOGGER.warn("Source:" + tuple.getSourceComponent() + " Name:" + metric.getName() + " spec:" + Boolean.toString((metric instanceof OddeeysSpecialMetric))+" data:"+jsonResult.toString());

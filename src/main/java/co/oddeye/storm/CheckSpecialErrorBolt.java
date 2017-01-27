@@ -12,6 +12,8 @@ import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import net.opentsdb.utils.Config;
 import org.apache.storm.task.OutputCollector;
@@ -41,6 +43,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     private byte[][] qualifiers;
     private byte[][] values;
     private final byte[] meta_family = "d".getBytes();
+    private final Map<Integer, Long> lastTimeSpecialMap = new HashMap<>();
 
     public CheckSpecialErrorBolt(java.util.Map config) {
         this.conf = config;
@@ -48,7 +51,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("mtrsc", "metric"));
+        declarer.declare(new Fields("mtrsc", "metric", "time"));
     }
 
     @Override
@@ -73,8 +76,15 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
             try {
                 LOGGER.warn("Start read meta in hbase");
-                mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+                final OddeeyMetricMetaList mtrscListtmp = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
                 LOGGER.warn("End read meta in hbase");
+                mtrscList = new OddeeyMetricMetaList();
+                mtrscListtmp.entrySet().stream().filter((mtrsc) -> (mtrsc.getValue().isSpecial())).forEachOrdered((mtrsc) -> {
+                    if (!mtrsc.getValue().getName().equals("host_absent")) {
+                        lastTimeSpecialMap.put(mtrsc.getValue().hashCode(), mtrsc.getValue().getLasttime());
+                        mtrscList.set(mtrsc.getValue());
+                    }
+                });
             } catch (Exception ex) {
                 mtrscList = new OddeeyMetricMetaList();
             }
@@ -90,47 +100,67 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple input
-    ) {
-        try {
-            OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
-            OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
-            PutRequest putvalue;
-            key = mtrsc.getKey();
-            if (!mtrscList.containsKey(mtrsc.hashCode())) {
-                mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
-                qualifiers = new byte[3][];
-                values = new byte[3][];
-                qualifiers[0] = "n".getBytes();
-                qualifiers[1] = "timestamp".getBytes();
-                qualifiers[2] = "Special".getBytes();
-                values[0] = key;
-                values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                values[2] = new byte[]{1};
-                putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-            } else {
-                mtrsc = mtrscList.get(mtrsc.hashCode());
-                qualifiers = new byte[1][];
-                values = new byte[1][];
-                qualifiers[0] = "timestamp".getBytes();
-                values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
+    public void execute(Tuple input) {
+        if (input.getSourceComponent().equals("ParseSpecialMetricBolt")) {
+            try {
+                OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
+                OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
+                PutRequest putvalue;
+                key = mtrsc.getKey();
+                if (!mtrscList.containsKey(mtrsc.hashCode())) {
+                    mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
+                    qualifiers = new byte[3][];
+                    values = new byte[3][];
+                    qualifiers[0] = "n".getBytes();
+                    qualifiers[1] = "timestamp".getBytes();
+                    qualifiers[2] = "Special".getBytes();
+                    values[0] = key;
+                    values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                    values[2] = new byte[]{1};
+                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
+                } else {
+                    mtrsc = mtrscList.get(mtrsc.hashCode());
+                    qualifiers = new byte[1][];
+                    values = new byte[1][];
+                    qualifiers[0] = "timestamp".getBytes();
+                    values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                    putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
+                    }
+                }
+                globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                lastTimeSpecialMap.put(mtrsc.hashCode(), mtrsc.getLasttime());
+
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getType()) + "Tags:" + mtrsc.getTags());
+                }
+                mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getType()), metric.getTimestamp());
+
+                collector.emit(new Values(mtrsc, metric,System.currentTimeMillis()));
+
+                mtrscList.set(mtrsc);
+            } catch (Exception ex) {
+                LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
+            }
+        }
+        if (input.getSourceComponent().equals("TimerSpout")) {
+            for (Iterator<Map.Entry<Integer, Long>> it = lastTimeSpecialMap.entrySet().iterator(); it.hasNext();) {
+                Map.Entry<Integer, Long> lastTime = it.next();
+                if (System.currentTimeMillis() - lastTime.getValue() > 60000 * 2) {
+                    final OddeeyMetricMeta mtrsc = mtrscList.get(lastTime.getKey());
+                    if (mtrsc == null) {
+                        LOGGER.warn("Metric not found " + lastTime.getKey());
+                    } else {
+//                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.warn("end error" + System.currentTimeMillis() + " " + lastTime.getValue() + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue());
+//                        }
+                        mtrsc.getErrorState().setLevel(-1, System.currentTimeMillis());
+                        it.remove();
+                        collector.emit(new Values(mtrsc, null, System.currentTimeMillis()));
+                    }
                 }
             }
-            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() +" Newlevel:" + AlertLevel.getPyName(metric.getType()) + "Tags:" + mtrsc.getTags());
-            }
-            mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getType()), metric.getTimestamp());
-
-            collector.emit(new Values(mtrsc, metric));
-
-            mtrscList.set(mtrsc);
-        } catch (Exception ex) {
-            LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
         }
         collector.ack(input);
     }
