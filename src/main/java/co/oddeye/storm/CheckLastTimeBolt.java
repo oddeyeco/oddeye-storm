@@ -9,15 +9,12 @@ import co.oddeye.core.AlertLevel;
 import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
-import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.opentsdb.utils.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -78,8 +75,8 @@ public class CheckLastTimeBolt extends BaseRichBolt {
 
                 LOGGER.warn("Start read meta in hbase");
                 mtrscList = new OddeeyMetricMetaList(globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), this.metatable, "host_absent");
-                List<Integer> tasks = context.getComponentTasks(context.getComponentId(context.getThisTaskId()));
-                LOGGER.warn("End read meta in hbase for CheckLastTimeBolt" + mtrscList.size());
+//                List<Integer> tasks = context.getComponentTasks(context.getComponentId(context.getThisTaskId()));
+//                LOGGER.warn("End read meta in hbase for CheckLastTimeBolt" + mtrscList.size());
 
 //                LOGGER.warn("getThisTaskIndex " + context.getThisTaskId());                
 //                LOGGER.warn("getThisTaskIndex 2 " + tasks);

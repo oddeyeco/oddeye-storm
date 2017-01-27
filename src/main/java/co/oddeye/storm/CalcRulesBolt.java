@@ -13,6 +13,7 @@ import co.oddeye.core.globalFunctions;
 import com.stumbleupon.async.Deferred;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -200,7 +201,9 @@ public class CalcRulesBolt extends BaseRichBolt {
                                                 PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                                                 globalFunctions.getClient(clientconf).put(putvalue);
                                             } catch (Exception e) {
-                                                LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + qualifiers + "values" + values);
+                                                LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
+                                                LOGGER.warn("catch In Multi qualifiers metatable: " + Arrays.toString(metatable) + " key " + Arrays.toString(key) + "family" + family);
+                                                LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + Arrays.deepToString(qualifiers) + "values" + Arrays.deepToString(values));
                                                 LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
                                                 
                                             }
