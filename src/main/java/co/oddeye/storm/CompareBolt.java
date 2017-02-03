@@ -229,10 +229,10 @@ public class CompareBolt extends BaseRichBolt {
                         CalendarObjRules.setTimeInMillis(metric.getTimestamp());
                         CalendarObjRules.add(Calendar.DATE, -1);
                         final Map<String, MetriccheckRule> Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
-                        final int alert_level = metric.getReaction();
+                        final int reaction = metric.getReaction();
                         short input_weight = 0;
-                        if (alert_level>0) {
-                            input_weight = (short) alert_level;
+                        if (reaction>0) {
+                            input_weight = (short) reaction;
                         }
                         weight_per = 0;
                         loop = 0;
