@@ -191,14 +191,16 @@ public class CompareBolt extends BaseRichBolt {
                             }
                         }
                         mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
-                        qualifiers = new byte[3][];
-                        values = new byte[3][];
+                        qualifiers = new byte[4][];
+                        values = new byte[4][];
                         qualifiers[0] = "n".getBytes();
                         qualifiers[1] = "timestamp".getBytes();
                         qualifiers[2] = "Regression".getBytes();
+                        qualifiers[3] = "type".getBytes();
                         values[0] = key;
                         values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
                         values[2] = mtrsc.getSerializedRegression();
+                        values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array(); 
                         putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                         LOGGER.info("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
                     } else {

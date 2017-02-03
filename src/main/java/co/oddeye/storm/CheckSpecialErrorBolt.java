@@ -107,16 +107,15 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
                 PutRequest putvalue;
                 key = mtrsc.getKey();
-                if (!mtrscList.containsKey(mtrsc.hashCode())) {
-                    mtrsc.getRegression().addData(metric.getTimestamp(), metric.getValue());
+                if (!mtrscList.containsKey(mtrsc.hashCode())) {                    
                     qualifiers = new byte[3][];
                     values = new byte[3][];
                     qualifiers[0] = "n".getBytes();
                     qualifiers[1] = "timestamp".getBytes();
-                    qualifiers[2] = "Special".getBytes();
+                    qualifiers[2] = "type".getBytes();
                     values[0] = key;
                     values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                    values[2] = new byte[]{1};
+                    values[2] = ByteBuffer.allocate(2).putShort(metric.getType()).array(); 
                     putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                 } else {
                     mtrsc = mtrscList.get(mtrsc.hashCode());
@@ -131,13 +130,13 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 }
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
 
-                if (AlertLevel.getPyName(metric.getType()) != -1) {
+                if (AlertLevel.getPyName(metric.getStatus()) != -1) {
                     lastTimeSpecialMap.put(mtrsc.hashCode(), metric.getTimestamp());
                 }
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getType()) + "Tags:" + mtrsc.getTags());
+                    LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
                 }
-                mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getType()), metric.getTimestamp());
+                mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
 
                 collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
 

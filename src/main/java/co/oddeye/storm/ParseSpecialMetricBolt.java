@@ -5,6 +5,7 @@
  */
 package co.oddeye.storm;
 
+import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
 import com.google.gson.JsonArray;
@@ -67,13 +68,25 @@ public class ParseSpecialMetricBolt extends BaseRichBolt {
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         LOGGER.debug("Emit metric " + Metric.toString());
-                        if (Metric.getAsJsonObject().get("specialTag") == null) {
-                            continue;
-                        } else if (!Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
-                            continue;
-                        }
+//                        if (Metric.getAsJsonObject().get("specialTag") == null) {
+//                            continue;
+//                        } else if (!Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
+//                            continue;
+//                        }
                         try {
                             final OddeeysSpecialMetric mtrsc = new OddeeysSpecialMetric(Metric);
+                            if (!mtrsc.isSpecial()) {
+                                if (mtrsc.getName().equals("host_alive")) {
+                                    Metric.getAsJsonObject().addProperty("metric", "host_absent");
+                                    Metric.getAsJsonObject().addProperty("type", "Special");
+                                    Metric.getAsJsonObject().addProperty("message", "Host Absent");
+                                    Metric.getAsJsonObject().addProperty("status", "ERROR");
+                                    final OddeeyMetric mtrsc2 = new OddeeysSpecialMetric(Metric);
+                                    collector.emit(new Values(mtrsc2));
+                                }
+                                continue;
+                            }
+
                             if (mtrsc.getName() == null) {
                                 LOGGER.warn("mtrsc.getName()==null " + Metric);
                                 LOGGER.warn("mtrsc.getName()==null " + msg);

@@ -69,12 +69,13 @@ public class ParseMetricBolt extends BaseRichBolt {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
-                        if (Metric.getAsJsonObject().get("specialTag") != null && Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
-                            LOGGER.info("Welcom special tag:" + Metric.toString());
-                            continue;
-                        }
                         try {
                             final OddeeyMetric mtrsc = new OddeeyMetric(Metric);
+                            if (mtrsc.isSpecial()) {
+                                LOGGER.info("Welcom special tag:" + Metric.toString());
+                                continue;
+                            }
+
                             if (mtrsc.getName() == null) {
                                 LOGGER.warn("mtrsc.getName()==null " + Metric);
                                 LOGGER.warn("mtrsc.getName()==null " + msg);
@@ -98,11 +99,12 @@ public class ParseMetricBolt extends BaseRichBolt {
                             date = new Date(mtrsc.getTimestamp());
                             LOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));
                             collector.emit(new Values(mtrsc));
-                            if (mtrsc.getName().equals("host_alive")) {
-                                Metric.getAsJsonObject().addProperty("metric", "host_absent");
-                                final OddeeyMetric mtrsc2 = new OddeeyMetric(Metric);
-                                collector.emit(new Values(mtrsc2));
-                            }
+//                            if (mtrsc.getName().equals("host_alive")) {
+//                                Metric.getAsJsonObject().addProperty("metric", "host_absent");
+//                                Metric.getAsJsonObject().addProperty("type", "Special");
+//                                final OddeeyMetric mtrsc2 = new OddeeyMetric(Metric);
+//                                collector.emit(new Values(mtrsc2));
+//                            }
 
                         } catch (Exception e) {
                             LOGGER.error("Exception: " + globalFunctions.stackTrace(e));
