@@ -229,15 +229,15 @@ public class CompareBolt extends BaseRichBolt {
                         CalendarObjRules.setTimeInMillis(metric.getTimestamp());
                         CalendarObjRules.add(Calendar.DATE, -1);
                         final Map<String, MetriccheckRule> Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
-                        final String alert_level = metric.getTags().get("alert_level");
+                        final int alert_level = metric.getReaction();
                         short input_weight = 0;
-                        if (null != alert_level) {
-                            input_weight = (short) Double.parseDouble(alert_level);
+                        if (alert_level>0) {
+                            input_weight = (short) alert_level;
                         }
                         weight_per = 0;
                         loop = 0;
                         weight = 0;
-                        if ((alert_level == null) || ((input_weight < 1) && (input_weight > -3))) {
+                        if ((input_weight < 1) && (input_weight > -3)) {
                             curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
                             LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
                             for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
@@ -313,10 +313,7 @@ public class CompareBolt extends BaseRichBolt {
                                 } else {
                                     LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                                 }
-
                             }
-
-//                p_weight = (short) weight;
                         } else if (input_weight > 0) {
                             if (metric.getValue() > input_weight) {
                                 weight = 16;
