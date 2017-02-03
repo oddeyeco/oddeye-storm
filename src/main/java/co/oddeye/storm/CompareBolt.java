@@ -200,7 +200,7 @@ public class CompareBolt extends BaseRichBolt {
                         values[0] = key;
                         values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
                         values[2] = mtrsc.getSerializedRegression();
-                        values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array(); 
+                        values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
                         putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                         LOGGER.info("Add metric Meta to hbase:" + mtrsc.getName() + " tags " + mtrsc.getTags());
                     } else {
@@ -210,9 +210,15 @@ public class CompareBolt extends BaseRichBolt {
                         if (!Arrays.equals(mtrsc.getKey(), key)) {
                             LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + mtrscinput.getName() + " tags " + mtrscinput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
                         }
-
                         qualifiers = new byte[2][];
-                        values = new byte[2][];
+                        values = new byte[2][];                        
+                        if (mtrscinput.getType() != mtrsc.getType()) {                            
+                            qualifiers = new byte[3][];
+                            values = new byte[3][];
+                            qualifiers[2] = "type".getBytes();
+                            values[2] = ByteBuffer.allocate(2).putShort(mtrscinput.getType()).array();
+                            mtrsc.setType(mtrscinput.getType());
+                        }
 
                         qualifiers[0] = "timestamp".getBytes();
                         qualifiers[1] = "Regression".getBytes();
@@ -231,7 +237,7 @@ public class CompareBolt extends BaseRichBolt {
                         final Map<String, MetriccheckRule> Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
                         final int reaction = metric.getReaction();
                         short input_weight = 0;
-                        if (reaction>0) {
+                        if (reaction > 0) {
                             input_weight = (short) reaction;
                         }
                         weight_per = 0;
