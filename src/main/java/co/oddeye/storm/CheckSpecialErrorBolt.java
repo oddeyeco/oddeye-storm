@@ -80,10 +80,10 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 LOGGER.warn("End read meta in hbase");
                 mtrscList = new OddeeyMetricMetaList();
                 mtrscListtmp.entrySet().stream().filter((mtrsc) -> (mtrsc.getValue().isSpecial())).forEachOrdered((mtrsc) -> {
-                    if (!mtrsc.getValue().getName().equals("host_absent")) {
+//                    if (!mtrsc.getValue().getName().equals("host_absent")) {
                         lastTimeSpecialMap.put(mtrsc.getValue().hashCode(), mtrsc.getValue().getLasttime());
                         mtrscList.set(mtrsc.getValue());
-                    }
+//                    }
                 });
             } catch (Exception ex) {
                 mtrscList = new OddeeyMetricMetaList();

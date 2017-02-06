@@ -104,7 +104,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         try {
             OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
             collector.ack(tuple);
-            if (!metric.getName().equals("host_absent")) {
+//            if (!metric.getName().equals("host_absent")) {
                 if (metric != null) {
                     OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
                     if (mtrscList == null) {
@@ -236,7 +236,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                     LOGGER.error(tuple.getFields().size() + "");
                     LOGGER.error(tuple.getValueByField("metric").toString());
                 }
-            }
+//            }
         } catch (Exception ex) {
             LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
         }

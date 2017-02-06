@@ -75,9 +75,6 @@ public class WriteToTSDBseries extends BaseRichBolt {
     public void execute(Tuple tuple) {
         collector.ack(tuple);
         OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
-        if (!metric.getName().equals("host_absent")) {
-            globalFunctions.getTSDB(openTsdbConfig, clientconf).addPoint(metric.getName(), metric.getTimestamp(), metric.getValue(), metric.getTSDBTags());
-        }
-
+        globalFunctions.getTSDB(openTsdbConfig, clientconf).addPoint(metric.getName(), metric.getTimestamp(), metric.getValue(), metric.getTSDBTags());
     }
 }

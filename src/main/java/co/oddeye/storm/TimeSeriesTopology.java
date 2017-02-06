@@ -125,15 +125,15 @@ public class TimeSeriesTopology {
                 .allGrouping("TimerSpout");
 
 
-        builder.setBolt("FilterForLastTimeBolt",
-                new FilterForLastTimeBolt(), Integer.parseInt(String.valueOf(tconf.get("FilterForLastTimeBoltParallelism_hint"))))
-                .shuffleGrouping("ParseSpecialMetricBolt")
-                .shuffleGrouping("ParseMetricBolt");
-
-        builder.setBolt("CheckLastTimeBolt",
-                new CheckLastTimeBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckLastTimeBoltParallelism_hint"))))
-                .customGrouping("FilterForLastTimeBolt", new MerticGrouper())
-                .allGrouping("TimerSpout");
+//        builder.setBolt("FilterForLastTimeBolt",
+//                new FilterForLastTimeBolt(), Integer.parseInt(String.valueOf(tconf.get("FilterForLastTimeBoltParallelism_hint"))))
+//                .shuffleGrouping("ParseSpecialMetricBolt")
+//                .shuffleGrouping("ParseMetricBolt");
+//
+//        builder.setBolt("CheckLastTimeBolt",
+//                new CheckLastTimeBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckLastTimeBoltParallelism_hint"))))
+//                .customGrouping("FilterForLastTimeBolt", new MerticGrouper())
+//                .allGrouping("TimerSpout");
         
         
         java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");

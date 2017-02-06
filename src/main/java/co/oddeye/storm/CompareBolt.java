@@ -229,7 +229,7 @@ public class CompareBolt extends BaseRichBolt {
                     }
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue);
 
-                    if (!metric.getName().equals("host_absent")) {
+//                    if (!metric.getName().equals("host_absent")) {
 
                         CalendarObj.setTimeInMillis(metric.getTimestamp());
                         CalendarObjRules.setTimeInMillis(metric.getTimestamp());
@@ -407,7 +407,7 @@ public class CompareBolt extends BaseRichBolt {
                             }
                         }
                         mtrscList.set(mtrsc);
-                    }
+//                    }
                 }
             } catch (RuntimeException ex) {
                 LOGGER.error("RuntimeException In big try:" + globalFunctions.stackTrace(ex) + tuple.getValueByField("metric"));

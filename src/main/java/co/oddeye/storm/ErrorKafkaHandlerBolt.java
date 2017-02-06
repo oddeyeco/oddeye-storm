@@ -111,12 +111,12 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
                     }
                 }
             }
-            if (mtrsc.getName().equals("host_absent")) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTimeInMillis(mtrsc.getErrorState().getTime());
-                jsonResult.addProperty("message", "Host Absent by " + cal.getTime());
-                jsonResult.addProperty("type", "Special");
-            }
+//            if (mtrsc.getName().equals("host_absent")) {
+//                Calendar cal = Calendar.getInstance();
+//                cal.setTimeInMillis(mtrsc.getErrorState().getTime());
+//                jsonResult.addProperty("message", "Host Absent by " + cal.getTime());
+//                jsonResult.addProperty("type", "Special");
+//            }
             if (time != null) {
                 jsonResult.addProperty("time", time);
             }

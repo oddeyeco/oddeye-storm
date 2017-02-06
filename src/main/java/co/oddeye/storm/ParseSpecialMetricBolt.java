@@ -76,14 +76,14 @@ public class ParseSpecialMetricBolt extends BaseRichBolt {
                         try {
                             final OddeeysSpecialMetric mtrsc = new OddeeysSpecialMetric(Metric);
                             if (!mtrsc.isSpecial()) {
-                                if (mtrsc.getName().equals("host_alive")) {
-                                    Metric.getAsJsonObject().addProperty("metric", "host_absent");
-                                    Metric.getAsJsonObject().addProperty("type", "Special");
-                                    Metric.getAsJsonObject().addProperty("message", "Host Absent");
-                                    Metric.getAsJsonObject().addProperty("status", "ERROR");
-                                    final OddeeyMetric mtrsc2 = new OddeeysSpecialMetric(Metric);
-                                    collector.emit(new Values(mtrsc2));
-                                }
+//                                if (mtrsc.getName().equals("host_alive")) {
+//                                    Metric.getAsJsonObject().addProperty("metric", "host_absent");
+//                                    Metric.getAsJsonObject().addProperty("type", "Special");
+//                                    Metric.getAsJsonObject().addProperty("message", "Host Absent");
+//                                    Metric.getAsJsonObject().addProperty("status", "ERROR");
+//                                    final OddeeyMetric mtrsc2 = new OddeeysSpecialMetric(Metric);
+//                                    collector.emit(new Values(mtrsc2));
+//                                }
                                 continue;
                             }
 
