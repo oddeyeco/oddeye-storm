@@ -5,7 +5,6 @@
  */
 package co.oddeye.storm;
 
-import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
 import com.google.gson.JsonArray;

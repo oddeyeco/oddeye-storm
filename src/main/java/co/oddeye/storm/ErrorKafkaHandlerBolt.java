@@ -87,25 +87,26 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
             jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             jsonResult.addProperty("action", mtrsc.getErrorState().getState());
-            if (tuple.getSourceComponent().equals("CheckLastTimeBolt")) {
-                jsonResult.addProperty("type", "Special");
-            } else {
-                if (mtrsc.isSpecial()) {
-                    jsonResult.addProperty("type", "Special");
-                } else {
-                    jsonResult.addProperty("type", "Regular");
-                }
-
-            }
+//            if (tuple.getSourceComponent().equals("CheckLastTimeBolt")) {
+//                jsonResult.addProperty("type", "Special");
+//            } else {
+//                if (mtrsc.isSpecial()) {
+//                    jsonResult.addProperty("type", "Special");
+//                } else {
+//                    jsonResult.addProperty("type", "Regular");
+//                }                
+//
+//            }
 //            LOGGER.warn(mtrsc.isSpecial() + " Name:" + mtrsc.getName());
             JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
 
             if (metric != null) {
                 jsonResult.addProperty("time", metric.getTimestamp());
+                jsonResult.addProperty("type", metric.getType());
+                jsonResult.addProperty("reaction", metric.getReaction());
                 if (metric instanceof OddeeysSpecialMetric) {
                     OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
-                    jsonResult.addProperty("message", Specmetric.getMessage());
-                    jsonResult.addProperty("type", "Special");
+                    jsonResult.addProperty("message", Specmetric.getMessage());                    
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
                     }

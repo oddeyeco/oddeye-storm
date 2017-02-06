@@ -151,8 +151,8 @@ public class TimeSeriesTopology {
         builder.setBolt("ErrorKafkaHandlerBolt",
                 new ErrorKafkaHandlerBolt(props,topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
                 .shuffleGrouping("CompareBolt")
-                .shuffleGrouping("CheckSpecialErrorBolt")
-                .shuffleGrouping("CheckLastTimeBolt");
+                .shuffleGrouping("CheckSpecialErrorBolt");
+//                .shuffleGrouping("CheckLastTimeBolt");
         
         
         
