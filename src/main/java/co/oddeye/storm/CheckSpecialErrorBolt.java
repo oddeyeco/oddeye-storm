@@ -138,7 +138,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 if (metric.getReaction() > 0) {                    
                     lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);                    
                 } else if (metric.getReaction() < 0) {                                        
-                    LOGGER.warn("metric.getReaction() < 0) Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
+//                    LOGGER.warn("metric.getReaction() < 0) Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
                     lastTimeSpecialMap.put(mtrsc.hashCode(), metric);
                 }
 //                }
