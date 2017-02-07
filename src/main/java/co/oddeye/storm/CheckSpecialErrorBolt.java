@@ -113,6 +113,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
                     values[2] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
                     putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
+                    globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
                 } else {
                     mtrsc = mtrscList.get(mtrsc.hashCode());
                     qualifiers = new byte[1][];
@@ -130,8 +131,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
                     }
+                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 }
-                globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                
 
                 mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
 
