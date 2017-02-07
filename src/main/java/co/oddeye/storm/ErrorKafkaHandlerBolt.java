@@ -11,7 +11,6 @@ import co.oddeye.core.OddeeysSpecialMetric;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.util.Calendar;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.codec.binary.Hex;
@@ -104,6 +103,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
                 jsonResult.addProperty("time", metric.getTimestamp());
                 jsonResult.addProperty("type", metric.getType());
                 jsonResult.addProperty("reaction", metric.getReaction());
+                jsonResult.addProperty("startvalue", metric.getValue());
                 if (metric instanceof OddeeysSpecialMetric) {
                     OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
                     jsonResult.addProperty("message", Specmetric.getMessage());                    

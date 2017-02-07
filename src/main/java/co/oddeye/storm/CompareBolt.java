@@ -211,8 +211,8 @@ public class CompareBolt extends BaseRichBolt {
                             LOGGER.warn("More key for single hash:" + mtrsc.getName() + " tags " + mtrsc.getTags() + "More key for single hash:" + mtrscinput.getName() + " tags " + mtrscinput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrsc.getKey()) + " Key= " + Hex.encodeHexString(key));
                         }
                         qualifiers = new byte[2][];
-                        values = new byte[2][];                        
-                        if (mtrscinput.getType() != mtrsc.getType()) {                            
+                        values = new byte[2][];
+                        if (mtrscinput.getType() != mtrsc.getType()) {
                             qualifiers = new byte[3][];
                             values = new byte[3][];
                             qualifiers[2] = "type".getBytes();
@@ -230,183 +230,179 @@ public class CompareBolt extends BaseRichBolt {
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue);
 
 //                    if (!metric.getName().equals("host_absent")) {
-
-                        CalendarObj.setTimeInMillis(metric.getTimestamp());
-                        CalendarObjRules.setTimeInMillis(metric.getTimestamp());
-                        CalendarObjRules.add(Calendar.DATE, -1);
-                        final Map<String, MetriccheckRule> Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
-                        final int reaction = metric.getReaction();
-                        short input_weight = 0;
-                        if (reaction > 0) {
-                            input_weight = (short) reaction;
-                        }
-                        weight_per = 0;
-                        loop = 0;
-                        weight = 0;
-                        if ((input_weight < 1) && (input_weight > -3)) {
-                            curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
-                            LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
-                            for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
-                                loop++;
-                                final MetriccheckRule Rule = RuleEntry.getValue();
-                                if (Rule == null) {
-                                    LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    continue;
-                                }
-
-                                CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
-
-                                if (!Rule.isIsValidRule()) {
-                                    if (LOGGER.isInfoEnabled()) {
-                                        LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    }
-                                    continue;
-                                }
-                                if (Rule.isHasNotData()) {
-                                    if (LOGGER.isInfoEnabled()) {
-                                        LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    }
-                                    continue;
-                                }
-                                local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
-                                if (curent_DW == local_DW) {
-                                    weight_KF = 2;
-
-                                } else {
-                                    weight_KF = 1;
-                                }
-                                if (Rule.getAvg() != null) {
-
-                                    if ((Rule.getAvg() != 0) && (metric.getValue() != 0)) {
-                                        tmp_weight_per = (metric.getValue() - Rule.getAvg()) / Rule.getAvg() * 100;
-                                    } else {
-                                        if (metric.getValue() == 0) {
-                                        }
-                                        tmp_weight_per = 0;
-                                    }
-                                }
-
-                                if (input_weight != -1) {
-                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                        if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
-                                            weight = (short) (weight + weight_KF);
-                                            weight_per = weight_per + tmp_weight_per;
-                                        }
-                                    }
-                                    if (Rule.getMax() != null) {
-                                        if (metric.getValue() > Rule.getMax()) {
-                                            weight = (short) (weight + weight_KF);
-                                        }
-                                    }
-                                } else {
-                                    if (LOGGER.isInfoEnabled()) {
-                                        LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                    }
-                                }
-
-                                if (input_weight != -2) {
-                                    if (Rule.getMin() != null) {
-                                        if (metric.getValue() < Rule.getMin()) {
-                                            weight = (short) (weight - weight_KF);
-                                            weight_per = weight_per + tmp_weight_per;
-                                        }
-                                    }
-                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                        if (metric.getValue() < Rule.getAvg() - devkef * Rule.getDev()) {
-                                            weight = (short) (weight - weight_KF);
-                                        }
-                                    }
-                                } else {
-                                    LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                                }
+                    CalendarObj.setTimeInMillis(metric.getTimestamp());
+                    CalendarObjRules.setTimeInMillis(metric.getTimestamp());
+                    CalendarObjRules.add(Calendar.DATE, -1);
+                    final Map<String, MetriccheckRule> Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
+                    final int reaction = metric.getReaction();
+                    short input_weight = (short) reaction;
+                    weight_per = 0;
+                    loop = 0;
+                    weight = 0;
+                    if ((input_weight < 1) && (input_weight > -3)) {
+                        curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
+                        LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
+                        for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
+                            loop++;
+                            final MetriccheckRule Rule = RuleEntry.getValue();
+                            if (Rule == null) {
+                                LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                continue;
                             }
-                        } else if (input_weight > 0) {
-                            if (metric.getValue() > input_weight) {
-                                weight = 16;
+
+                            CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
+
+                            if (!Rule.isIsValidRule()) {
+                                if (LOGGER.isInfoEnabled()) {
+                                    LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                }
+                                continue;
+                            }
+                            if (Rule.isHasNotData()) {
+                                if (LOGGER.isInfoEnabled()) {
+                                    LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                }
+                                continue;
+                            }
+                            local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
+                            if (curent_DW == local_DW) {
+                                weight_KF = 2;
+
                             } else {
-                                weight = 0;
+                                weight_KF = 1;
                             }
-                        } else if (input_weight == -4) {
-                            if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            if (Rule.getAvg() != null) {
+
+                                if ((Rule.getAvg() != 0) && (metric.getValue() != 0)) {
+                                    tmp_weight_per = (metric.getValue() - Rule.getAvg()) / Rule.getAvg() * 100;
+                                } else {
+                                    if (metric.getValue() == 0) {
+                                    }
+                                    tmp_weight_per = 0;
+                                }
                             }
-                        } else if (input_weight == -5) {
-                            LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+
+                            if (input_weight != -1) {
+                                if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                    if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
+                                        weight = (short) (weight + weight_KF);
+                                        weight_per = weight_per + tmp_weight_per;
+                                    }
+                                }
+                                if (Rule.getMax() != null) {
+                                    if (metric.getValue() > Rule.getMax()) {
+                                        weight = (short) (weight + weight_KF);
+                                    }
+                                }
+                            } else {
+                                if (LOGGER.isInfoEnabled()) {
+                                    LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                                }
+                            }
+
+                            if (input_weight != -2) {
+                                if (Rule.getMin() != null) {
+                                    if (metric.getValue() < Rule.getMin()) {
+                                        weight = (short) (weight - weight_KF);
+                                        weight_per = weight_per + tmp_weight_per;
+                                    }
+                                }
+                                if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                    if (metric.getValue() < Rule.getAvg() - devkef * Rule.getDev()) {
+                                        weight = (short) (weight - weight_KF);
+                                    }
+                                }
+                            } else {
+                                LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                            }
+                        }
+                    } else if (input_weight > 0) {
+                        if (metric.getValue() > input_weight) {
+                            weight = 16;
                         } else {
-                            if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                            }
+                            weight = 0;
                         }
-
-                        if (weight != 0) {
-                            final AlertLevel AlertLevel = new AlertLevel();
-
-                            weight_per = weight_per / loop;
-                            double predict_value = mtrsc.getRegression().predict(CalendarObj.getTimeInMillis());
-                            double predict_value_per = 0;
-                            if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
-                                predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
-                            }
-                            // TODO Karoxa hanel aradzin bolt
-                            key = mtrsc.getTags().get("UUID").getValueTSDBUID();
-                            key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
-
-                            putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
-                            mtrsc.getLevelList().add(AlertLevel.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
-                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                            if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-                            }
-                        } else {
-                            mtrsc.getLevelList().add(-1);
+                    } else if (input_weight == -4) {
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         }
-                        if (mtrsc.getLevelList().size() > 10) {
-                            mtrsc.getLevelList().remove(0);
+                    } else if (input_weight == -5) {
+                        LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                    } else {
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
                         }
+                    }
 
-                        if (Collections.max(mtrsc.getLevelList()) > -1) {
-                            Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
-                            for (Integer e : mtrsc.getLevelList()) {
-                                if (e > -1) {
-                                    for (int j = e; j >= 0; j--) {
-                                        Integer counter = Errormap.get(j);
-                                        if (counter != null) {
-                                            counter++;
-                                        } else {
-                                            counter = 1;
-                                        }
+                    if (weight != 0) {
+                        final AlertLevel AlertLevel = new AlertLevel();
 
-                                        Errormap.put(j, counter);
+                        weight_per = weight_per / loop;
+                        double predict_value = mtrsc.getRegression().predict(CalendarObj.getTimeInMillis());
+                        double predict_value_per = 0;
+                        if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
+                            predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
+                        }
+                        // TODO Karoxa hanel aradzin bolt
+                        key = mtrsc.getTags().get("UUID").getValueTSDBUID();
+                        key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
+
+                        putvalue = new PutRequest(errortable, key, error_family, mtrsc.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
+                        mtrsc.getLevelList().add(AlertLevel.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
+                        globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+                        }
+                    } else {
+                        mtrsc.getLevelList().add(-1);
+                    }
+                    if (mtrsc.getLevelList().size() > 10) {
+                        mtrsc.getLevelList().remove(0);
+                    }
+
+                    if (Collections.max(mtrsc.getLevelList()) > -1) {
+                        Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
+                        for (Integer e : mtrsc.getLevelList()) {
+                            if (e > -1) {
+                                for (int j = e; j >= 0; j--) {
+                                    Integer counter = Errormap.get(j);
+                                    if (counter != null) {
+                                        counter++;
+                                    } else {
+                                        counter = 1;
                                     }
 
-                                }
-                            }
-                            if (!Errormap.isEmpty()) {
-                                boolean setlevel = false;
-                                for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
-                                    if (item.getValue() > 4) {
-                                        mtrsc.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
-                                        setlevel = true;
-                                        break;
-                                    }
-
-                                }
-                                if (!setlevel) {
-                                    mtrsc.getErrorState().setLevel(mtrsc.getErrorState().getLevel(), metric.getTimestamp());
+                                    Errormap.put(j, counter);
                                 }
 
-                            }
-                            CalendarObj.setTimeInMillis(metric.getTimestamp());
-                            if (mtrsc.getErrorState().getState() > -1) {
-                                collector.emit(new Values(mtrsc, metric));
-                            }
-                        } else {
-                            if (mtrsc.getErrorState().getLevel() != -1) {
-                                mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
-                                collector.emit(new Values(mtrsc, metric));
                             }
                         }
-                        mtrscList.set(mtrsc);
+                        if (!Errormap.isEmpty()) {
+                            boolean setlevel = false;
+                            for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
+                                if (item.getValue() > 4) {
+                                    mtrsc.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                    setlevel = true;
+                                    break;
+                                }
+
+                            }
+                            if (!setlevel) {
+                                mtrsc.getErrorState().setLevel(mtrsc.getErrorState().getLevel(), metric.getTimestamp());
+                            }
+
+                        }
+//                            CalendarObj.setTimeInMillis(metric.getTimestamp());
+                        if (mtrsc.getErrorState().getState() > -1) {
+                            collector.emit(new Values(mtrsc, metric));
+                        }
+                    } else {
+                        if (mtrsc.getErrorState().getLevel() != -1) {
+                            mtrsc.getErrorState().setLevel(-1, metric.getTimestamp());
+                            collector.emit(new Values(mtrsc, metric));
+                        }
+                    }
+                    mtrscList.set(mtrsc);
 //                    }
                 }
             } catch (RuntimeException ex) {
