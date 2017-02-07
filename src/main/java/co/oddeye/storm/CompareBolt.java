@@ -335,7 +335,7 @@ public class CompareBolt extends BaseRichBolt {
                     }
 
                     if (weight != 0) {
-                        final AlertLevel AlertLevel = new AlertLevel();
+                        final AlertLevel AlertLevel = new AlertLevel(true);
 
                         weight_per = weight_per / loop;
                         double predict_value = mtrsc.getRegression().predict(CalendarObj.getTimeInMillis());
