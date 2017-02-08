@@ -20,6 +20,7 @@ KafkaSemaphore:
 Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
   metatable: test_oddeye-meta
+  usertable: oddeyeusers
   errorstable: test_oddeye-errors
   errorshistorytable: test_oddeye-error-history
   tsd.core.auto_create_metrics: true
