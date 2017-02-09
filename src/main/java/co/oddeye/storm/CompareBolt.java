@@ -84,6 +84,19 @@ public class CompareBolt extends BaseRichBolt {
         this.errortable = String.valueOf(conf.get("errorstable")).getBytes();
         CalendarObjRules = Calendar.getInstance();
         CalendarObj = Calendar.getInstance();
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer ofd) {
+        ofd.declare(new Fields("mtrsc", "metric"));
+    }
+
+    @Override
+    public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
+        LOGGER.warn("DoPrepare WriteToTSDBseries");
+        collector = oc;
+        parser = new JsonParser();
+        
         try {
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
@@ -97,20 +110,7 @@ public class CompareBolt extends BaseRichBolt {
             clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
         } catch (IOException ex) {
             LOGGER.error("OpenTSDB config execption : should not be here !!!");
-        }
-
-    }
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer ofd) {
-        ofd.declare(new Fields("mtrsc", "metric"));
-    }
-
-    @Override
-    public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
-        LOGGER.warn("DoPrepare WriteToTSDBseries");
-        collector = oc;
-        parser = new JsonParser();
+        }        
         try {
             globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
             try {
