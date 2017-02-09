@@ -455,7 +455,7 @@ public class CompareBolt extends BaseRichBolt {
 
                         }
 //                            CalendarObj.setTimeInMillis(metric.getTimestamp());
-                        if (mtrscMetaLocal.getErrorState().getState() > -1) {
+                        if (mtrscMetaLocal.getErrorState().getState() != 1) {
                             collector.emit(new Values(mtrscMetaLocal, metric));
                         }
                     } else {
