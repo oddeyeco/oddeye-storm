@@ -133,14 +133,16 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     }
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 }
-                
 
                 mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
 
-                if (metric.getReaction() > 0) {                    
-                    lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);                    
-                } else if (metric.getReaction() < 0) {                                        
-//                    LOGGER.warn("metric.getReaction() < 0) Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
+                if (metric.getReaction() > 0) {
+                    if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()) == null) {
+                        lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
+                    } else if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()).getTimestamp() < metric.getTimestamp()) {
+                        lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
+                    }
+                } else if (metric.getReaction() < 0) {
                     lastTimeSpecialMap.put(mtrsc.hashCode(), metric);
                 }
 //                }
@@ -173,9 +175,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                         }
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, System.currentTimeMillis());
                         mtrscList.set(mtrsc);
-//                        LOGGER.warn("metric.getReaction() < 0) Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
-                        it.remove();
                         collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
+                        it.remove();
+
                     }
                 }
             }
@@ -194,8 +196,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                         }
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                         mtrscList.set(mtrsc);
-                        it.remove();
                         collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
+                        it.remove();
+
                     }
                 }
             }
