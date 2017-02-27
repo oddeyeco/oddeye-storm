@@ -80,41 +80,52 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         }
 
 //        if (mtrsc.getErrorState().getState() != 1) {
-            JsonObject jsonResult = new JsonObject();
-            jsonResult.addProperty("hash", mtrsc.hashCode());
-            jsonResult.addProperty("key", Hex.encodeHexString(mtrsc.getKey()));
-            jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
-            jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
-            jsonResult.addProperty("action", mtrsc.getErrorState().getState());
-            JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
+        JsonObject jsonResult = new JsonObject();
+        jsonResult.addProperty("hash", mtrsc.hashCode());
+        jsonResult.addProperty("key", Hex.encodeHexString(mtrsc.getKey()));
+        jsonResult.addProperty("action", mtrsc.getErrorState().getState());
+        JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
+        JsonElement values = gson.toJsonTree(mtrsc.LevelValuesList());
 
-            if (metric != null) {
-                jsonResult.addProperty("time", metric.getTimestamp());
-                jsonResult.addProperty("type", metric.getType());
-                jsonResult.addProperty("reaction", metric.getReaction());
-                jsonResult.addProperty("startvalue", metric.getValue());
-                if (metric instanceof OddeeysSpecialMetric) {
-                    OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
-                    jsonResult.addProperty("message", Specmetric.getMessage());                    
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
-                    }
+        
+
+        if (metric != null) {
+            jsonResult.addProperty("time", metric.getTimestamp());
+            jsonResult.addProperty("type", metric.getType());
+            jsonResult.addProperty("reaction", metric.getReaction());
+            jsonResult.addProperty("startvalue", metric.getValue());
+            if (metric instanceof OddeeysSpecialMetric) {
+                OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
+                jsonResult.addProperty("message", Specmetric.getMessage());
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
                 }
             }
-            if (time != null) {
-                jsonResult.addProperty("time", time);
-            }
-            jsonResult.add("starttimes", starttimes);
-            JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
-            jsonResult.add("endtimes", endtimes);
-            jsonResult.addProperty("source", tuple.getSourceComponent());
+        }
+        if (time != null) {
+            jsonResult.addProperty("time", time);
+        }
+        jsonResult.add("starttimes", starttimes);
+        JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
+        jsonResult.add("endtimes", endtimes);
+        jsonResult.addProperty("source", tuple.getSourceComponent());
+//        LOGGER.warn(values.toString());
+        jsonResult.addProperty("values", values.toString());
+        final ProducerRecord<String, String> datafull = new ProducerRecord<>(mtrsc.getTags().get("UUID").toString()+mtrsc.getErrorState().getLevel(), jsonResult.toString());
+        producer.send(datafull);
+        
+        
+        if (mtrsc.getErrorState().getState() != 1) {
+            jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
+            jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
             producer.send(data);
+        }
 
 
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Send Data:" + jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
-            }
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Send Data:" + jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
+        }
 //        }
 
 //        OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");

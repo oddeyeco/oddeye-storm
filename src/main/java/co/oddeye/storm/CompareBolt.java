@@ -65,7 +65,7 @@ public class CompareBolt extends BaseRichBolt {
     private final byte[] usertable;
     private final byte[] usertechfamily = "technicalinfo".getBytes();
 
-    private byte[] errortable;
+    private final byte[] errortable;
     private final byte[] error_family = "d".getBytes();
 
     private JsonParser parser = null;
@@ -401,7 +401,7 @@ public class CompareBolt extends BaseRichBolt {
                     if (AlertLevels == null) {
                         AlertLevels = new AlertLevel(true);
                     }
-
+                    Map<String,Object> metricsmap = new HashMap<>();
                     if (weight != 0) {
                         weight_per = weight_per / loop;
                         double predict_value = mtrscMetaLocal.getRegression().predict(CalendarObj.getTimeInMillis());
@@ -409,22 +409,28 @@ public class CompareBolt extends BaseRichBolt {
                         if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
                             predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
                         }
+                        metricsmap.put("lever", AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
+                        mtrscMetaLocal.getLevelList().add(AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
                         // TODO Karoxa hanel aradzin bolt
                         key = mtrscMetaLocal.getTags().get("UUID").getValueTSDBUID();
                         key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
-
-                        putvalue = new PutRequest(errortable, key, error_family, mtrscMetaLocal.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
-                        mtrscMetaLocal.getLevelList().add(AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
+                        putvalue = new PutRequest(errortable, key, error_family, mtrscMetaLocal.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());                        
                         globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                         if (LOGGER.isInfoEnabled()) {
                             LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
                         }
                     } else {
+                        metricsmap.put("lever", -1);
                         mtrscMetaLocal.getLevelList().add(-1);
                     }
                     if (mtrscMetaLocal.getLevelList().size() > 10) {
                         mtrscMetaLocal.getLevelList().remove(0);
+                        mtrscMetaLocal.LevelValuesList().remove(0);
                     }
+                    
+                    metricsmap.put("value", metric.getValue());
+                    mtrscMetaLocal.LevelValuesList().add(metricsmap);
+                    
                     if (Collections.max(mtrscMetaLocal.getLevelList()) > -1) {
                         Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
                         mtrscMetaLocal.getLevelList().stream().filter((e) -> (e > -1)).forEachOrdered((e) -> {
@@ -455,9 +461,10 @@ public class CompareBolt extends BaseRichBolt {
 
                         }
 //                            CalendarObj.setTimeInMillis(metric.getTimestamp());
-                        if (mtrscMetaLocal.getErrorState().getState() != 1) {
+//                        if (mtrscMetaLocal.getErrorState().getState() != 1) {
+                           
                             collector.emit(new Values(mtrscMetaLocal, metric));
-                        }
+//                        }
                     } else {
                         if (mtrscMetaLocal.getErrorState().getLevel() != -1) {
                             mtrscMetaLocal.getErrorState().setLevel(-1, metric.getTimestamp());
