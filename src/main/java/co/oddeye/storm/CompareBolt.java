@@ -284,7 +284,8 @@ public class CompareBolt extends BaseRichBolt {
                     LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 }
-
+                mtrscList.set(mtrscMetaLocal);
+                
                 CalendarObj.setTimeInMillis(metric.getTimestamp());
                 CalendarObjRules.setTimeInMillis(metric.getTimestamp());
                 CalendarObjRules.add(Calendar.DATE, -1);
@@ -472,7 +473,7 @@ public class CompareBolt extends BaseRichBolt {
                         }
                     }
                 }
-                mtrscList.set(mtrscMetaLocal);
+//                mtrscList.set(mtrscMetaLocal);
             }
 
         } catch (Exception ex) {

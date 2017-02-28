@@ -87,8 +87,6 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
         JsonElement values = gson.toJsonTree(mtrsc.LevelValuesList());
 
-        
-
         if (metric != null) {
             jsonResult.addProperty("time", metric.getTimestamp());
             jsonResult.addProperty("type", metric.getType());
@@ -109,19 +107,21 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
         jsonResult.add("endtimes", endtimes);
         jsonResult.addProperty("source", tuple.getSourceComponent());
+        jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
 //        LOGGER.warn(values.toString());
         jsonResult.addProperty("values", values.toString());
-        final ProducerRecord<String, String> datafull = new ProducerRecord<>(mtrsc.getTags().get("UUID").toString()+mtrsc.getErrorState().getLevel(), jsonResult.toString());
+        final ProducerRecord<String, String> datafull = new ProducerRecord<>(mtrsc.getTags().get("UUID").toString() + mtrsc.getErrorState().getLevel(), jsonResult.toString());
         producer.send(datafull);
-        
-        
+        if (mtrsc.getErrorState().getLevel() != mtrsc.getErrorState().getPrevlevel()) {
+            final ProducerRecord<String, String> dataprev = new ProducerRecord<>(mtrsc.getTags().get("UUID").toString() + mtrsc.getErrorState().getPrevlevel(), jsonResult.toString());
+            producer.send(datafull);
+        }
+
         if (mtrsc.getErrorState().getState() != 1) {
             jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
-            jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
             final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
             producer.send(data);
         }
-
 
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Send Data:" + jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
