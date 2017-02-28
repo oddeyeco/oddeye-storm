@@ -109,7 +109,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         jsonResult.addProperty("source", tuple.getSourceComponent());
         jsonResult.addProperty("level", mtrsc.getErrorState().getLevel());
 //        LOGGER.warn(values.toString());
-        jsonResult.addProperty("values", values.toString());
+        jsonResult.add("values", values);
         final ProducerRecord<String, String> datafull = new ProducerRecord<>(mtrsc.getTags().get("UUID").toString() + mtrsc.getErrorState().getLevel(), jsonResult.toString());
         producer.send(datafull);
         if (mtrsc.getErrorState().getLevel() != mtrsc.getErrorState().getPrevlevel()) {

@@ -410,7 +410,7 @@ public class CompareBolt extends BaseRichBolt {
                         if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
                             predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
                         }
-                        metricsmap.put("lever", AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
+                        metricsmap.put("level", AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
                         mtrscMetaLocal.getLevelList().add(AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
                         // TODO Karoxa hanel aradzin bolt
                         key = mtrscMetaLocal.getTags().get("UUID").getValueTSDBUID();
