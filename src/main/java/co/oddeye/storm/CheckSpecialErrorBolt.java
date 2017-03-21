@@ -197,7 +197,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                         mtrscList.set(mtrsc);
                         collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
-                        it.remove();
+//                        it.remove();
 
                     }
                 }
