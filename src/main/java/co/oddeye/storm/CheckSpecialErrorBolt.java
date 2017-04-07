@@ -133,6 +133,11 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     }
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 }
+                
+//                if (metric.getName().equals("check_hbase_regionserver"))
+//                {
+//                    LOGGER.warn("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " getType " + metric.getType()+" by "+mtrsc.getType());
+//                }
 
                 mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
 
