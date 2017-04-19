@@ -10,6 +10,8 @@ import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.OddeeysSpecialMetric;
 import co.oddeye.core.globalFunctions;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -45,6 +47,8 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     private final byte[] meta_family = "d".getBytes();
     private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialMap = new HashMap<>();
     private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialLiveMap = new HashMap<>();
+    private JsonParser parser = null;
+    private JsonObject jsonResult = null;
 
     public CheckSpecialErrorBolt(java.util.Map config) {
         this.conf = config;
@@ -58,6 +62,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector oc) {
         collector = oc;
+        parser = new JsonParser();
 
         try {
             String quorum = String.valueOf(conf.get("zkHosts"));
@@ -97,6 +102,17 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
+        if (input.getSourceComponent().equals("kafkaSemaphoreSpot")) {
+            collector.ack(input);
+            jsonResult = this.parser.parse(input.getString(0)).getAsJsonObject();            
+            if (jsonResult.get("action").getAsString().equals("deletemetricbyhash")) {
+                final int hash = jsonResult.get("hash").getAsInt();
+                if (mtrscList.containsKey(hash)) {
+                    mtrscList.remove(hash);
+                }
+            }
+        }
+
         if (input.getSourceComponent().equals("ParseSpecialMetricBolt")) {
             try {
                 OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
@@ -133,12 +149,11 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     }
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 }
-                
+
 //                if (metric.getName().equals("check_hbase_regionserver"))
 //                {
 //                    LOGGER.warn("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " getType " + metric.getType()+" by "+mtrsc.getType());
 //                }
-
                 mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
 
                 if (metric.getReaction() > 0) {
