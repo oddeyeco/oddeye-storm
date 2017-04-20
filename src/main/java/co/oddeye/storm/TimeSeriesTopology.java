@@ -58,24 +58,16 @@ public class TimeSeriesTopology {
         SpoutConfig kafkaConfig = new SpoutConfig(zkHosts,
                 String.valueOf(kafkaconf.get("tsdbtopic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKeyTSDB")));
 
-// Specify that the kafka messages are String        
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
-//        kafkaConfig.
-//        kafkaConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
-// We want to consume all the first messages in
-// the topic every time we run the topology to
-// help in debugging. In production, this
-// property should be false
-//        kafkaConfig.forceFromStart = true;
-// set the kafka spout class
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
         builder.setSpout("TimerSpout", new TimerSpout(), 1);
-        // Semaphore bolt
-        
+        // Semaphore Spout        
         BrokerHosts zkSemaphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
+        
         SpoutConfig kafkaSemaphoreConfig = new SpoutConfig(zkSemaphoreHosts,
                 String.valueOf(kafkasemaphoreconf.get("topic")), String.valueOf(kafkasemaphoreconf.get("zkRoot")), String.valueOf(kafkasemaphoreconf.get("zkKey")));
+        
         kafkaSemaphoreConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
         builder.setSpout("kafkaSemaphoreSpot", new KafkaSpout(kafkaSemaphoreConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutSemaphoreParallelism_hint"))));        
         
@@ -109,21 +101,26 @@ public class TimeSeriesTopology {
         builder.setBolt("CompareBolt",
                 new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
                 .customGrouping("ParseMetricBolt", new MerticGrouper())
-                .allGrouping("kafkaSemaphoreSpot");
+                .allGrouping("SemaforProxyBolt");
 
         builder.setBolt("CalcRulesBolt",
                 new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
-                .customGrouping("ParseMetricBolt", new MerticGrouper());
+                .customGrouping("ParseMetricBolt", new MerticGrouper())
+                .allGrouping("SemaforProxyBolt");
 
         builder.setBolt("ParseSpecialMetricBolt",
                 new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
                 .shuffleGrouping("KafkaSpout");
-       
+
+        builder.setBolt("SemaforProxyBolt",
+                new SemaforProxyBolt(), Integer.parseInt(String.valueOf(tconf.get("SemaforProxyBoltParallelism_hint"))))
+                .shuffleGrouping("kafkaSemaphoreSpot");        
+        
         builder.setBolt("CheckSpecialErrorBolt",
                 new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
                 .customGrouping("ParseSpecialMetricBolt", new MerticGrouper())
                 .allGrouping("TimerSpout")
-                .allGrouping("kafkaSemaphoreSpot");
+                .allGrouping("SemaforProxyBolt");
 
 
 //        builder.setBolt("FilterForLastTimeBolt",

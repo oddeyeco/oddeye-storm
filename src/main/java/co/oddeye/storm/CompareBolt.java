@@ -32,8 +32,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
-import java.util.logging.Level;
-import org.hbase.async.GetRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
 import org.hbase.async.Scanner;
@@ -165,19 +163,22 @@ public class CompareBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        if (tuple.getSourceComponent().equals("kafkaSemaphoreSpot")) {
-            collector.ack(tuple);
-            jsonResult = this.parser.parse(tuple.getString(0)).getAsJsonObject();
+        this.collector.ack(tuple);
+        if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {            
+            
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("message from SemaforProxyBolt" + tuple.getValueByField("action").toString());
+            }                           
+            
+            jsonResult = this.parser.parse(tuple.getValueByField("action").toString()).getAsJsonObject();
 
             if (jsonResult.get("action").getAsString().equals("deletemetricbyhash")) {
                 final int hash = jsonResult.get("hash").getAsInt();
                 if (mtrscList.containsKey(hash)) {
-                    mtrscList.remove(hash);
+                    mtrscList.remove(hash);                    
                 }
             }
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("message from kafkaSemaphoreSpot" + tuple.getString(0));
-            }
+
             if (jsonResult.get("action").getAsString().equals("resetregresion")) {
                 final int hash = jsonResult.get("hash").getAsInt();
                 if (mtrscList.containsKey(hash)) {
@@ -191,7 +192,7 @@ public class CompareBolt extends BaseRichBolt {
                         globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                         mtrscList.set(mtrsc);
                     } catch (IOException ex) {
-                        java.util.logging.Logger.getLogger(CompareBolt.class.getName()).log(Level.SEVERE, null, ex);
+                        LOGGER.error(globalFunctions.stackTrace(ex));                        
                     }
                 }
             }
@@ -232,18 +233,18 @@ public class CompareBolt extends BaseRichBolt {
                     if (!mtrscList.containsKey(code)) {
                         mtrscMetaLocal = mtrscMetaInput;
 
-                        GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
-                        ArrayList<KeyValue> Regressiondata;
-                        try {
-                            Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
-                            for (KeyValue Regression : Regressiondata) {
-                                if (Arrays.equals(Regression.qualifier(), "Regression".getBytes())) {
-                                    mtrscMetaLocal.setSerializedRegression(Regression.value());
-                                }
-                            }
-                        } catch (Exception ex) {
-                            LOGGER.error("In Regression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
-                        }
+//                        GetRequest getRegression = new GetRequest(metatable, key, meta_family, "Regression".getBytes());
+//                        ArrayList<KeyValue> Regressiondata;
+//                        try {
+//                            Regressiondata = globalFunctions.getSecindaryclient(clientconf).get(getRegression).joinUninterruptibly();
+//                            for (KeyValue Regression : Regressiondata) {
+//                                if (Arrays.equals(Regression.qualifier(), "Regression".getBytes())) {
+//                                    mtrscMetaLocal.setSerializedRegression(Regression.value());
+//                                }
+//                            }
+//                        } catch (Exception ex) {
+//                            LOGGER.error("In Regression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+//                        }
 
                         mtrscMetaLocal.getRegression().addData(metric.getTimestamp(), metric.getValue());
                         qualifiers = new byte[4][];
@@ -262,8 +263,9 @@ public class CompareBolt extends BaseRichBolt {
                         }
                         values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
                         putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-                        LOGGER.info("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags());
-                        globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
+                        LOGGER.info("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags()+" code "+code+" newcode: "+mtrscMetaLocal.hashCode());                                                
+//                        globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
+                        globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                     } else {
 //                        oldmtrc = mtrsc;
                         mtrscMetaLocal = mtrscList.get(mtrscMetaInput.hashCode());
@@ -289,6 +291,7 @@ public class CompareBolt extends BaseRichBolt {
                         LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
                         globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                     }
+                    
                     mtrscList.set(mtrscMetaLocal);
 
                     CalendarObj.setTimeInMillis(metric.getTimestamp());

@@ -34,6 +34,7 @@ Topology:
     SpoutParallelism_hint: 1
     SpoutSemaphoreParallelism_hint: 1
     ParseMetricBoltParallelism_hint: 2
+    SemaforProxyBoltParallelism_hint: 2
     WriteToTSDBseriesParallelism_hint: 6
     CompareBoltParallelism_hint: 6
     CalcRulesBoltParallelism_hint: 6

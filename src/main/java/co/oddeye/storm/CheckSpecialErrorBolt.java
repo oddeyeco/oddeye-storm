@@ -102,9 +102,15 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        if (input.getSourceComponent().equals("kafkaSemaphoreSpot")) {
-            collector.ack(input);
-            jsonResult = this.parser.parse(input.getString(0)).getAsJsonObject();            
+        this.collector.ack(input);
+        if (input.getSourceComponent().equals("SemaforProxyBolt")) {
+
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("message from SemaforProxyBolt" + input.getValueByField("action").toString());
+            }
+
+            jsonResult = this.parser.parse(input.getValueByField("action").toString()).getAsJsonObject();
+
             if (jsonResult.get("action").getAsString().equals("deletemetricbyhash")) {
                 final int hash = jsonResult.get("hash").getAsInt();
                 if (mtrscList.containsKey(hash)) {
@@ -223,7 +229,6 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 }
             }
         }
-        collector.ack(input);
     }
 
 }
