@@ -245,7 +245,7 @@ public class CompareBolt extends BaseRichBolt {
 //                        } catch (Exception ex) {
 //                            LOGGER.error("In Regression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
 //                        }
-                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp(), metric.getValue());
+                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp()/1000, metric.getValue());
                         qualifiers = new byte[4][];
                         values = new byte[4][];
                         qualifiers[0] = "n".getBytes();
@@ -268,7 +268,7 @@ public class CompareBolt extends BaseRichBolt {
                     } else {
 //                        oldmtrc = mtrsc;
                         mtrscMetaLocal = mtrscList.get(mtrscMetaInput.hashCode());
-                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp(), metric.getValue());
+                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp()/1000, metric.getValue());
                         if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
                             LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
                         }
