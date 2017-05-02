@@ -414,7 +414,7 @@ public class CompareBolt extends BaseRichBolt {
                         Map<String, Object> metricsmap = new HashMap<>();
                         if (weight != 0) {
                             weight_per = weight_per / loop;
-                            double predict_value = mtrscMetaLocal.getRegression().predict(CalendarObj.getTimeInMillis());
+                            double predict_value = mtrscMetaLocal.getRegression().predict(CalendarObj.getTimeInMillis()/1000);
                             double predict_value_per = 0;
                             if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
                                 predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
