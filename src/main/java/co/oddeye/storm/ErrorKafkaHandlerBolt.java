@@ -86,7 +86,9 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         jsonResult.addProperty("action", mtrsc.getErrorState().getState());
         JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());
         JsonElement values = gson.toJsonTree(mtrsc.LevelValuesList());
-
+        if (time != null) {
+            jsonResult.addProperty("time", time);
+        }
         if (metric != null) {
             jsonResult.addProperty("time", metric.getTimestamp());
             jsonResult.addProperty("type", metric.getType());
@@ -100,9 +102,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
                 }
             }
         }
-        if (time != null) {
-            jsonResult.addProperty("time", time);
-        }
+
         jsonResult.add("starttimes", starttimes);
         JsonElement endtimes = gson.toJsonTree(mtrsc.getErrorState().getEndtimes());
         jsonResult.add("endtimes", endtimes);
