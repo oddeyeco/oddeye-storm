@@ -11,6 +11,7 @@ import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
+import com.google.common.collect.Iterables;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -457,15 +458,18 @@ public class CompareBolt extends BaseRichBolt {
                             });
                             if (!Errormap.isEmpty()) {
                                 boolean setlevel = false;
+                                boolean savelevel = true;
                                 for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
                                     if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
                                         setlevel = true;
-                                        if (mtrscMetaLocal.getErrorState().getLevel() <= item.getKey()) {
+                                        if (mtrscMetaLocal.getErrorState().getLevel() < Iterables.getLast(mtrscMetaLocal.getLevelList()) ) {
                                             mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                            savelevel = false;
                                             break;
                                         } else {
                                             if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
                                                 mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                                savelevel = false;
                                                 break;
                                             }
                                         }
@@ -473,6 +477,9 @@ public class CompareBolt extends BaseRichBolt {
                                     }
 
                                 }
+                                if (savelevel) {
+                                    mtrscMetaLocal.getErrorState().setLevel(mtrscMetaLocal.getErrorState().getLevel(), metric.getTimestamp());
+                                }                                
                                 if (!setlevel) {
                                     mtrscMetaLocal.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, metric.getTimestamp());
                                 }
