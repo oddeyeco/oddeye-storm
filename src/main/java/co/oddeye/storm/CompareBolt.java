@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author vahan
  */
 public class CompareBolt extends BaseRichBolt {
-    
+
     protected OutputCollector collector;
 
 //    private static final Logger LOGGER = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
@@ -54,21 +54,21 @@ public class CompareBolt extends BaseRichBolt {
     private OddeeyMetricMetaList mtrscList;
     private Calendar CalendarObjRules;
     private final Calendar CalendarObj;
-    
+
     private final int devkef = 1;
-    
+
     private final byte[] metatable;
     private final byte[] meta_family = "d".getBytes();
-    
+
     private final byte[] usertable;
     private final byte[] usertechfamily = "technicalinfo".getBytes();
-    
+
     private final byte[] errortable;
     private final byte[] error_family = "d".getBytes();
-    
+
     private JsonParser parser = null;
     private JsonObject jsonResult = null;
-    
+
     private final Map<String, AlertLevel> UserLevels = new HashMap<>();
 
     /**
@@ -83,18 +83,18 @@ public class CompareBolt extends BaseRichBolt {
         CalendarObjRules = Calendar.getInstance();
         CalendarObj = Calendar.getInstance();
     }
-    
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
         ofd.declare(new Fields("mtrsc", "metric"));
     }
-    
+
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
         LOGGER.warn("DoPrepare WriteToTSDBseries");
         collector = oc;
         parser = new JsonParser();
-        
+
         try {
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
@@ -102,7 +102,7 @@ public class CompareBolt extends BaseRichBolt {
             openTsdbConfig.overrideConfig("tsd.storage.enable_compaction", String.valueOf(conf.get("tsd.storage.enable_compaction")));
             openTsdbConfig.overrideConfig("tsd.storage.hbase.data_table", String.valueOf(conf.get("tsd.storage.hbase.data_table")));
             openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
-            
+
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
             clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
@@ -118,7 +118,7 @@ public class CompareBolt extends BaseRichBolt {
             } catch (Exception ex) {
                 mtrscList = new OddeeyMetricMetaList();
             }
-            
+
             try {
                 Scanner scanner = globalFunctions.getSecindaryclient(clientconf).newScanner(usertable);
                 scanner.setServerBlockCache(false);
@@ -127,10 +127,10 @@ public class CompareBolt extends BaseRichBolt {
 //            scanner.setQualifier("n".getBytes());
                 final byte[][] Qualifiers = new byte[][]{"AL".getBytes()};
                 scanner.setQualifiers(Qualifiers);
-                
+
                 ArrayList<ArrayList<KeyValue>> rows;
                 while ((rows = scanner.nextRows(1000).joinUninterruptibly()) != null) {
-                    
+
                     for (final ArrayList<KeyValue> row : rows) {
                         String ALjson = "";
 //                    String UsID = "";
@@ -150,49 +150,49 @@ public class CompareBolt extends BaseRichBolt {
                             UserLevels.put(UsID, AlertLevels);
                         }
                     }
-                    
+
                 }
             } catch (Exception e) {
             }
-            
+
         } catch (Exception ex) {
             LOGGER.error("OpenTSDB config execption : " + ex.toString());
         }
         LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt Finish");
     }
-    
+
     @Override
     public void execute(Tuple tuple) {
         this.collector.ack(tuple);
-        if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {            
-            
+        if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {
+
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("message from SemaforProxyBolt" + tuple.getValueByField("action").toString());
-            }            
-            
+            }
+
             jsonResult = this.parser.parse(tuple.getValueByField("action").toString()).getAsJsonObject();
-            
+
             if (jsonResult.get("action").getAsString().equals("deletemetricbyhash")) {
                 final int hash = jsonResult.get("hash").getAsInt();
                 if (mtrscList.containsKey(hash)) {
-                    mtrscList.remove(hash);                    
+                    mtrscList.remove(hash);
                 }
             }
-            
+
             if (jsonResult.get("action").getAsString().equals("resetregresion")) {
                 final int hash = jsonResult.get("hash").getAsInt();
                 if (mtrscList.containsKey(hash)) {
                     try {
                         final OddeeyMetricMeta mtrsc = mtrscList.get(hash);
                         mtrsc.getRegression().clear();
-                        
+
                         byte[] qualifier = "Regression".getBytes();
                         byte[] value = mtrsc.getSerializedRegression();
                         PutRequest putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifier, value);
                         globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                         mtrscList.set(mtrsc);
                     } catch (IOException ex) {
-                        LOGGER.error(globalFunctions.stackTrace(ex));                        
+                        LOGGER.error(globalFunctions.stackTrace(ex));
                     }
                 }
             }
@@ -208,16 +208,16 @@ public class CompareBolt extends BaseRichBolt {
                     }
                 }
             }
-            
+
         }
-        
+
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
-            
+
             try {
                 OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
                 OddeeyMetricMeta mtrscMetaInput = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
                 OddeeyMetricMeta mtrscMetaLocal;
-                
+
                 PutRequest putvalue;
                 byte[] key = mtrscMetaInput.getKey();
                 byte[][] qualifiers;
@@ -228,7 +228,7 @@ public class CompareBolt extends BaseRichBolt {
                 } catch (Exception ex) {
                     LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
                 }
-                
+
                 if (code != 0) {
                     if (!mtrscList.containsKey(code)) {
                         mtrscMetaLocal = mtrscMetaInput;
@@ -245,7 +245,7 @@ public class CompareBolt extends BaseRichBolt {
 //                        } catch (Exception ex) {
 //                            LOGGER.error("In Regression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
 //                        }
-                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp()/1000, metric.getValue());
+                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
                         qualifiers = new byte[4][];
                         values = new byte[4][];
                         qualifiers[0] = "n".getBytes();
@@ -268,7 +268,7 @@ public class CompareBolt extends BaseRichBolt {
                     } else {
 //                        oldmtrc = mtrsc;
                         mtrscMetaLocal = mtrscList.get(mtrscMetaInput.hashCode());
-                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp()/1000, metric.getValue());
+                        mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
                         if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
                             LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
                         }
@@ -281,7 +281,7 @@ public class CompareBolt extends BaseRichBolt {
                             values[2] = ByteBuffer.allocate(2).putShort(mtrscMetaInput.getType()).array();
                             mtrscMetaLocal.setType(mtrscMetaInput.getType());
                         }
-                        
+
                         qualifiers[0] = "timestamp".getBytes();
                         qualifiers[1] = "Regression".getBytes();
                         values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
@@ -290,9 +290,9 @@ public class CompareBolt extends BaseRichBolt {
                         LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
                         globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                     }
-                    
+
                     mtrscList.set(mtrscMetaLocal);
-                    
+
                     CalendarObj.setTimeInMillis(metric.getTimestamp());
                     CalendarObjRules.setTimeInMillis(metric.getTimestamp());
                     CalendarObjRules.add(Calendar.DATE, -1);
@@ -317,9 +317,9 @@ public class CompareBolt extends BaseRichBolt {
                                 LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
                                 continue;
                             }
-                            
+
                             CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
-                            
+
                             if (!Rule.isIsValidRule()) {
                                 if (LOGGER.isInfoEnabled()) {
                                     LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
@@ -334,16 +334,16 @@ public class CompareBolt extends BaseRichBolt {
                             }
                             int local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
                             int weight_KF;
-                            
+
                             if (curent_DW == local_DW) {
                                 weight_KF = 2;
-                                
+
                             } else {
                                 weight_KF = 1;
                             }
-                            
+
                             if (Rule.getAvg() != null) {
-                                
+
                                 if ((Rule.getAvg() != 0) && (metric.getValue() != 0)) {
                                     tmp_weight_per = (metric.getValue() - Rule.getAvg()) / Rule.getAvg() * 100;
                                 } else {
@@ -352,7 +352,7 @@ public class CompareBolt extends BaseRichBolt {
                                     tmp_weight_per = 0;
                                 }
                             }
-                            
+
                             if (input_weight != -1) {
                                 if (Rule.getAvg() != null && Rule.getDev() != null) {
                                     if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
@@ -370,7 +370,7 @@ public class CompareBolt extends BaseRichBolt {
                                     LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
                                 }
                             }
-                            
+
                             if (input_weight != -2) {
                                 if (Rule.getMin() != null) {
                                     if (metric.getValue() < Rule.getMin()) {
@@ -387,7 +387,7 @@ public class CompareBolt extends BaseRichBolt {
                                 LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
                             }
                         }
-                        
+
                     } else if (input_weight > 0) {
                         if (metric.getValue() > input_weight) {
                             weight = 16;
@@ -414,7 +414,7 @@ public class CompareBolt extends BaseRichBolt {
                         Map<String, Object> metricsmap = new HashMap<>();
                         if (weight != 0) {
                             weight_per = weight_per / loop;
-                            double predict_value = mtrscMetaLocal.getRegression().predict(CalendarObj.getTimeInMillis()/1000);
+                            double predict_value = mtrscMetaLocal.getRegression().predict(CalendarObj.getTimeInMillis() / 1000);
                             double predict_value_per = 0;
                             if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
                                 predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
@@ -437,13 +437,13 @@ public class CompareBolt extends BaseRichBolt {
                             mtrscMetaLocal.getLevelList().remove(0);
                             mtrscMetaLocal.LevelValuesList().remove(0);
                         }
-                        
+
                         metricsmap.put("value", metric.getValue());
                         mtrscMetaLocal.LevelValuesList().add(metricsmap);
-                        
+
                         if (Collections.max(mtrscMetaLocal.getLevelList()) > -1) {
                             Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
-                            mtrscMetaLocal.getLevelList().stream().filter((e) -> (e > -1)).forEachOrdered((e) -> {
+                            mtrscMetaLocal.getLevelList().stream().forEachOrdered((e) -> {
                                 for (int j = e; j >= 0; j--) {
                                     Integer counter = Errormap.get(j);
                                     if (counter != null) {
@@ -451,7 +451,7 @@ public class CompareBolt extends BaseRichBolt {
                                     } else {
                                         counter = 1;
                                     }
-                                    
+
                                     Errormap.put(j, counter);
                                 }
                             });
@@ -459,22 +459,27 @@ public class CompareBolt extends BaseRichBolt {
                                 boolean setlevel = false;
                                 for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
                                     if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
-                                        mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
                                         setlevel = true;
-                                        break;
+                                        if (mtrscMetaLocal.getErrorState().getLevel() <= item.getKey()) {
+                                            mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                            break;
+                                        } else {
+                                            if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
+                                                mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                                break;
+                                            }
+                                        }
+
                                     }
-                                    
+
                                 }
                                 if (!setlevel) {
                                     mtrscMetaLocal.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, metric.getTimestamp());
                                 }
-                                
+
                             }
-//                            CalendarObj.setTimeInMillis(metric.getTimestamp());
-//                        if (mtrscMetaLocal.getErrorState().getState() != 1) {
 
                             collector.emit(new Values(mtrscMetaLocal.dublicate(), metric.dublicate()));
-//                        }
                         } else {
                             if (mtrscMetaLocal.getErrorState().getLevel() != -1) {
                                 mtrscMetaLocal.getErrorState().setLevel(-1, metric.getTimestamp());
@@ -484,11 +489,11 @@ public class CompareBolt extends BaseRichBolt {
                     }
 //                mtrscList.set(mtrscMetaLocal);
                 }
-                
+
             } catch (Exception ex) {
                 LOGGER.error("Exception execute: " + globalFunctions.stackTrace(ex));
             }
-            
+
         }
     }
 }
