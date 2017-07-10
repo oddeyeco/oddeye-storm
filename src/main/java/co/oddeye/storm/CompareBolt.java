@@ -434,7 +434,7 @@ public class CompareBolt extends BaseRichBolt {
                             metricsmap.put("lever", -1);
                             mtrscMetaLocal.getLevelList().add(-1);
                         }
-                        if (mtrscMetaLocal.getLevelList().size() > 10) {
+                        if (mtrscMetaLocal.getLevelList().size() > 15) {
                             mtrscMetaLocal.getLevelList().remove(0);
                             mtrscMetaLocal.LevelValuesList().remove(0);
                         }
