@@ -477,6 +477,7 @@ public class CompareBolt extends BaseRichBolt {
                                     }
 
                                 }
+                                mtrscMetaLocal.getErrorState().setUpstate(weight>0);
                                 if (savelevel) {
                                     mtrscMetaLocal.getErrorState().setLevel(mtrscMetaLocal.getErrorState().getLevel(), metric.getTimestamp());
                                 }                                
