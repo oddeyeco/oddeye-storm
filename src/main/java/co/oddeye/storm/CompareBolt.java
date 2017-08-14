@@ -462,25 +462,33 @@ public class CompareBolt extends BaseRichBolt {
                                 for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
                                     if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
                                         setlevel = true;
-                                        if (mtrscMetaLocal.getErrorState().getLevel() < Iterables.getLast(mtrscMetaLocal.getLevelList()) ) {
+                                        if (mtrscMetaLocal.getErrorState().getLevel() < Iterables.getLast(mtrscMetaLocal.getLevelList())) {
                                             mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
                                             savelevel = false;
                                             break;
                                         } else {
-                                            if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
-                                                mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
-                                                savelevel = false;
-                                                break;
+                                            if (Errormap.containsKey(mtrscMetaLocal.getErrorState().getLevel())) {
+                                                try {
+
+                                                    if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
+                                                        mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                                        savelevel = false;
+                                                        break;
+                                                    }
+                                                } catch (Exception e) {
+                                                    LOGGER.error("Exception execute: " + globalFunctions.stackTrace(e));
+                                                }
                                             }
+
                                         }
 
                                     }
 
                                 }
-                                mtrscMetaLocal.getErrorState().setUpstate(weight>0);
+                                mtrscMetaLocal.getErrorState().setUpstate(weight > 0);
                                 if (savelevel) {
                                     mtrscMetaLocal.getErrorState().setLevel(mtrscMetaLocal.getErrorState().getLevel(), metric.getTimestamp());
-                                }                                
+                                }
                                 if (!setlevel) {
                                     mtrscMetaLocal.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, metric.getTimestamp());
                                 }

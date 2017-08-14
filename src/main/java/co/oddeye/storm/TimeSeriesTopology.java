@@ -62,6 +62,7 @@ public class TimeSeriesTopology {
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
         builder.setSpout("TimerSpout", new TimerSpout(), 1);
+        builder.setSpout("TimerSpout2x", new TimerSpout2x(), 1);
         // Semaphore Spout        
         BrokerHosts zkSemaphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
         
@@ -132,8 +133,20 @@ public class TimeSeriesTopology {
 //                new CheckLastTimeBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckLastTimeBoltParallelism_hint"))))
 //                .customGrouping("FilterForLastTimeBolt", new MerticGrouper())
 //                .allGrouping("TimerSpout");
+        java.util.Map<String, Object> Mailconfig = (java.util.Map<String, Object>) topologyconf.get("mail");
         
-        
+        builder.setBolt("SendNotifierBolt",
+                new SendNotifierBolt(TSDBconfig, Mailconfig), Integer.parseInt(String.valueOf(tconf.get("SendNotifierBoltParallelism_hint"))))                
+                .customGrouping("CompareBolt",new MetaByUserGrouper())
+                .customGrouping("CheckSpecialErrorBolt",new MetaByUserGrouper())                
+                .allGrouping("TimerSpout2x")
+                .allGrouping("kafkaSemaphoreSpot");   
+
+        builder.setBolt("MetricErrorToHbase",
+                new MetricErrorToHbase(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("MetricErrorToHbaseParallelism_hint"))))
+                .shuffleGrouping("CompareBolt")
+                .shuffleGrouping("CheckSpecialErrorBolt");            
+
         java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");
         Properties props = new Properties();
         props.put("bootstrap.servers", String.valueOf(errorKafkaConf.get("bootstrap.servers")));
