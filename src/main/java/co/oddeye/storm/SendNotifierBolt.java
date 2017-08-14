@@ -127,7 +127,7 @@ public class SendNotifierBolt extends BaseRichBolt {
                             Sender = new SendToTelegram(target.getValue(), user);
                         }
                         if (target.getKey().equals("email")) {
-                            Sender = new SendToEmail(target.getValue(), user,mailconf);
+                            Sender = new SendToEmail(target.getValue(), user, mailconf);
                         }
                     }
                     return Sender;
@@ -137,20 +137,22 @@ public class SendNotifierBolt extends BaseRichBolt {
             });
         }
 
-        if (tuple.getSourceComponent().equals("CompareBolt")||tuple.getSourceComponent().equals("CheckSpecialErrorBolt")) {
+        if (tuple.getSourceComponent().equals("CompareBolt") || tuple.getSourceComponent().equals("CheckSpecialErrorBolt")) {
             OddeeyMetricMeta metricMeta = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
-            final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
-            if (ErrorsList.containsKey(metricMeta.hashCode())) {
-                User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
-                if (metricMeta.getErrorState().getLevel() == -1) {
-                    ErrorsList.remove(metricMeta.hashCode());
+            if (metricMeta.getErrorState().getState() != 1) {
+                final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
+                if (ErrorsList.containsKey(metricMeta.hashCode())) {
+                    User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
+                    if (metricMeta.getErrorState().getLevel() == -1) {
+                        ErrorsList.remove(metricMeta.hashCode());
+                    }
+                } else {
+                    if (metricMeta.getErrorState().getLevel() > -1) {
+                        User.PrepareNotifier(metricMeta, null, true);
+                    }
                 }
-            } else {
-                if (metricMeta.getErrorState().getLevel() > -1) {
-                    User.PrepareNotifier(metricMeta, null, true);
-                }
+                ErrorsList.put(metricMeta.hashCode(), metricMeta);
             }
-            ErrorsList.put(metricMeta.hashCode(), metricMeta);
         }
 
         collector.ack(tuple);

@@ -5,6 +5,7 @@
  */
 package co.oddeye.storm;
 
+import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.globalFunctions;
 import co.oddeye.storm.core.StormUser;
@@ -85,16 +86,13 @@ public class MetricErrorToHbase extends BaseRichBolt {
     public void execute(Tuple tuple) {
         this.collector.ack(tuple);
         if (tuple.getSourceComponent().equals("CompareBolt")||tuple.getSourceComponent().equals("CheckSpecialErrorBolt")) {
-            try {
-                OddeeyMetricMeta metricMeta = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
-                byte[] historykey = ArrayUtils.addAll(metricMeta.getUUIDKey(), metricMeta.getKey());
-                historykey = ArrayUtils.addAll(historykey, globalFunctions.getDayKey(metricMeta.getErrorState().getTime()));
-                
-                PutRequest puthistory = new PutRequest(errorshistorytable, historykey, "h".getBytes(), globalFunctions.getNoDayKey(metricMeta.getErrorState().getTime()), metricMeta.getErrorState().getSerialized());
-                globalFunctions.getSecindaryclient(clientconf).put(puthistory);
-        }catch (IOException ex) {
-            LOGGER.error(globalFunctions.stackTrace(ex));                
-        }
+            OddeeyMetricMeta metricMeta = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
+            OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+            byte[] historykey = ArrayUtils.addAll(metricMeta.getUUIDKey(), metricMeta.getKey());
+            historykey = ArrayUtils.addAll(historykey, globalFunctions.getDayKey(metricMeta.getErrorState().getTime()));
+            
+            PutRequest puthistory = new PutRequest(errorshistorytable, historykey, "h".getBytes(), globalFunctions.getNoDayKey(metricMeta.getErrorState().getTime()), metricMeta.getErrorState().ToJson(metric).toString().getBytes());
+            globalFunctions.getSecindaryclient(clientconf).put(puthistory);
     }
 }
 
