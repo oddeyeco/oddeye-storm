@@ -113,9 +113,9 @@ public class TimeSeriesTopology {
 //                new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
 //                .shuffleGrouping("KafkaSpout");
 //
-//        builder.setBolt("SemaforProxyBolt",
-//                new SemaforProxyBolt(), Integer.parseInt(String.valueOf(tconf.get("SemaforProxyBoltParallelism_hint"))))
-//                .shuffleGrouping("kafkaSemaphoreSpot");        
+        builder.setBolt("SemaforProxyBolt",
+                new SemaforProxyBolt(), Integer.parseInt(String.valueOf(tconf.get("SemaforProxyBoltParallelism_hint"))))
+                .shuffleGrouping("kafkaSemaphoreSpot");        
 //        
 //        builder.setBolt("CheckSpecialErrorBolt",
 //                new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
