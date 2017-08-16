@@ -17,9 +17,10 @@ KafkaSemaphore:
    zkRoot: "/semaphore_oddeye"
    zkKey: "semaphore-staus"       
    
+   
 Tsdb:
   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
-   
+  hbase.rpcs.batch.size: 4096 
   metatable: test_oddeye-meta
   errorstable: test_oddeye-errors
   errorshistorytable: test_oddeye-error-history

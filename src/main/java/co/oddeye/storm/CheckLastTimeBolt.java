@@ -65,7 +65,7 @@ public class CheckLastTimeBolt extends BaseRichBolt {
 
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
-            clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
+            clientconf.overrideConfig("hbase.rpcs.batch.size", String.valueOf(conf.get("hbase.rpcs.batch.size")));
             globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
 //            CalendarObjRules = Calendar.getInstance();
 

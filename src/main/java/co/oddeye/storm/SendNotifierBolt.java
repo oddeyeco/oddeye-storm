@@ -83,7 +83,7 @@ public class SendNotifierBolt extends BaseRichBolt {
 
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
-            clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
+            clientconf.overrideConfig("hbase.rpcs.batch.size", String.valueOf(conf.get("hbase.rpcs.batch.size")));
             TSDB tsdb = globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
             if (tsdb == null) {
                 LOGGER.error("tsdb: " + tsdb);

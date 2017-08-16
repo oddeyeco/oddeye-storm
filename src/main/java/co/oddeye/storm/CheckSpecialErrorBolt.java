@@ -74,7 +74,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
-            clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
+            clientconf.overrideConfig("hbase.rpcs.batch.size", String.valueOf(conf.get("hbase.rpcs.batch.size")));
             globalFunctions.getTSDB(openTsdbConfig, clientconf);
 //            CalendarObjRules = Calendar.getInstance();
 
