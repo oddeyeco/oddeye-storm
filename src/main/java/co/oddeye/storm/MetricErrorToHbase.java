@@ -8,14 +8,10 @@ package co.oddeye.storm;
 import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.globalFunctions;
-import co.oddeye.storm.core.StormUser;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.logging.Level;
 import net.opentsdb.core.TSDB;
 import net.opentsdb.utils.Config;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -23,7 +19,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.hbase.async.DeleteRequest;
 import org.hbase.async.PutRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +65,7 @@ public class MetricErrorToHbase extends BaseRichBolt {
 
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
-            clientconf.overrideConfig("hbase.rpcs.batch.size", "2048");
+            clientconf.overrideConfig("hbase.rpcs.batch.size", "4096");
             TSDB tsdb = globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
             if (tsdb == null) {
                 LOGGER.error("tsdb: " + tsdb);
