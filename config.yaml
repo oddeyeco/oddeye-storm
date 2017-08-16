@@ -52,11 +52,7 @@ Topology:
     CalcRulesBoltParallelism_hint: 6
     ErrorKafkaHandlerParallelism_hint: 6
     CheckSpecialErrorBoltParallelism_hint: 3
-    FilterForLastTimeBoltParallelism_hint: 3
-    CheckLastTimeBoltParallelism_hint: 6
-    
-    SpoutSemaphoreParallelism_hint: 1
-    ParseMetricBoltParallelism_hint: 2
+   
     MetricErrorToHbaseParallelism_hint: 3
     SendNotifierBoltParallelism_hint: 6    
 #    TSDBMsgBoltParallelism_hint: 4
