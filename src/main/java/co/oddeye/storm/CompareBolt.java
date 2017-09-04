@@ -423,10 +423,10 @@ public class CompareBolt extends BaseRichBolt {
                             metricsmap.put("level", AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
                             mtrscMetaLocal.getLevelList().add(AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
                             // TODO Karoxa hanel aradzin bolt
-//                            key = mtrscMetaLocal.getTags().get("UUID").getValueTSDBUID();
-//                            key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
-//                            putvalue = new PutRequest(errortable, key, error_family, mtrscMetaLocal.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
-//                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                            key = mtrscMetaLocal.getTags().get("UUID").getValueTSDBUID();
+                            key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
+                            putvalue = new PutRequest(errortable, key, error_family, mtrscMetaLocal.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
+                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                             if (LOGGER.isInfoEnabled()) {
                                 LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
                             }
