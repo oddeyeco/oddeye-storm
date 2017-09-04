@@ -97,10 +97,10 @@ public class TimeSeriesTopology {
                 new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
                 .shuffleGrouping("ParseMetricBolt");
 
-        builder.setBolt("CompareBolt",
-                new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
-                .customGrouping("ParseMetricBolt", new MerticGrouper())
-                .allGrouping("SemaforProxyBolt");
+//        builder.setBolt("CompareBolt",
+//                new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
+//                .customGrouping("ParseMetricBolt", new MerticGrouper())
+//                .allGrouping("SemaforProxyBolt");
 
         builder.setBolt("CalcRulesBolt",
                 new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
@@ -125,13 +125,13 @@ public class TimeSeriesTopology {
 
         builder.setBolt("SendNotifierBolt",
                 new SendNotifierBolt(TSDBconfig, Mailconfig), Integer.parseInt(String.valueOf(tconf.get("SendNotifierBoltParallelism_hint"))))                
-                .customGrouping("CompareBolt",new MetaByUserGrouper())
+//                .customGrouping("CompareBolt",new MetaByUserGrouper())
                 .customGrouping("CheckSpecialErrorBolt",new MetaByUserGrouper())                
                 .allGrouping("TimerSpout2x")
                 .allGrouping("kafkaSemaphoreSpot");   
         builder.setBolt("MetricErrorToHbase",
                 new MetricErrorToHbase(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("MetricErrorToHbaseParallelism_hint"))))
-                .shuffleGrouping("CompareBolt")
+//                .shuffleGrouping("CompareBolt")
                 .shuffleGrouping("CheckSpecialErrorBolt");
 
         java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");
@@ -148,7 +148,7 @@ public class TimeSeriesTopology {
         String topic = String.valueOf(errorKafkaConf.get("topic"));
         builder.setBolt("ErrorKafkaHandlerBolt",
                 new ErrorKafkaHandlerBolt(props,topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
-                .shuffleGrouping("CompareBolt")
+//                .shuffleGrouping("CompareBolt")
                 .shuffleGrouping("CheckSpecialErrorBolt");
 ////                .shuffleGrouping("CheckLastTimeBolt");
 
