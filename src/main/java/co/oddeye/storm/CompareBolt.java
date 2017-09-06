@@ -269,6 +269,13 @@ public class CompareBolt extends BaseRichBolt {
                     } else {
 //                        oldmtrc = mtrsc;
                         mtrscMetaLocal = mtrscList.get(mtrscMetaInput.hashCode());
+
+                        LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                        if ((mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()) < 0) {
+                            LOGGER.warn("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                            return;
+                        }
+
                         mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
                         if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
                             LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
