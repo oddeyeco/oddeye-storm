@@ -116,8 +116,14 @@ public class ParseMetricBolt extends BaseRichBolt {
                             LOGGER.error("Exception Wits Metriq: " + Metric);
                             LOGGER.error("Exception Wits Input: " + msg);
                         }
+                        
+                    }
+                                        
+                    if (MetricList.size()>0)
+                    {
                         collector.emit(new Values(MetricList));
                     }
+                    
                 }
             } catch (JsonSyntaxException ex) {
                 LOGGER.error("JsonSyntaxException: " + globalFunctions.stackTrace(ex));

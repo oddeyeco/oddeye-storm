@@ -5,9 +5,10 @@
  */
 package co.oddeye.storm;
 
-import co.oddeye.core.OddeeyMetricMeta;
+import co.oddeye.core.OddeeyMetric;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -18,9 +19,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author vahan
  */
-public class MetaByUserGrouper implements CustomStreamGrouping {
+public class MerticListGrouper implements CustomStreamGrouping {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(MetaByUserGrouper.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(MerticListGrouper.class);  
     private List<Integer> tasks;
 
     @Override
@@ -31,9 +32,14 @@ public class MetaByUserGrouper implements CustomStreamGrouping {
     @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
         List<Integer> rvalue = new ArrayList<>(values.size());
-        values.stream().filter((val) -> (val instanceof OddeeyMetricMeta)).map((val) -> (OddeeyMetricMeta) val).forEachOrdered((OddeeyMetricMeta metric) -> {
-            rvalue.add(tasks.get(Math.abs(metric.getTags().get("UUID").getValue().hashCode()) % tasks.size()));
-        });        
+        
+        values.stream().map((o) -> (Map<Integer, OddeeyMetric>) o).map((metricList) -> metricList.entrySet().iterator().next().getValue()).map((metric) -> {
+            rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
+            return metric;
+        }).forEachOrdered((metric) -> {
+            LOGGER.info("metric" +metric.getName() +" tags:"+ metric.getTags()+ " values"+rvalue);
+        });
+       
         return rvalue;
     }
 

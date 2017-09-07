@@ -97,15 +97,15 @@ public class TimeSeriesTopology {
                 new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
                 .shuffleGrouping("ParseMetricBolt");
 
-//        builder.setBolt("CompareBolt",
-//                new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
-//                .customGrouping("ParseMetricBolt", new MerticGrouper())
-//                .allGrouping("SemaforProxyBolt");
+        builder.setBolt("CompareBolt",
+                new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
+                .customGrouping("ParseMetricBolt", new MerticListGrouper())
+                .allGrouping("SemaforProxyBolt");
 
-//        builder.setBolt("CalcRulesBolt",
-//                new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
-//                .customGrouping("ParseMetricBolt", new MerticGrouper())
-//                .allGrouping("SemaforProxyBolt");
+        builder.setBolt("CalcRulesBolt",
+                new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
+                .customGrouping("ParseMetricBolt", new MerticListGrouper())
+                .allGrouping("SemaforProxyBolt");
 
         builder.setBolt("ParseSpecialMetricBolt",
                 new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
