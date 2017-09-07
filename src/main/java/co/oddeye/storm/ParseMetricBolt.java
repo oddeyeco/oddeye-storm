@@ -13,6 +13,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -35,10 +36,12 @@ public class ParseMetricBolt extends BaseRichBolt {
     private JsonParser parser = null;
     private JsonArray jsonResult = null;
     private Date date;
+    
+    private Map<Integer, OddeeyMetric> MetricList = new ConcurrentHashMap<>();
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
-        ofd.declare(new Fields("metric"));
+        ofd.declare(new Fields("MetricList"));
     }
 
     @Override
@@ -67,6 +70,7 @@ public class ParseMetricBolt extends BaseRichBolt {
             try {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
+                    MetricList.clear();
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         try {
@@ -98,7 +102,8 @@ public class ParseMetricBolt extends BaseRichBolt {
                             }
                             date = new Date(mtrsc.getTimestamp());
                             LOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));
-                            collector.emit(new Values(mtrsc));
+                            MetricList.put(mtrsc.hashCode(), mtrsc);
+//                            collector.emit(new Values(mtrsc));
 //                            if (mtrsc.getName().equals("host_alive")) {
 //                                Metric.getAsJsonObject().addProperty("metric", "host_absent");
 //                                Metric.getAsJsonObject().addProperty("type", "Special");
@@ -111,7 +116,7 @@ public class ParseMetricBolt extends BaseRichBolt {
                             LOGGER.error("Exception Wits Metriq: " + Metric);
                             LOGGER.error("Exception Wits Input: " + msg);
                         }
-
+                        collector.emit(new Values(MetricList));
                     }
                 }
             } catch (JsonSyntaxException ex) {

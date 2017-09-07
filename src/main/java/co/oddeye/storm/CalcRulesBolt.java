@@ -42,7 +42,7 @@ public class CalcRulesBolt extends BaseRichBolt {
     private Config openTsdbConfig;
     private org.hbase.async.Config clientconf;
     private byte[] metatable;
-    private OddeeyMetricMetaList mtrscList;
+    private OddeeyMetricMetaList MetricMetaList;
     private Calendar CalendarObjRules;
     private Map<String, MetriccheckRule> Rules;
     private boolean needsave;
@@ -91,10 +91,10 @@ public class CalcRulesBolt extends BaseRichBolt {
 
             try {
                 LOGGER.warn("Start read meta in hbase");
-                mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
                 LOGGER.warn("End read meta in hbase");
             } catch (Exception ex) {
-                mtrscList = new OddeeyMetricMetaList();
+                MetricMetaList = new OddeeyMetricMetaList();
             }
 
         } catch (IOException ex) {
@@ -108,68 +108,70 @@ public class CalcRulesBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         this.collector.ack(tuple);
-        if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {            
-            
+        if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {
+
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("message from SemaforProxyBolt" + tuple.getValueByField("action").toString());
-            }                           
-            
+            }
+
             jsonResult = this.parser.parse(tuple.getValueByField("action").toString()).getAsJsonObject();
 
             if (jsonResult.get("action").getAsString().equals("deletemetricbyhash")) {
                 final int hash = jsonResult.get("hash").getAsInt();
-                if (mtrscList.containsKey(hash)) {
-                    mtrscList.remove(hash);
+                if (MetricMetaList.containsKey(hash)) {
+                    MetricMetaList.remove(hash);
                 }
             }
         }
 
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
-            try {
-                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
-//                this.collector.ack(tuple);
-                if (metric != null) {
-                    OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
-                    if (mtrscList == null) {
-                        LOGGER.error("Es anasunucjun@ vonca null darel");
-                        try {
-                            LOGGER.warn("Start read meta in hbase");
-                            mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
-                            LOGGER.warn("End read meta in hbase");
-                        } catch (Exception ex) {
-                            mtrscList = new OddeeyMetricMetaList();
+            Map<Integer, OddeeyMetric> MetricList = (Map<Integer, OddeeyMetric>) tuple.getValueByField("metric");
+            MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> {
+                try {
+//                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+                    if (metric != null) {
+                        OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
+                        if (MetricMetaList == null) {
+                            LOGGER.error("Es anasunucjun@ vonca null darel");
+                            try {
+                                LOGGER.warn("Start read meta in hbase");
+                                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+                                LOGGER.warn("End read meta in hbase");
+                            } catch (Exception ex) {
+                                MetricMetaList = new OddeeyMetricMetaList();
+                            }
                         }
-                    }
 
-                    Integer code = 0;
-                    try {
-                        code = mtrsc.hashCode();
-                    } catch (Exception ex) {
-                        LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
-                    }
-
-                    if (code != 0) {
-                        if (mtrscList.containsKey(mtrsc.hashCode())) {
-                            mtrsc = mtrscList.get(mtrsc.hashCode());
-                        }
+                        Integer code = 0;
                         try {
-                            calcRules(mtrsc, metric, code);
-                            mtrscList.set(mtrsc);
+                            code = mtrsc.hashCode();
                         } catch (Exception ex) {
-                            LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
+                            LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+                        }
+
+                        if (code != 0) {
+                            if (MetricMetaList.containsKey(mtrsc.hashCode())) {
+                                mtrsc = MetricMetaList.get(mtrsc.hashCode());
+                            }
+                            try {
+                                calcRules(mtrsc, metric, code);
+                                MetricMetaList.set(mtrsc);
+                            } catch (Exception ex) {
+                                LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
+                            }
+                        } else {
+                            LOGGER.error("code is 0: ");
                         }
                     } else {
-                        LOGGER.error("code is 0: ");
+                        LOGGER.error("metric is null: ");
+                        LOGGER.error(tuple.getFields().size() + "");
+                        LOGGER.error(tuple.getValueByField("metric").toString());
                     }
-                } else {
-                    LOGGER.error("metric is null: ");
-                    LOGGER.error(tuple.getFields().size() + "");
-                    LOGGER.error(tuple.getValueByField("metric").toString());
-                }
 //            }
-            } catch (Exception ex) {
-                LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
-            }
+                } catch (Exception ex) {
+                    LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
+                }
+            });
         }
 
     }
