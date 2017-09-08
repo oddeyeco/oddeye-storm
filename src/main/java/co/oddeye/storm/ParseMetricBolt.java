@@ -37,7 +37,7 @@ public class ParseMetricBolt extends BaseRichBolt {
     private JsonArray jsonResult = null;
     private Date date;
     
-    private final Map<Integer, OddeeyMetric> MetricList = new ConcurrentHashMap<>();
+    
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
@@ -70,7 +70,7 @@ public class ParseMetricBolt extends BaseRichBolt {
             try {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
-                    MetricList.clear();
+                    final Map<Integer, OddeeyMetric> MetricList = new ConcurrentHashMap<>();
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         try {
