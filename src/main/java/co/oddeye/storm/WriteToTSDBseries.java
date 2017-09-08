@@ -8,6 +8,7 @@ package co.oddeye.storm;
 import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.globalFunctions;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -77,6 +78,10 @@ public class WriteToTSDBseries extends BaseRichBolt {
         Map<Integer, OddeeyMetric> MetricList = (Map<Integer, OddeeyMetric>) tuple.getValueByField("MetricList");
         MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> {
             globalFunctions.getTSDB(openTsdbConfig, clientconf).addPoint(metric.getName(), metric.getTimestamp(), metric.getValue(), metric.getTSDBTags());
+            
+            Date date = new Date(metric.getTimestamp());
+            LOGGER.info("Write Metric: "+metric.getName()+" in Time:"+date +" by Value: "+ metric.getValue()+" vs tags: "+ metric.getTSDBTags());
         });
+        
     }
 }
