@@ -214,9 +214,12 @@ public class CompareBolt extends BaseRichBolt {
 
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
             Map<Integer, OddeeyMetric> MetricList = (Map<Integer, OddeeyMetric>) tuple.getValueByField("MetricList");
-            MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> {
+//            MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> 
+            for (Map.Entry<Integer, OddeeyMetric> metricEntry:MetricList.entrySet())
+            {
                 try {
 //                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+                    OddeeyMetric metric = metricEntry.getValue();
                     OddeeyMetricMeta mtrscMetaInput = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
                     OddeeyMetricMeta mtrscMetaLocal;
 
@@ -261,7 +264,8 @@ public class CompareBolt extends BaseRichBolt {
                             LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
                             if ((mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()) < 0) {
                                 LOGGER.warn("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
-                                return;
+                                continue;
+                                //TODO continue
                             }
 
                             mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
@@ -503,7 +507,7 @@ public class CompareBolt extends BaseRichBolt {
                 } catch (Exception ex) {
                     LOGGER.error("Exception execute: " + globalFunctions.stackTrace(ex));
                 }
-            });
+            };
 
         }
     }
