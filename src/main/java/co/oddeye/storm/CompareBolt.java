@@ -269,6 +269,7 @@ public class CompareBolt extends BaseRichBolt {
                             }
 
                             mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
+                            
                             if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
                                 LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
                             }
@@ -289,6 +290,7 @@ public class CompareBolt extends BaseRichBolt {
                             putvalue = new PutRequest(metatable, mtrscMetaLocal.getKey(), meta_family, qualifiers, values);
                             LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
                             globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                            mtrscMetaLocal.setLasttime(mtrscMetaInput.getLasttime());
                         }
 
                         MetricMetaList.set(mtrscMetaLocal);
