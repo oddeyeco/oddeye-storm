@@ -37,8 +37,6 @@ public class ParseMetricBolt extends BaseRichBolt {
     private JsonParser parser = null;
     private JsonArray jsonResult = null;
     private Date date;
-    
-    
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
@@ -117,14 +115,15 @@ public class ParseMetricBolt extends BaseRichBolt {
                             LOGGER.error("Exception Wits Metriq: " + Metric);
                             LOGGER.error("Exception Wits Input: " + msg);
                         }
-                        
-                    }
-                                        
-                    if (MetricList.size()>0)
-                    {
-                        collector.emit(new Values(MetricList));
+
                     }
                     
+                    if (MetricList.size() > 0) {
+                        final OddeeyMetric firstmetric = MetricList.entrySet().iterator().next().getValue();
+                        LOGGER.info(" first metric "+firstmetric.getTags().hashCode() +" Name "+firstmetric.getName()+" Tags "+firstmetric.getTags()+" full json:" + msg);
+                        collector.emit(new Values(MetricList));
+                    }
+
                 }
             } catch (JsonSyntaxException ex) {
                 LOGGER.error("JsonSyntaxException: " + globalFunctions.stackTrace(ex));
