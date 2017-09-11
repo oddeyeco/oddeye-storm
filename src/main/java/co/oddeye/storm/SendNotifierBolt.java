@@ -139,6 +139,11 @@ public class SendNotifierBolt extends BaseRichBolt {
 
         if (tuple.getSourceComponent().equals("CompareBolt") || tuple.getSourceComponent().equals("CheckSpecialErrorBolt")) {
             OddeeyMetricMeta metricMeta = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
+
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Metric prepare to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
+            }
+
             if (metricMeta.getErrorState().getState() != 1) {
                 final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
                 if (ErrorsList.containsKey(metricMeta.hashCode())) {

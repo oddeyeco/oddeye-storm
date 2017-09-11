@@ -215,8 +215,7 @@ public class CompareBolt extends BaseRichBolt {
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
             Map<String, OddeeyMetric> MetricList = (Map<String, OddeeyMetric>) tuple.getValueByField("MetricList");
 //            MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) ->            
-            for (Map.Entry<String, OddeeyMetric> metricEntry:MetricList.entrySet())
-            {
+            for (Map.Entry<String, OddeeyMetric> metricEntry : MetricList.entrySet()) {
                 try {
 //                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
                     OddeeyMetric metric = metricEntry.getValue();
@@ -260,16 +259,20 @@ public class CompareBolt extends BaseRichBolt {
                         } else {
 //                        oldmtrc = mtrsc;
                             mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
-
-                            LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():"+mtrscMetaLocal.getLasttime()+" "+ (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                            if (LOGGER.isInfoEnabled()) {
+                                LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():" + mtrscMetaLocal.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                            }
                             if ((mtrscMetaInput.getLasttime() < mtrscMetaLocal.getLasttime())) {
-                                LOGGER.warn("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                                if (LOGGER.isInfoEnabled()) {
+                                    LOGGER.info("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                                }
+
                                 continue;
                                 //TODO continue
                             }
 
                             mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
-                            
+
                             if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
                                 LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
                             }
