@@ -13,6 +13,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import java.util.Date;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -70,7 +71,7 @@ public class ParseMetricBolt extends BaseRichBolt {
             try {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
-                    final Map<Integer, OddeeyMetric> MetricList = new ConcurrentHashMap<>();
+                    final Map<Integer, OddeeyMetric> MetricList = new TreeMap<>();
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         try {
