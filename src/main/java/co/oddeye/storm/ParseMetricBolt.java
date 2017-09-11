@@ -69,7 +69,7 @@ public class ParseMetricBolt extends BaseRichBolt {
             try {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
-                    final Map<Integer, OddeeyMetric> MetricList = new TreeMap<>();
+                    final TreeMap<Integer, OddeeyMetric> MetricList = new TreeMap<>();
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         try {
@@ -119,7 +119,7 @@ public class ParseMetricBolt extends BaseRichBolt {
                     }
                     
                     if (MetricList.size() > 0) {
-                        final OddeeyMetric firstmetric = MetricList.entrySet().iterator().next().getValue();
+                        final OddeeyMetric firstmetric = MetricList.firstEntry().getValue();
                         LOGGER.info(" first metric "+firstmetric.getTags().hashCode() +" Name "+firstmetric.getName()+" Tags "+firstmetric.getTags()+" full json:" + msg);
                         collector.emit(new Values(MetricList));
                     }

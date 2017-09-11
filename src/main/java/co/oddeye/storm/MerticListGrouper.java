@@ -9,6 +9,7 @@ import co.oddeye.core.OddeeyMetric;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -33,7 +34,7 @@ public class MerticListGrouper implements CustomStreamGrouping {
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
         List<Integer> rvalue = new ArrayList<>(values.size());
         
-        values.stream().map((o) -> (Map<Integer, OddeeyMetric>) o).map((metricList) -> metricList.entrySet().iterator().next().getValue()).map((metric) -> {
+        values.stream().map((o) -> (TreeMap<Integer, OddeeyMetric>) o).map((metricList) -> metricList.firstEntry().getValue()).map((metric) -> {
             rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
             return metric;
         }).forEachOrdered((metric) -> {
