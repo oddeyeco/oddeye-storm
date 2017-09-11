@@ -120,7 +120,7 @@ public class ParseMetricBolt extends BaseRichBolt {
                     
                     if (MetricList.size() > 0) {
                         final OddeeyMetric firstmetric = MetricList.firstEntry().getValue();
-                        LOGGER.info(" first metric "+firstmetric.getTags().hashCode() +" Name "+firstmetric.getName()+" Tags "+firstmetric.getTags()+" full json:" + msg);
+                        LOGGER.info(" first metric: Hash "+firstmetric.hashCode()+" list Size: "+MetricList.size() +" Tags hash "+firstmetric.getTags().hashCode() +" Name "+firstmetric.getName()+" Tags "+firstmetric.getTags()+" full json:" + msg);
                         collector.emit(new Values(MetricList));
                     }
 
