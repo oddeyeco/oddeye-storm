@@ -214,7 +214,8 @@ public class CompareBolt extends BaseRichBolt {
 
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
             Map<Integer, OddeeyMetric> MetricList = (Map<Integer, OddeeyMetric>) tuple.getValueByField("MetricList");
-//            MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> 
+//            MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) ->
+            final OddeeyMetric firstmetric = MetricList.entrySet().iterator().next().getValue();
             for (Map.Entry<Integer, OddeeyMetric> metricEntry:MetricList.entrySet())
             {
                 try {
@@ -261,7 +262,7 @@ public class CompareBolt extends BaseRichBolt {
 //                        oldmtrc = mtrsc;
                             mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
 
-                            LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():"+mtrscMetaLocal.getLasttime()+" "+ (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                            LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():"+mtrscMetaLocal.getLasttime()+" "+ (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime())+" first metric "+firstmetric.getTags().hashCode() );
                             if ((mtrscMetaInput.getLasttime() < mtrscMetaLocal.getLasttime())) {
                                 LOGGER.warn("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
                                 continue;
