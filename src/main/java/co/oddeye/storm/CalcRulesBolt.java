@@ -125,7 +125,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         }
 
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
-            Map<Integer, OddeeyMetric> MetricList = (Map<Integer, OddeeyMetric>) tuple.getValueByField("MetricList");
+            Map<String, OddeeyMetric> MetricList = (Map<String, OddeeyMetric>) tuple.getValueByField("MetricList");
             MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> {
                 try {
 //                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");

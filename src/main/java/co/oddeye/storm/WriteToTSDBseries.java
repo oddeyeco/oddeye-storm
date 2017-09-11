@@ -75,7 +75,7 @@ public class WriteToTSDBseries extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         collector.ack(tuple);
-        Map<Integer, OddeeyMetric> MetricList = (Map<Integer, OddeeyMetric>) tuple.getValueByField("MetricList");
+        Map<String, OddeeyMetric> MetricList = (Map<String, OddeeyMetric>) tuple.getValueByField("MetricList");
         MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> {
             globalFunctions.getTSDB(openTsdbConfig, clientconf).addPoint(metric.getName(), metric.getTimestamp(), metric.getValue(), metric.getTSDBTags());
             

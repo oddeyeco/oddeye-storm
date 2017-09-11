@@ -69,7 +69,7 @@ public class ParseMetricBolt extends BaseRichBolt {
             try {
                 if (this.jsonResult.size() > 0) {
                     LOGGER.debug("Ready count: " + this.jsonResult.size());
-                    final TreeMap<Integer, OddeeyMetric> MetricList = new TreeMap<>();
+                    final TreeMap<String, OddeeyMetric> MetricList = new TreeMap<>();
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         try {
@@ -100,8 +100,8 @@ public class ParseMetricBolt extends BaseRichBolt {
                                 continue;
                             }
                             date = new Date(mtrsc.getTimestamp());
-                            LOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));
-                            MetricList.put(mtrsc.hashCode(), mtrsc);
+                            LOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));                            
+                            MetricList.put(mtrsc.getName(), mtrsc);
 //                            collector.emit(new Values(mtrsc));
 //                            if (mtrsc.getName().equals("host_alive")) {
 //                                Metric.getAsJsonObject().addProperty("metric", "host_absent");

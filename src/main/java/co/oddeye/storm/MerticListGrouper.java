@@ -34,7 +34,7 @@ public class MerticListGrouper implements CustomStreamGrouping {
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
         List<Integer> rvalue = new ArrayList<>(values.size());
         
-        values.stream().map((o) -> (TreeMap<Integer, OddeeyMetric>) o).map((metricList) -> metricList.firstEntry().getValue()).map((metric) -> {
+        values.stream().map((o) -> (TreeMap<String, OddeeyMetric>) o).map((metricList) -> metricList.firstEntry().getValue()).map((metric) -> {
             rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
             return metric;
         }).forEachOrdered((metric) -> {
