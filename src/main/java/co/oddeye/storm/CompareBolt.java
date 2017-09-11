@@ -262,7 +262,7 @@ public class CompareBolt extends BaseRichBolt {
                             mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
 
                             LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
-                            if ((mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()) < 0) {
+                            if ((mtrscMetaInput.getLasttime() < mtrscMetaLocal.getLasttime())) {
                                 LOGGER.warn("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
                                 continue;
                                 //TODO continue
