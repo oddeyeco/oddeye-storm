@@ -47,8 +47,7 @@ public class ParseSpecialMetricBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        String msg = input.getString(0);
-        this.collector.ack(input);
+        String msg = input.getString(0);        
         JsonElement Metric;
         try {
             if (this.parser.parse(msg).isJsonArray()) {
@@ -67,22 +66,9 @@ public class ParseSpecialMetricBolt extends BaseRichBolt {
                     for (int i = 0; i < this.jsonResult.size(); i++) {
                         Metric = this.jsonResult.get(i);
                         LOGGER.debug("Emit metric " + Metric.toString());
-//                        if (Metric.getAsJsonObject().get("specialTag") == null) {
-//                            continue;
-//                        } else if (!Metric.getAsJsonObject().get("specialTag").getAsBoolean()) {
-//                            continue;
-//                        }
                         try {
                             final OddeeysSpecialMetric mtrsc = new OddeeysSpecialMetric(Metric);
                             if (!mtrsc.isSpecial()) {
-//                                if (mtrsc.getName().equals("host_alive")) {
-//                                    Metric.getAsJsonObject().addProperty("metric", "host_absent");
-//                                    Metric.getAsJsonObject().addProperty("type", "Special");
-//                                    Metric.getAsJsonObject().addProperty("message", "Host Absent");
-//                                    Metric.getAsJsonObject().addProperty("status", "ERROR");
-//                                    final OddeeyMetric mtrsc2 = new OddeeysSpecialMetric(Metric);
-//                                    collector.emit(new Values(mtrsc2));
-//                                }
                                 continue;
                             }
 
@@ -122,6 +108,7 @@ public class ParseSpecialMetricBolt extends BaseRichBolt {
                 LOGGER.error("NumberFormatException: " + globalFunctions.stackTrace(ex));
             }
             this.jsonResult = null;
+            this.collector.ack(input);
         }
     }
 

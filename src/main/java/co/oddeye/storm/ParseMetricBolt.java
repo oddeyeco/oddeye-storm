@@ -14,7 +14,6 @@ import com.google.gson.JsonSyntaxException;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -34,8 +33,7 @@ public class ParseMetricBolt extends BaseRichBolt {
 
     protected OutputCollector collector;
     public static final Logger LOGGER = LoggerFactory.getLogger(ParseMetricBolt.class);
-    private JsonParser parser = null;
-    private JsonArray jsonResult = null;
+    private JsonParser parser = null;    
     private Date date;
 
     @Override
@@ -55,23 +53,24 @@ public class ParseMetricBolt extends BaseRichBolt {
         String msg = input.getString(0);
         LOGGER.debug("Start messge:" + msg);
         JsonElement Metric;
+        JsonArray jsonResult = null;
         try {
             if (this.parser.parse(msg).isJsonArray()) {
-                this.jsonResult = this.parser.parse(msg).getAsJsonArray();
+                jsonResult = this.parser.parse(msg).getAsJsonArray();
             } else {
-                this.jsonResult = null;
+                jsonResult = null;
                 LOGGER.error("not array:" + msg);
             }
         } catch (JsonSyntaxException ex) {
             LOGGER.info("msg parse Exception" + ex.toString());
         }
-        if (this.jsonResult != null) {
+        if (jsonResult != null) {
             try {
-                if (this.jsonResult.size() > 0) {
-                    LOGGER.debug("Ready count: " + this.jsonResult.size());
+                if (jsonResult.size() > 0) {
+                    LOGGER.debug("Ready count: " + jsonResult.size());
                     final TreeMap<String, OddeeyMetric> MetricList = new TreeMap<>();
-                    for (int i = 0; i < this.jsonResult.size(); i++) {
-                        Metric = this.jsonResult.get(i);
+                    for (int i = 0; i < jsonResult.size(); i++) {
+                        Metric = jsonResult.get(i);
                         try {
                             final OddeeyMetric mtrsc = new OddeeyMetric(Metric);
                             if (mtrsc.isSpecial()) {
@@ -131,8 +130,7 @@ public class ParseMetricBolt extends BaseRichBolt {
             } catch (NumberFormatException ex) {
                 LOGGER.error("NumberFormatException: " + globalFunctions.stackTrace(ex));
 //                this.collector.ack(input);
-            }
-            this.jsonResult = null;
+            }            
         }
         this.collector.ack(input);
     }

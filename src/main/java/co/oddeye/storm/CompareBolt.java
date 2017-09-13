@@ -164,7 +164,7 @@ public class CompareBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        this.collector.ack(tuple);
+        
         if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {
 
             if (LOGGER.isInfoEnabled()) {
@@ -512,8 +512,9 @@ public class CompareBolt extends BaseRichBolt {
                 } catch (Exception ex) {
                     LOGGER.error("Exception execute: " + globalFunctions.stackTrace(ex));
                 }
-            };
+            }
 
         }
+        this.collector.ack(tuple);
     }
 }

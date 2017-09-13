@@ -73,8 +73,7 @@ public class WriteToTSDBseries extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
-        collector.ack(tuple);
+    public void execute(Tuple tuple) {        
         Map<String, OddeeyMetric> MetricList = (Map<String, OddeeyMetric>) tuple.getValueByField("MetricList");
         MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) -> {
             globalFunctions.getTSDB(openTsdbConfig, clientconf).addPoint(metric.getName(), metric.getTimestamp(), metric.getValue(), metric.getTSDBTags());
@@ -82,6 +81,6 @@ public class WriteToTSDBseries extends BaseRichBolt {
             Date date = new Date(metric.getTimestamp());
             LOGGER.info("Write Metric: "+metric.getName()+" in Time:"+date +" by Value: "+ metric.getValue()+" vs tags: "+ metric.getTSDBTags());
         });
-        
+        collector.ack(tuple);
     }
 }
