@@ -192,9 +192,18 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 final OddeeysSpecialMetric metric = metricEntry.getValue();
                 final Long lastTime = metric.getTimestamp();
                 if ((System.currentTimeMillis() - lastTime) > Math.abs(60000 * metric.getReaction())) {
-                    final OddeeyMetricMeta mtrsc = mtrscList.get(metricEntry.getKey());
+                    OddeeyMetricMeta mtrsc = mtrscList.get(metricEntry.getKey());
                     if (mtrsc == null) {
-                        LOGGER.warn("Metric Meta not found " + metricEntry.getKey());
+                        LOGGER.warn("for lastTimeSpecialMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
+                        try {
+                            mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));                            
+                        } catch (Exception ex) {
+                            LOGGER.error(globalFunctions.stackTrace(ex));
+                        }
+                    }
+                    
+                    if (mtrsc == null) {
+                        LOGGER.warn("PIPEC for lastTimeSpecialMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
                         if (LOGGER.isInfoEnabled()) {
                             LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " count:" + lastTimeSpecialMap.size());
@@ -213,9 +222,17 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 final OddeeysSpecialMetric metric = metricEntry.getValue();
                 final Long lastTime = metric.getTimestamp();
                 if ((System.currentTimeMillis() - lastTime) > Math.abs(60000 * metric.getReaction())) {
-                    final OddeeyMetricMeta mtrsc = mtrscList.get(metricEntry.getKey());
+                    OddeeyMetricMeta mtrsc = mtrscList.get(metricEntry.getKey());
                     if (mtrsc == null) {
-                        LOGGER.warn("Metric Meta not found " + metricEntry.getKey());
+                        LOGGER.warn("for lastTimeSpecialLiveMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
+                        try {
+                            mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));                            
+                        } catch (Exception ex) {
+                            LOGGER.error(globalFunctions.stackTrace(ex));
+                        }
+                    }                    
+                    if (mtrsc == null) {
+                        LOGGER.warn("PIPEC for lastTimeSpecialLiveMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
                         if (LOGGER.isInfoEnabled()) {
                             LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " count:" + lastTimeSpecialMap.size());
