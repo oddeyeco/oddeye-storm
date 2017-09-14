@@ -33,33 +33,48 @@ public class SendToTelegram extends SendTo {
 
     @Override
     public void run() {
-//        LOGGER.warn("Sent for user " + targetuser.getValue().getEmail() + " to Telegram " + targetdata.size() + " Messages");
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Sent for user " + targetuser.getValue().getEmail() + " to Telegram " + targetdata.size() + " Messages");
+        }
+
         Iterator<Map.Entry<Integer, OddeeyMetricMeta>> iter = targetdata.entrySet().iterator();
         String Text = "";
         int Counter = 0;
         while (iter.hasNext()) {
             Counter++;
             Map.Entry<Integer, OddeeyMetricMeta> entry = iter.next();
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Sent metric " + entry.getValue().hashCode()+" Name:"+entry.getValue().getName() + " State " + entry.getValue().getErrorState().getStateName() + " to Level " + entry.getValue().getErrorState().getLevelName() + "Tags:  " + entry.getValue().getTags());
+            }            
             if (Counter < 11) {
                 if (entry.getValue().getErrorState().getLevel() == -1) {
-                    Text = Text + "\nMertic " + "<a href=\""+"https://app.oddeye.co/OddeyeCoconut/metriq/"+entry.getValue().hashCode()+"/"+ (long) Math.floor(entry.getValue().getErrorState().getTime()/1000)+"\">"+entry.getValue().getName() + "</a> <b> Already not in Error </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
+                    Text = Text + "\nMertic " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().hashCode() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> Already not in Error </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
                 } else {
-                    Text = Text + "\nLevel For " + "<a href=\""+"https://app.oddeye.co/OddeyeCoconut/metriq/"+entry.getValue().hashCode()+"/"+ (long) Math.floor(entry.getValue().getErrorState().getTime()/1000)+"\">"+entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() +  "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>" ;
+                    Text = Text + "\nLevel For " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().hashCode() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>";
                 }
-            }                            
+                iter.remove();
+            }
+            else
+            {
+                targetdata.clear();
+                break;
+            }
 
-            iter.remove();
+            
         }
+        
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Send Telegram text "+ Text);
+            }          
 //        LOGGER.warn(Text);
         if ((!targetdata.getTargetValue().isEmpty()) && (!Text.isEmpty())) {
-            if (Counter>10)
-            {
-                Text = Text+"\n And "+(Counter-10)+" More";
+            if (Counter > 10) {
+                Text = Text + "\n And " + (Counter - 10) + " More";
             }
             try {
                 Text = "<i>OddEye Report</i>" + Text;
                 Text = URLEncoder.encode(Text, "UTF-8");
-                String uri = "https://api.telegram.org/bot317219245:AAFqFjcddeXfrpIZ-V4ENeve87oxg0ZGGYs/sendMessage?chat_id=" + targetdata.getTargetValue() + "&text=" + Text+"&parse_mode=HTML&disable_web_page_preview=true";
+                String uri = "https://api.telegram.org/bot317219245:AAFqFjcddeXfrpIZ-V4ENeve87oxg0ZGGYs/sendMessage?chat_id=" + targetdata.getTargetValue() + "&text=" + Text + "&parse_mode=HTML&disable_web_page_preview=true";
                 OddeyeHttpURLConnection.sendGet(uri);
             } catch (UnsupportedEncodingException ex) {
                 LOGGER.error(globalFunctions.stackTrace(ex));
