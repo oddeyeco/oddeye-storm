@@ -262,7 +262,7 @@ public class CompareBolt extends BaseRichBolt {
                             if (LOGGER.isInfoEnabled()) {
                                 LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():" + mtrscMetaLocal.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
                             }
-                            if ((mtrscMetaInput.getLasttime() < mtrscMetaLocal.getLasttime())) {
+                        if ((mtrscMetaInput.getLasttime() <= mtrscMetaLocal.getLasttime())) {
                                 if (LOGGER.isInfoEnabled()) {
                                     LOGGER.info("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
                                 }
@@ -473,8 +473,8 @@ public class CompareBolt extends BaseRichBolt {
                                             } else {
                                                 if (Errormap.containsKey(mtrscMetaLocal.getErrorState().getLevel())) {
                                                     try {
-
-                                                        if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
+                                                        //if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
+                                                        if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
                                                             mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
                                                             savelevel = false;
                                                             break;
