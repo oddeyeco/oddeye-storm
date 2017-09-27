@@ -117,7 +117,7 @@ public class TimeSeriesTopology {
 
         builder.setBolt("CheckSpecialErrorBolt",
                 new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
-                .customGrouping("ParseSpecialMetricBolt", new MerticGrouper())
+                .customGrouping("ParseSpecialMetricBolt", new MerticListGrouper())
                 .allGrouping("TimerSpout")
                 .allGrouping("SemaforProxyBolt");
 

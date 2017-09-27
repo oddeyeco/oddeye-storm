@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author vahan
  */
+@Deprecated
 public class MerticGrouper implements CustomStreamGrouping {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(MerticGrouper.class);  

@@ -164,7 +164,7 @@ public class CompareBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        
+
         if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {
 
             if (LOGGER.isInfoEnabled()) {
@@ -213,308 +213,310 @@ public class CompareBolt extends BaseRichBolt {
         }
 
         if (tuple.getSourceComponent().equals("ParseMetricBolt")) {
-            Map<String, OddeeyMetric> MetricList = (Map<String, OddeeyMetric>) tuple.getValueByField("MetricList");
-//            MetricList.entrySet().stream().map((metricEntry) -> metricEntry.getValue()).forEachOrdered((metric) ->            
-            for (Map.Entry<String, OddeeyMetric> metricEntry : MetricList.entrySet()) {
-                try {
-//                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
+            if (tuple.getValueByField("MetricField") instanceof Map) {
+                Map<String, OddeeyMetric> MetricList = (Map<String, OddeeyMetric>) tuple.getValueByField("MetricField");
+                for (Map.Entry<String, OddeeyMetric> metricEntry : MetricList.entrySet()) {
                     OddeeyMetric metric = metricEntry.getValue();
-                    OddeeyMetricMeta mtrscMetaInput = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
-                    OddeeyMetricMeta mtrscMetaLocal;
-
-                    PutRequest putvalue;
-                    byte[] key = mtrscMetaInput.getKey();
-                    byte[][] qualifiers;
-                    byte[][] values;
-                    Integer code = 0;
-                    try {
-                        code = mtrscMetaInput.hashCode();
-                    } catch (Exception ex) {
-                        LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
-                    }
-
-                    if (code != 0) {
-                        if (!MetricMetaList.containsKey(code)) {
-                            mtrscMetaLocal = mtrscMetaInput;
-                            mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
-                            qualifiers = new byte[4][];
-                            values = new byte[4][];
-                            qualifiers[0] = "n".getBytes();
-                            qualifiers[1] = "timestamp".getBytes();
-                            qualifiers[2] = "Regression".getBytes();
-                            qualifiers[3] = "type".getBytes();
-                            values[0] = key;
-                            values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                            try {
-                                values[2] = mtrscMetaLocal.getSerializedRegression();
-                            } catch (IOException ex) {
-                                LOGGER.error("In getSerializedRegression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
-                                values[2] = new byte[0];
-                            }
-                            values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
-                            putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-                            LOGGER.info("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
-//                        globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
-                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                        } else {
-//                        oldmtrc = mtrsc;
-                            mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
-                            if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():" + mtrscMetaLocal.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
-                            }
-                        if ((mtrscMetaInput.getLasttime() <= mtrscMetaLocal.getLasttime())) {
-                                if (LOGGER.isInfoEnabled()) {
-                                    LOGGER.info("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
-                                }
-
-                                continue;
-                                //TODO continue
-                            }
-
-                            mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
-
-                            if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
-                                LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
-                            }
-                            qualifiers = new byte[2][];
-                            values = new byte[2][];
-                            if (mtrscMetaInput.getType() != mtrscMetaLocal.getType()) {
-                                qualifiers = new byte[3][];
-                                values = new byte[3][];
-                                qualifiers[2] = "type".getBytes();
-                                values[2] = ByteBuffer.allocate(2).putShort(mtrscMetaInput.getType()).array();
-                                mtrscMetaLocal.setType(mtrscMetaInput.getType());
-                            }
-
-                            qualifiers[0] = "timestamp".getBytes();
-                            qualifiers[1] = "Regression".getBytes();
-                            values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                            values[1] = mtrscMetaLocal.getSerializedRegression();
-                            putvalue = new PutRequest(metatable, mtrscMetaLocal.getKey(), meta_family, qualifiers, values);
-                            LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
-                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                            mtrscMetaLocal.setLasttime(mtrscMetaInput.getLasttime());
-                        }
-
-                        MetricMetaList.set(mtrscMetaLocal);
-
-                        CalendarObj.setTimeInMillis(metric.getTimestamp());
-                        CalendarObjRules.setTimeInMillis(metric.getTimestamp());
-                        CalendarObjRules.add(Calendar.DATE, -1);
-                        final Map<String, MetriccheckRule> Rules = mtrscMetaLocal.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
-                        final int reaction = metric.getReaction();
-                        short input_weight = (short) reaction;
-                        double weight_per = 0;
-                        int loop = 0;
-                        int weight = 0;
-//                    if (mtrscMetaLocal.hashCode() == -1762243125) {
-//                        LOGGER.warn("RULES " + Rules.size());
-//                    }
-                        if ((input_weight < 1) && (input_weight > -3)) {
-                            int curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
-                            LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
-                            double tmp_weight_per = 0;
-//                    tmp_weight_per = 0;
-                            for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
-                                loop++;
-                                final MetriccheckRule Rule = RuleEntry.getValue();
-                                if (Rule == null) {
-                                    LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                                    continue;
-                                }
-
-                                CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
-
-                                if (!Rule.isIsValidRule()) {
-                                    if (LOGGER.isInfoEnabled()) {
-                                        LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                                    }
-                                    continue;
-                                }
-                                if (Rule.isHasNotData()) {
-                                    if (LOGGER.isInfoEnabled()) {
-                                        LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                                    }
-                                    continue;
-                                }
-                                int local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
-                                int weight_KF;
-
-                                if (curent_DW == local_DW) {
-                                    weight_KF = 2;
-
-                                } else {
-                                    weight_KF = 1;
-                                }
-
-                                if (Rule.getAvg() != null) {
-
-                                    if ((Rule.getAvg() != 0) && (metric.getValue() != 0)) {
-                                        tmp_weight_per = (metric.getValue() - Rule.getAvg()) / Rule.getAvg() * 100;
-                                    } else {
-                                        if (metric.getValue() == 0) {
-                                        }
-                                        tmp_weight_per = 0;
-                                    }
-                                }
-
-                                if (input_weight != -1) {
-                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                        if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
-                                            weight = (short) (weight + weight_KF);
-                                            weight_per = weight_per + tmp_weight_per;
-                                        }
-                                    }
-                                    if (Rule.getMax() != null) {
-                                        if (metric.getValue() > Rule.getMax()) {
-                                            weight = (short) (weight + weight_KF);
-                                        }
-                                    }
-                                } else {
-                                    if (LOGGER.isInfoEnabled()) {
-                                        LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                                    }
-                                }
-
-                                if (input_weight != -2) {
-                                    if (Rule.getMin() != null) {
-                                        if (metric.getValue() < Rule.getMin()) {
-                                            weight = (short) (weight - weight_KF);
-                                            weight_per = weight_per + tmp_weight_per;
-                                        }
-                                    }
-                                    if (Rule.getAvg() != null && Rule.getDev() != null) {
-                                        if (metric.getValue() < Rule.getAvg() - devkef * Rule.getDev()) {
-                                            weight = (short) (weight - weight_KF);
-                                        }
-                                    }
-                                } else {
-                                    LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                                }
-                            }
-
-                        } else if (input_weight > 0) {
-                            if (metric.getValue() > input_weight) {
-                                weight = 16;
-                            } else {
-                                weight = 0;
-                            }
-                        } else if (input_weight == -4) {
-                            if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                            }
-                        } else if (input_weight == -5) {
-                            LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                        } else {
-                            weight = 0;
-                            if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                            }
-                        }
-                        if (input_weight != -3) {
-                            AlertLevel AlertLevels = UserLevels.get(mtrscMetaLocal.getTags().get("UUID").getValue()); //new AlertLevel(true);
-                            if (AlertLevels == null) {
-                                AlertLevels = new AlertLevel(true);
-                            }
-                            Map<String, Object> metricsmap = new HashMap<>();
-                            if (weight != 0) {
-                                weight_per = weight_per / loop;
-                                double predict_value = mtrscMetaLocal.getRegression().predict(CalendarObj.getTimeInMillis() / 1000);
-                                double predict_value_per = 0;
-                                if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
-                                    predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
-                                }
-                                metricsmap.put("level", AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
-                                mtrscMetaLocal.getLevelList().add(AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
-                                // TODO Karoxa hanel aradzin bolt
-                                key = mtrscMetaLocal.getTags().get("UUID").getValueTSDBUID();
-                                key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
-                                putvalue = new PutRequest(errortable, key, error_family, mtrscMetaLocal.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
-                                globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                                if (LOGGER.isInfoEnabled()) {
-                                    LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
-                                }
-                            } else {
-                                metricsmap.put("lever", -1);
-                                mtrscMetaLocal.getLevelList().add(-1);
-                            }
-                            if (mtrscMetaLocal.getLevelList().size() > 15) {
-                                mtrscMetaLocal.getLevelList().remove(0);
-                                mtrscMetaLocal.LevelValuesList().remove(0);
-                            }
-
-                            metricsmap.put("value", metric.getValue());
-                            mtrscMetaLocal.LevelValuesList().add(metricsmap);
-
-                            if (Collections.max(mtrscMetaLocal.getLevelList()) > -1) {
-                                Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
-                                mtrscMetaLocal.getLevelList().stream().forEachOrdered((e) -> {
-                                    for (int j = e; j >= 0; j--) {
-                                        Integer counter = Errormap.get(j);
-                                        if (counter != null) {
-                                            counter++;
-                                        } else {
-                                            counter = 1;
-                                        }
-
-                                        Errormap.put(j, counter);
-                                    }
-                                });
-                                if (!Errormap.isEmpty()) {
-                                    boolean setlevel = false;
-                                    boolean savelevel = true;
-                                    for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
-                                        if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
-                                            setlevel = true;
-                                            if (mtrscMetaLocal.getErrorState().getLevel() < Iterables.getLast(mtrscMetaLocal.getLevelList())) {
-                                                mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
-                                                savelevel = false;
-                                                break;
-                                            } else {
-                                                if (Errormap.containsKey(mtrscMetaLocal.getErrorState().getLevel())) {
-                                                    try {
-                                                        //if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
-                                                        if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
-                                                            mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
-                                                            savelevel = false;
-                                                            break;
-                                                        }
-                                                    } catch (Exception e) {
-                                                        LOGGER.error("Exception execute: " + globalFunctions.stackTrace(e));
-                                                    }
-                                                }
-
-                                            }
-
-                                        }
-
-                                    }
-                                    mtrscMetaLocal.getErrorState().setUpstate(weight > 0);
-                                    if (savelevel) {
-                                        mtrscMetaLocal.getErrorState().setLevel(mtrscMetaLocal.getErrorState().getLevel(), metric.getTimestamp());
-                                    }
-                                    if (!setlevel) {
-                                        mtrscMetaLocal.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, metric.getTimestamp());
-                                    }
-
-                                }
-
-                                collector.emit(new Values(mtrscMetaLocal.dublicate(), metric.dublicate()));
-                            } else {
-                                if (mtrscMetaLocal.getErrorState().getLevel() != -1) {
-                                    mtrscMetaLocal.getErrorState().setLevel(-1, metric.getTimestamp());
-                                    collector.emit(new Values(mtrscMetaLocal.dublicate(), metric.dublicate()));
-                                }
-                            }
-                        }
-//                mtrscList.set(mtrscMetaLocal);
-                    }
-                } catch (Exception ex) {
-                    LOGGER.error("Exception execute: " + globalFunctions.stackTrace(ex));
+                    this.checkMetric(metric);
                 }
             }
 
+            if (tuple.getValueByField("MetricField") instanceof OddeeyMetric) {
+                this.checkMetric((OddeeyMetric) tuple.getValueByField("MetricField"));
+            }
         }
         this.collector.ack(tuple);
+    }
+
+    public void checkMetric(OddeeyMetric metric) {
+        try {
+            OddeeyMetricMeta mtrscMetaInput = new OddeeyMetricMeta(metric, globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf));
+            OddeeyMetricMeta mtrscMetaLocal;
+
+            PutRequest putvalue;
+            byte[] key = mtrscMetaInput.getKey();
+            byte[][] qualifiers;
+            byte[][] values;
+            Integer code = 0;
+            try {
+                code = mtrscMetaInput.hashCode();
+            } catch (Exception ex) {
+                LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+            }
+
+            if (code != 0) {
+                if (!MetricMetaList.containsKey(code)) {
+                    mtrscMetaLocal = mtrscMetaInput;
+                    mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
+                    qualifiers = new byte[4][];
+                    values = new byte[4][];
+                    qualifiers[0] = "n".getBytes();
+                    qualifiers[1] = "timestamp".getBytes();
+                    qualifiers[2] = "Regression".getBytes();
+                    qualifiers[3] = "type".getBytes();
+                    values[0] = key;
+                    values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                    try {
+                        values[2] = mtrscMetaLocal.getSerializedRegression();
+                    } catch (IOException ex) {
+                        LOGGER.error("In getSerializedRegression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+                        values[2] = new byte[0];
+                    }
+                    values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
+                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
+                    LOGGER.info("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
+//                        globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
+                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                } else {
+                    mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():" + mtrscMetaLocal.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                    }
+                    if ((mtrscMetaInput.getLasttime() <= mtrscMetaLocal.getLasttime())) {
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+                        }
+
+                        return;
+                    }
+                    mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
+
+                    if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
+                        LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
+                    }
+                    qualifiers = new byte[2][];
+                    values = new byte[2][];
+                    if (mtrscMetaInput.getType() != mtrscMetaLocal.getType()) {
+                        qualifiers = new byte[3][];
+                        values = new byte[3][];
+                        qualifiers[2] = "type".getBytes();
+                        values[2] = ByteBuffer.allocate(2).putShort(mtrscMetaInput.getType()).array();
+                        mtrscMetaLocal.setType(mtrscMetaInput.getType());
+                    }
+
+                    qualifiers[0] = "timestamp".getBytes();
+                    qualifiers[1] = "Regression".getBytes();
+                    values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                    values[1] = mtrscMetaLocal.getSerializedRegression();
+                    putvalue = new PutRequest(metatable, mtrscMetaLocal.getKey(), meta_family, qualifiers, values);
+                    LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
+//                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                    mtrscMetaLocal.setLasttime(mtrscMetaInput.getLasttime());
+                }
+//                        System.out.println(mtrscMetaLocal.getErrorState().getLevel()); 
+
+                MetricMetaList.set(mtrscMetaLocal);
+
+                CalendarObj.setTimeInMillis(metric.getTimestamp());
+                CalendarObjRules.setTimeInMillis(metric.getTimestamp());
+                CalendarObjRules.add(Calendar.DATE, -1);
+                final Map<String, MetriccheckRule> Rules = mtrscMetaLocal.getRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
+                final int reaction = metric.getReaction();
+                short input_weight = (short) reaction;
+                double weight_per = 0;
+                int loop = 0;
+                int weight = 0;
+
+                if ((input_weight < 1) && (input_weight > -3)) {
+                    int curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
+                    LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
+                    double tmp_weight_per = 0;
+//                    tmp_weight_per = 0;
+                    for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
+                        loop++;
+                        final MetriccheckRule Rule = RuleEntry.getValue();
+                        if (Rule == null) {
+                            LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                            continue;
+                        }
+
+                        CalendarObjRules = MetriccheckRule.QualifierToCalendar(Rule.getQualifier());
+
+                        if (!Rule.isIsValidRule()) {
+                            if (LOGGER.isInfoEnabled()) {
+                                LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                            }
+                            continue;
+                        }
+                        if (Rule.isHasNotData()) {
+                            if (LOGGER.isInfoEnabled()) {
+                                LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                            }
+                            continue;
+                        }
+                        int local_DW = CalendarObjRules.get(Calendar.DAY_OF_WEEK);
+                        int weight_KF;
+
+                        if (curent_DW == local_DW) {
+                            weight_KF = 2;
+
+                        } else {
+                            weight_KF = 1;
+                        }
+
+                        if (Rule.getAvg() != null) {
+
+                            if ((Rule.getAvg() != 0) && (metric.getValue() != 0)) {
+                                tmp_weight_per = (metric.getValue() - Rule.getAvg()) / Rule.getAvg() * 100;
+                            } else {
+                                if (metric.getValue() == 0) {
+                                }
+                                tmp_weight_per = 0;
+                            }
+                        }
+
+                        if (input_weight != -1) {
+                            if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                if (metric.getValue() > Rule.getAvg() + devkef * Rule.getDev()) {
+                                    weight = (short) (weight + weight_KF);
+                                    weight_per = weight_per + tmp_weight_per;
+                                }
+                            }
+                            if (Rule.getMax() != null) {
+                                if (metric.getValue() > Rule.getMax()) {
+                                    weight = (short) (weight + weight_KF);
+                                }
+                            }
+                        } else {
+                            if (LOGGER.isInfoEnabled()) {
+                                LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                            }
+                        }
+
+                        if (input_weight != -2) {
+                            if (Rule.getMin() != null) {
+                                if (metric.getValue() < Rule.getMin()) {
+                                    weight = (short) (weight - weight_KF);
+                                    weight_per = weight_per + tmp_weight_per;
+                                }
+                            }
+                            if (Rule.getAvg() != null && Rule.getDev() != null) {
+                                if (metric.getValue() < Rule.getAvg() - devkef * Rule.getDev()) {
+                                    weight = (short) (weight - weight_KF);
+                                }
+                            }
+                        } else {
+                            LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                        }
+                    }
+
+                } else if (input_weight > 0) {
+                    if (metric.getValue() > input_weight) {
+                        weight = 16;
+                    } else {
+                        weight = 0;
+                    }
+                } else if (input_weight == -4) {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                    }
+                } else if (input_weight == -5) {
+                    LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                } else {
+                    weight = 0;
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                    }
+                }
+                if (input_weight != -3) {
+                    AlertLevel AlertLevels = UserLevels.get(mtrscMetaLocal.getTags().get("UUID").getValue()); //new AlertLevel(true);
+                    if (AlertLevels == null) {
+                        AlertLevels = new AlertLevel(true);
+                    }
+                    Map<String, Object> metricsmap = new HashMap<>();
+                    if (weight != 0) {
+                        weight_per = weight_per / loop;
+                        double predict_value = mtrscMetaLocal.getRegression().predict(CalendarObj.getTimeInMillis() / 1000);
+                        double predict_value_per = 0;
+                        if ((!Double.isNaN(predict_value)) && (predict_value != 0)) {
+                            predict_value_per = (metric.getValue() - predict_value) / predict_value * 100;
+                        }
+                        metricsmap.put("level", AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
+                        mtrscMetaLocal.getLevelList().add(AlertLevels.getErrorLevel(weight, weight_per, metric.getValue(), predict_value_per));
+                        // TODO Karoxa hanel aradzin bolt
+                        key = mtrscMetaLocal.getTags().get("UUID").getValueTSDBUID();
+                        key = ArrayUtils.addAll(key, ByteBuffer.allocate(8).putLong((long) (CalendarObj.getTimeInMillis() / 1000)).array());
+                        putvalue = new PutRequest(errortable, key, error_family, mtrscMetaLocal.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
+                        globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                        }
+                    } else {
+                        metricsmap.put("lever", -1);
+                        mtrscMetaLocal.getLevelList().add(-1);
+                    }
+                    if (mtrscMetaLocal.getLevelList().size() > 15) {
+                        mtrscMetaLocal.getLevelList().remove(0);
+                        mtrscMetaLocal.LevelValuesList().remove(0);
+                    }
+
+                    metricsmap.put("value", metric.getValue());
+                    mtrscMetaLocal.LevelValuesList().add(metricsmap);
+
+                    if (Collections.max(mtrscMetaLocal.getLevelList()) > -1) {
+                        Map<Integer, Integer> Errormap = new TreeMap<>(Collections.reverseOrder());
+                        mtrscMetaLocal.getLevelList().stream().forEachOrdered((e) -> {
+                            for (int j = e; j >= 0; j--) {
+                                Integer counter = Errormap.get(j);
+                                if (counter != null) {
+                                    counter++;
+                                } else {
+                                    counter = 1;
+                                }
+
+                                Errormap.put(j, counter);
+                            }
+                        });
+                        if (!Errormap.isEmpty()) {
+                            boolean setlevel = false;
+                            boolean savelevel = true;
+                            for (Map.Entry<Integer, Integer> item : Errormap.entrySet()) {
+                                if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
+                                    setlevel = true;
+                                    if (mtrscMetaLocal.getErrorState().getLevel() < Iterables.getLast(mtrscMetaLocal.getLevelList())) {
+                                        mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                        savelevel = false;
+                                        break;
+                                    } else {
+                                        if (Errormap.containsKey(mtrscMetaLocal.getErrorState().getLevel())) {
+                                            try {
+                                                //if (item.getValue() - Errormap.get(mtrscMetaLocal.getErrorState().getLevel()) > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
+                                                if (item.getValue() > AlertLevels.get(item.getKey()).get(AlertLevel.ALERT_PARAM_RECCOUNT)) {
+                                                    mtrscMetaLocal.getErrorState().setLevel(item.getKey(), metric.getTimestamp());
+                                                    savelevel = false;
+                                                    break;
+                                                }
+                                            } catch (Exception e) {
+                                                LOGGER.error("Exception execute: " + globalFunctions.stackTrace(e));
+                                            }
+                                        }
+
+                                    }
+
+                                }
+
+                            }
+                            mtrscMetaLocal.getErrorState().setUpstate(weight > 0);
+                            if (savelevel) {
+                                mtrscMetaLocal.getErrorState().setLevel(mtrscMetaLocal.getErrorState().getLevel(), metric.getTimestamp());
+                            }
+                            if (!setlevel) {
+                                mtrscMetaLocal.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, metric.getTimestamp());
+                            }
+
+                        }
+                        collector.emit(new Values(mtrscMetaLocal.dublicate(), metric.dublicate()));
+                    } else {
+                        if (mtrscMetaLocal.getErrorState().getLevel() != -1) {
+                            mtrscMetaLocal.getErrorState().setLevel(-1, metric.getTimestamp());
+                            collector.emit(new Values(mtrscMetaLocal.dublicate(), metric.dublicate()));
+                        }
+                    }
+                }
+//                mtrscList.set(mtrscMetaLocal);
+            }
+        } catch (Exception ex) {
+            LOGGER.error("Exception execute: " + globalFunctions.stackTrace(ex));
+        }
     }
 }

@@ -7,6 +7,7 @@ package co.oddeye.storm;
 
 import co.oddeye.core.OddeeyMetric;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,13 +34,26 @@ public class MerticListGrouper implements CustomStreamGrouping {
     @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
         List<Integer> rvalue = new ArrayList<>(values.size());
-        
-        values.stream().map((o) -> (TreeMap<String, OddeeyMetric>) o).map((metricList) -> metricList.firstEntry().getValue()).map((metric) -> {
-            rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
-            return metric;
-        }).forEachOrdered((metric) -> {
-            LOGGER.info("metric" +metric.getName() +" tags:"+ metric.getTags()+ " values"+rvalue);
-        });
+        OddeeyMetric metric =null;
+        for (Object o : values) {
+            if (o instanceof TreeMap)
+            {
+                metric = ((TreeMap<String, OddeeyMetric>) o).firstEntry().getValue();
+            }
+            if (o instanceof OddeeyMetric)
+            {
+                metric = (OddeeyMetric) o;
+            }            
+            if (metric!= null)
+            {
+                rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
+                LOGGER.info("metric" +metric.getName() +" tags:"+ metric.getTags()+ " values"+rvalue);
+            }
+            else
+            {
+                LOGGER.error("Invalid Metric");
+            }
+        }
        
         return rvalue;
     }

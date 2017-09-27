@@ -6,6 +6,7 @@
 package co.oddeye.storm;
 
 import co.oddeye.core.AlertLevel;
+import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.OddeeysSpecialMetric;
@@ -102,7 +103,6 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        this.collector.ack(input);
         if (input.getSourceComponent().equals("SemaforProxyBolt")) {
 
             if (LOGGER.isInfoEnabled()) {
@@ -120,70 +120,18 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
         }
 
         if (input.getSourceComponent().equals("ParseSpecialMetricBolt")) {
-            try {
-                OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
-                OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
-                PutRequest putvalue;
-                key = mtrsc.getKey();
-                if (!mtrscList.containsKey(mtrsc.hashCode())) {
-                    qualifiers = new byte[3][];
-                    values = new byte[3][];
-                    qualifiers[0] = "n".getBytes();
-                    qualifiers[1] = "timestamp".getBytes();
-                    qualifiers[2] = "type".getBytes();
-                    values[0] = key;
-                    values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                    values[2] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
-                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-                    globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
-                } else {
-                    mtrsc = mtrscList.get(mtrsc.hashCode());
-                    qualifiers = new byte[1][];
-                    values = new byte[1][];
-                    if (metric.getType() != mtrsc.getType()) {
-                        qualifiers = new byte[2][];
-                        values = new byte[2][];
-                        qualifiers[1] = "type".getBytes();
-                        values[1] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
-                        mtrsc.setType(metric.getType());
-                    }
-                    qualifiers[0] = "timestamp".getBytes();
-                    values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                    putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
-                    }
-                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+            if (input.getValueByField("MetricField") instanceof Map) {
+                Map<String, OddeeyMetric> MetricList = (Map<String, OddeeyMetric>) input.getValueByField("MetricField");
+                for (Map.Entry<String, OddeeyMetric> metricEntry : MetricList.entrySet()) {
+                    OddeeysSpecialMetric metric = (OddeeysSpecialMetric) metricEntry.getValue();
+                    this.checkMetric(metric);
                 }
-
-//                if (metric.getName().equals("check_hbase_regionserver"))
-//                {
-//                    LOGGER.warn("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " getType " + metric.getType()+" by "+mtrsc.getType());
-//                }
-                mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
-
-                if (metric.getReaction() > 0) {
-                    if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()) == null) {
-                        lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
-                    } else if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()).getTimestamp() < metric.getTimestamp()) {
-                        lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
-                    }
-                } else if (metric.getReaction() < 0) {
-                    lastTimeSpecialMap.put(mtrsc.hashCode(), metric);
-                }
-//                }
-
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
-                }
-//                mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
-
-                collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
-
-                mtrscList.set(mtrsc);
-            } catch (Exception ex) {
-                LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
             }
+
+            if (input.getValueByField("MetricField") instanceof OddeeyMetric) {
+                this.checkMetric((OddeeysSpecialMetric) input.getValueByField("MetricField"));
+            }
+
         }
 
         if (input.getSourceComponent().equals("TimerSpout")) {
@@ -196,12 +144,12 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     if (mtrsc == null) {
                         LOGGER.warn("for lastTimeSpecialMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                         try {
-                            mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));                            
+                            mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
                         } catch (Exception ex) {
                             LOGGER.error(globalFunctions.stackTrace(ex));
                         }
                     }
-                    
+
                     if (mtrsc == null) {
                         LOGGER.warn("PIPEC for lastTimeSpecialMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
@@ -226,11 +174,11 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     if (mtrsc == null) {
                         LOGGER.warn("for lastTimeSpecialLiveMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                         try {
-                            mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));                            
+                            mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
                         } catch (Exception ex) {
                             LOGGER.error(globalFunctions.stackTrace(ex));
                         }
-                    }                    
+                    }
                     if (mtrsc == null) {
                         LOGGER.warn("PIPEC for lastTimeSpecialLiveMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
@@ -246,6 +194,73 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 }
             }
         }
+        this.collector.ack(input);
     }
 
+    public void checkMetric(OddeeysSpecialMetric metric) {
+        try {
+//                OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
+            OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
+            PutRequest putvalue;
+            key = mtrsc.getKey();
+            if (!mtrscList.containsKey(mtrsc.hashCode())) {
+                qualifiers = new byte[3][];
+                values = new byte[3][];
+                qualifiers[0] = "n".getBytes();
+                qualifiers[1] = "timestamp".getBytes();
+                qualifiers[2] = "type".getBytes();
+                values[0] = key;
+                values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                values[2] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
+                putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
+                globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
+            } else {
+                mtrsc = mtrscList.get(mtrsc.hashCode());
+                qualifiers = new byte[1][];
+                values = new byte[1][];
+                if (metric.getType() != mtrsc.getType()) {
+                    qualifiers = new byte[2][];
+                    values = new byte[2][];
+                    qualifiers[1] = "type".getBytes();
+                    values[1] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
+                    mtrsc.setType(metric.getType());
+                }
+                qualifiers[0] = "timestamp".getBytes();
+                values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+                putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
+                }
+                globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+            }
+
+//                if (metric.getName().equals("check_hbase_regionserver"))
+//                {
+//                    LOGGER.warn("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " getType " + metric.getType()+" by "+mtrsc.getType());
+//                }
+            mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
+
+            if (metric.getReaction() > 0) {
+                if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()) == null) {
+                    lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
+                } else if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()).getTimestamp() < metric.getTimestamp()) {
+                    lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
+                }
+            } else if (metric.getReaction() < 0) {
+                lastTimeSpecialMap.put(mtrsc.hashCode(), metric);
+            }
+//                }
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
+            }
+//                mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
+
+            collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
+
+            mtrscList.set(mtrsc);
+        } catch (Exception ex) {
+            LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
+        }
+    }
 }
