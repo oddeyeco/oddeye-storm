@@ -265,7 +265,7 @@ public class CompareBolt extends BaseRichBolt {
                     values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
                     putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                     LOGGER.info("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
-//                        globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
+                    globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 } else {
                     mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
@@ -300,7 +300,7 @@ public class CompareBolt extends BaseRichBolt {
                     values[1] = mtrscMetaLocal.getSerializedRegression();
                     putvalue = new PutRequest(metatable, mtrscMetaLocal.getKey(), meta_family, qualifiers, values);
                     LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
-//                            globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                     mtrscMetaLocal.setLasttime(mtrscMetaInput.getLasttime());
                 }
 //                        System.out.println(mtrscMetaLocal.getErrorState().getLevel()); 
