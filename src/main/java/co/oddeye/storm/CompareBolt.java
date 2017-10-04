@@ -158,6 +158,7 @@ public class CompareBolt extends BaseRichBolt {
                 }
                 LOGGER.warn("UserLevels list : " + UserLevels.size());
             } catch (Exception e) {
+                LOGGER.error("OpenTSDB config execption : " + e.toString());
             }
 
         } catch (Exception ex) {
