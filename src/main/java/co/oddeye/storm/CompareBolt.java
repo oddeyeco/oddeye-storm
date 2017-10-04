@@ -147,12 +147,16 @@ public class CompareBolt extends BaseRichBolt {
                                 AlertLevels = globalFunctions.getGson().fromJson(ALjson, AlertLevel.class);
                             } else {
                                 AlertLevels = new AlertLevel(true);
+                                LOGGER.warn("Add UserLevels list : " + UsID + ": EMPTY");
                             }
                             UserLevels.put(UsID, AlertLevels);
+                            LOGGER.warn("Add UserLevels list : " + UsID + ":" + ALjson);
                         }
+
                     }
 
                 }
+                LOGGER.warn("UserLevels list : " + UserLevels.size());
             } catch (Exception e) {
             }
 
