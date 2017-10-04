@@ -272,7 +272,7 @@ public class CompareBolt extends BaseRichBolt {
                     putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                     LOGGER.info("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
                     globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
-                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+//                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 } else {
                     mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
                     if (LOGGER.isInfoEnabled()) {
