@@ -212,6 +212,8 @@ public class CompareBolt extends BaseRichBolt {
                         UserLevels.put(uuid, AlertLevels);
                     }
                 }
+                LOGGER.warn("Edit UserLevels list Semaphore : " + uuid + ":" + changedata);
+                
             }
 
         }
