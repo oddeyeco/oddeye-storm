@@ -88,7 +88,7 @@ public class SendNotifierBolt extends BaseRichBolt {
             if (tsdb == null) {
                 LOGGER.error("tsdb: " + tsdb);
             }
-            this.userstable = String.valueOf(conf.get("userstable")).getBytes();
+            this.userstable = String.valueOf(conf.get("usertable")).getBytes();
             final Scanner user_scanner = globalFunctions.getSecindaryclient(clientconf).newScanner(userstable);
             ArrayList<ArrayList<KeyValue>> rows;
             while ((rows = user_scanner.nextRows(1000).joinUninterruptibly()) != null) {
