@@ -149,14 +149,13 @@ public class CompareBolt extends BaseRichBolt {
                                 AlertLevels = new AlertLevel(true);
                                 LOGGER.warn("Add UserLevels list : " + UsID + ": EMPTY");
                             }
-                            UserLevels.put(UsID, AlertLevels);
-                            LOGGER.warn("Add UserLevels list : " + UsID + ":" + ALjson);
+                            UserLevels.put(UsID, AlertLevels);                            
                         }
 
                     }
 
                 }
-                LOGGER.warn("UserLevels list : " + UserLevels.size());
+                
             } catch (Exception e) {
                 LOGGER.error("OpenTSDB config execption : " + e.toString());
             }
