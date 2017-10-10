@@ -22,8 +22,13 @@ import org.slf4j.LoggerFactory;
 public class TimerSpout extends BaseRichSpout {
 
     private SpoutOutputCollector outputCollector;
+    private long interval;
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TimerSpout.class);  
-
+     
+    public TimerSpout (long _interval)
+    {
+        interval = _interval;
+    }
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("time"));
@@ -37,10 +42,10 @@ public class TimerSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         try {
-            LOGGER.debug("outputCollector.start");
-            Thread.sleep(60000);
+            LOGGER.debug("outputCollector.start for interval "+interval);
+            Thread.sleep(interval);
             outputCollector.emit(new Values(System.currentTimeMillis()));
-            LOGGER.debug("outputCollector.emit");
+            LOGGER.debug("outputCollector.emit for interval "+interval);
         } catch (InterruptedException ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));
         }

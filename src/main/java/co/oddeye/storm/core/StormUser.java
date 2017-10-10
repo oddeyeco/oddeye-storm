@@ -13,12 +13,13 @@ import co.oddeye.core.globalFunctions;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.hbase.async.KeyValue;
@@ -31,6 +32,50 @@ import org.slf4j.LoggerFactory;
  */
 public class StormUser implements Serializable {
 
+    public class Consumption implements Serializable {
+
+        private Double amount = 0.0;
+        private Integer count = 0;
+        ReentrantLock lock = new ReentrantLock();
+
+        /**
+         * @return the amount
+         */
+        public Double getAmount() {
+            return amount;
+        }
+
+        /**
+         * @return the count
+         */
+        public Integer getCount() {
+            return count;
+        }
+
+        public void doConsumption(Double value, Integer _count) {
+            while (lock.isLocked()) {
+                System.out.println("isLocked");
+            }
+            amount = amount + value * _count;
+            count = count + _count;
+        }
+
+        public void doConsumption(Double value) {
+            lock.lock();
+            try {
+                amount = value;
+                count++;
+
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        public void clear() {
+            amount = 0.0;
+            count = 0;
+        }
+    }
     public static final Logger LOGGER = LoggerFactory.getLogger(StormUser.class);
 
     private UUID id;
@@ -42,6 +87,8 @@ public class StormUser implements Serializable {
     private String city;
     private String region;
     private String timezone = null;
+    private Double balance;
+    private Consumption tmpconsumption = new Consumption();
     private final Map<String, String> FiltertemplateList = new HashMap<>();
     private final Map<String, Map<String, String>> FiltertemplateMap = new HashMap<>();
 
@@ -74,6 +121,10 @@ public class StormUser implements Serializable {
             if (Arrays.equals(property.qualifier(), "city".getBytes())) {
                 this.city = new String(property.value());
             }
+
+            if (Arrays.equals(property.qualifier(), "balance".getBytes())) {
+                this.balance = ByteBuffer.wrap(property.value()).getDouble();//Bytes.getLong(property.value());
+            }
             if ((Arrays.equals(property.qualifier(), "timezone".getBytes()))) {
                 if ((Arrays.equals(property.family(), "personalinfo".getBytes()))) {
                     this.timezone = new String(property.value());
@@ -99,7 +150,7 @@ public class StormUser implements Serializable {
     }
 
     public void PrepareNotifier(OddeeyMetricMeta metric, OddeeyMetricMeta oldmetric, boolean isStart) {
-        
+
         boolean filtred = false;
         Map<String, String> NotifiersList = new HashMap<>();
         Map<String, Boolean> RemoveList = new HashMap<>();
@@ -115,17 +166,17 @@ public class StormUser implements Serializable {
                 if (filter.containsKey("send_telegram")) {
                     if (filter.containsKey("telegram_input")) {
                         chatid = filter.get("telegram_input");
-                    }                    
+                    }
                     if (filter.get("send_telegram").equals("on") && !chatid.isEmpty()) {
                         if (Checkforfilter(filter, metric)) {
-                            NotifiersList.put(filtername,chatid);
+                            NotifiersList.put(filtername, chatid);
                             filtred = true;
                             RemoveList.put(filtername.replace("oddeye_base_send_", ""), false);
                         } else {
                             RemoveList.put(filtername.replace("oddeye_base_send_", ""), true);
                             if (!isStart) {
                                 if (Checkforfilter(filter, oldmetric)) {
-                                    NotifiersList.put(filtername,chatid);
+                                    NotifiersList.put(filtername, chatid);
                                     filtred = true;
                                 }
                             }
@@ -145,14 +196,14 @@ public class StormUser implements Serializable {
 
                     if (filter.get("send_email").equals("on")) {
                         if (Checkforfilter(filter, metric)) {
-                            NotifiersList.put(filtername,chatid);
+                            NotifiersList.put(filtername, chatid);
                             filtred = true;
                             RemoveList.put(filtername.replace("oddeye_base_send_", ""), false);
                         } else {
                             RemoveList.put(filtername.replace("oddeye_base_send_", ""), true);
                             if (!isStart) {
                                 if (Checkforfilter(filter, oldmetric)) {
-                                    NotifiersList.put(filtername,chatid);
+                                    NotifiersList.put(filtername, chatid);
                                     filtred = true;
                                 }
                             }
@@ -179,7 +230,7 @@ public class StormUser implements Serializable {
                         } else {
                             Sendlist.set(metric);
                             Sendlist.setTargetType(target);
-                            Sendlist.setTargetValue(targetEntry.getValue());                            
+                            Sendlist.setTargetValue(targetEntry.getValue());
                         }
 
                     } catch (Exception ex) {
@@ -327,6 +378,20 @@ public class StormUser implements Serializable {
      */
     public Map<String, OddeeySenderMetricMetaList> getTargetList() {
         return TargetList;
+    }
+
+    /**
+     * @return the balance
+     */
+    public Double getBalance() {
+        return balance;
+    }
+
+    /**
+     * @return the tmpconsumption
+     */
+    public Consumption getTmpconsumption() {
+        return tmpconsumption;
     }
 
 }

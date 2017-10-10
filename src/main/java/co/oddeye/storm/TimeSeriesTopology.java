@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -61,8 +62,9 @@ public class TimeSeriesTopology {
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
-        builder.setSpout("TimerSpout", new TimerSpout(), 1);
-        builder.setSpout("TimerSpout2x", new TimerSpout2x(), 1);
+        builder.setSpout("TimerSpout", new TimerSpout(TimeUnit.MINUTES.toMillis(1)), 1);
+        builder.setSpout("TimerSpout2x", new TimerSpout(TimeUnit.MINUTES.toMillis(2)), 1);
+        builder.setSpout("TimerSpout10x", new TimerSpout(TimeUnit.MINUTES.toMillis(10)), 1);
         // Semaphore Spout        
         BrokerHosts zkSemaphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
 
