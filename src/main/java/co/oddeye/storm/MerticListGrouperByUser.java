@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author vahan
  */
-public class MerticListGrouper implements CustomStreamGrouping {
+public class MerticListGrouperByUser implements CustomStreamGrouping {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(MerticListGrouper.class);  
+    public static final Logger LOGGER = LoggerFactory.getLogger(MerticListGrouperByUser.class);  
     private List<Integer> tasks;
 
     @Override
@@ -44,7 +44,7 @@ public class MerticListGrouper implements CustomStreamGrouping {
             }            
             if (metric!= null)
             {
-                rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
+                rvalue.add(tasks.get(Math.abs(metric.getTags().get("UUID").hashCode()) % tasks.size()));
                 LOGGER.info("metric" +metric.getName() +" tags:"+ metric.getTags()+ " values"+rvalue);
             }
             else

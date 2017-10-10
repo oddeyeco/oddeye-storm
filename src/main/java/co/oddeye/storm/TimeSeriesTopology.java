@@ -131,6 +131,15 @@ public class TimeSeriesTopology {
                 .customGrouping("CheckSpecialErrorBolt",new MetaByUserGrouper())                
                 .allGrouping("TimerSpout2x")
                 .allGrouping("kafkaSemaphoreSpot");   
+
+
+        builder.setBolt("UserBalaceCalcBolt",
+                new UserBalaceCalcBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("UserBalaceCalcBoltParallelism_hint"))))                
+                .customGrouping("ParseMetricBolt",new MerticListGrouperByUser())
+                .customGrouping("ParseSpecialMetricBolt",new MerticListGrouperByUser())                
+                .allGrouping("TimerSpout10x");   
+        
+        
         builder.setBolt("MetricErrorToHbase",
                 new MetricErrorToHbase(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("MetricErrorToHbaseParallelism_hint"))))
                 .shuffleGrouping("CompareBolt")

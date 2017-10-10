@@ -162,5 +162,6 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                 user.getTmpconsumption().doConsumption(messageprice);
             }
         }
+        collector.ack(tuple);
     }
 }

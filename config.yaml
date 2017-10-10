@@ -55,6 +55,7 @@ Topology:
     CalcRulesBoltParallelism_hint: 6
     ErrorKafkaHandlerParallelism_hint: 6
     CheckSpecialErrorBoltParallelism_hint: 3
+    UserBalaceCalcBoltParallelism_hint: 3
    
     MetricErrorToHbaseParallelism_hint: 3
     SendNotifierBoltParallelism_hint: 6    
