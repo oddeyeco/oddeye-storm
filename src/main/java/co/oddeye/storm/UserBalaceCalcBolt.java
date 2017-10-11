@@ -101,12 +101,12 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
         this.usertable = String.valueOf(this.conf.get("usertable")).getBytes();
         this.consumptiontable = String.valueOf(conf.get("consumptionusertable")).getBytes();
         this.messageprice = Double.parseDouble(String.valueOf(conf.get("messageprice")));
-
     }
 
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
         try {
+            collector = oc;
             parser = new JsonParser();
             UserList = new HashMap<>();
             String quorum = String.valueOf(conf.get("zkHosts"));
