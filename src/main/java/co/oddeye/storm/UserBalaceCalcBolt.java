@@ -68,7 +68,10 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
             try {
                 for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {
                     if (userEntry.getValue().getTmpconsumption().getAmount() > 0) {
-                        LOGGER.warn(userEntry.getValue().getEmail() + " " + userEntry.getValue().getTmpconsumption().getAmount() + " " + userEntry.getValue().getTmpconsumption().getCount());
+                        if (LOGGER.isDebugEnabled())
+                        {
+                            LOGGER.debug(userEntry.getValue().getEmail() + " " + userEntry.getValue().getTmpconsumption().getAmount() + " " + userEntry.getValue().getTmpconsumption().getCount());
+                        }                        
                         Calendar cal = Calendar.getInstance();
                         cal.set(Calendar.MILLISECOND, 0);
                         cal.set(Calendar.SECOND, 0);
@@ -82,10 +85,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         userEntry.getValue().getTmpconsumption().clear();
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
-
-                    } else {
-                        LOGGER.warn(userEntry.getValue().getEmail() + " EMPTY");
-                    }
+                    } 
 
                 }
             } finally {
