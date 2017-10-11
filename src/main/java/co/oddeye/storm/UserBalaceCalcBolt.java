@@ -11,16 +11,12 @@ import co.oddeye.storm.core.StormUser;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
-import java.util.Timer;
 import java.util.TreeMap;
-import java.text.NumberFormat;
 import java.util.Calendar;
-import java.util.concurrent.TimeUnit;
 import net.opentsdb.core.TSDB;
 import net.opentsdb.utils.Config;
 import org.apache.commons.lang.ArrayUtils;
@@ -75,11 +71,14 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         Calendar cal = Calendar.getInstance();
                         cal.set(Calendar.MILLISECOND, 0);
                         cal.set(Calendar.SECOND, 0);
+                        byte[] year_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.YEAR)).array();
                         byte[] month_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.MONTH)).array();
                         byte[] day_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.DATE)).array();
                         byte[] houre_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.HOUR)).array();
                         byte[] minute_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.MINUTE)).array();
-                        byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), month_key);
+                        
+                        byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), ArrayUtils.addAll(year_key, month_key) );
+                        
                         byte[] qualifiers = ArrayUtils.addAll(ArrayUtils.addAll(day_key, houre_key), minute_key);
                         byte[] values = ByteBuffer.allocate(12).putDouble(userEntry.getValue().getTmpconsumption().getAmount()).putInt(userEntry.getValue().getTmpconsumption().getCount()).array();
                         userEntry.getValue().getTmpconsumption().clear();
