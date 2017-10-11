@@ -73,13 +73,9 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         cal.set(Calendar.SECOND, 0);
                         byte[] year_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.YEAR)).array();
                         byte[] month_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.MONTH)).array();
-                        byte[] day_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.DATE)).array();
-                        byte[] houre_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.HOUR)).array();
-                        byte[] minute_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.MINUTE)).array();
-                        
-                        byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), ArrayUtils.addAll(year_key, month_key) );
-                        
-                        byte[] qualifiers = ArrayUtils.addAll(ArrayUtils.addAll(day_key, houre_key), minute_key);
+                        byte[] time_key = ByteBuffer.allocate(8).putLong(cal.getTimeInMillis()).array();                        
+                        byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), ArrayUtils.addAll(year_key, month_key) );                        
+                        byte[] qualifiers = time_key;
                         byte[] values = ByteBuffer.allocate(12).putDouble(userEntry.getValue().getTmpconsumption().getAmount()).putInt(userEntry.getValue().getTmpconsumption().getCount()).array();
                         userEntry.getValue().getTmpconsumption().clear();
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
