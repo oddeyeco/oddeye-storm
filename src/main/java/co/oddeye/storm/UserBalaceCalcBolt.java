@@ -154,7 +154,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
         if ((tuple.getSourceComponent().equals("ParseMetricBolt")) || (tuple.getSourceComponent().equals("ParseSpecialMetricBolt"))) {
             StormUser user;
             if (tuple.getValueByField("MetricField") instanceof TreeMap) {
-                TreeMap<String, OddeeyMetric> MetricList = (TreeMap<String, OddeeyMetric>) tuple;
+                TreeMap<String, OddeeyMetric> MetricList = (TreeMap<String, OddeeyMetric>) tuple.getValueByField("MetricField");
                 user = UserList.get(MetricList.firstEntry().getValue().getTags().get("UUID"));
                 user.getTmpconsumption().doConsumption(messageprice, MetricList.size());
                 if (LOGGER.isDebugEnabled()) {
@@ -165,7 +165,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
             }
 
             if (tuple.getValueByField("MetricField") instanceof OddeeyMetric) {
-                user = UserList.get(((OddeeyMetric) tuple).getTags().get("UUID"));
+                user = UserList.get(((OddeeyMetric) tuple.getValueByField("MetricField")).getTags().get("UUID"));
                 user.getTmpconsumption().doConsumption(messageprice);
             }
         }
