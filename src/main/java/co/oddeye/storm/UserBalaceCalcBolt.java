@@ -64,11 +64,11 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
 
         @Override
         public void run() {
-            LOGGER.warn("Write 10 minutes consumption to"+(new String(consumptiontable)));
+            LOGGER.warn("Write 10 minutes consumption to" + (new String(consumptiontable)));
             try {
-                for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {                    
+                for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {
                     if (userEntry.getValue().getTmpconsumption().getAmount() > 0) {
-                        LOGGER.warn(userEntry.getValue().getEmail() + " "+userEntry.getValue().getTmpconsumption().getAmount()+" "+userEntry.getValue().getTmpconsumption().getCount());                    
+                        LOGGER.warn(userEntry.getValue().getEmail() + " " + userEntry.getValue().getTmpconsumption().getAmount() + " " + userEntry.getValue().getTmpconsumption().getCount());
                         Calendar cal = Calendar.getInstance();
                         cal.set(Calendar.MILLISECOND, 0);
                         cal.set(Calendar.SECOND, 0);
@@ -83,10 +83,8 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
 
-                    }
-                    else
-                    {
-                            LOGGER.warn(userEntry.getValue().getEmail() + " EMPTY");                    
+                    } else {
+                        LOGGER.warn(userEntry.getValue().getEmail() + " EMPTY");
                     }
 
                 }
@@ -153,19 +151,20 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
         if (tuple.getSourceComponent().equals("TimerSpout10x")) {
             (new SaveTask()).run();
         }
-        LOGGER.warn("SourceComponent " + tuple.getSourceComponent());
-        if ((tuple.getSourceComponent().equals("ParseMetricBolt"))||(tuple.getSourceComponent().equals("ParseSpecialMetricBolt"))) {
+        if ((tuple.getSourceComponent().equals("ParseMetricBolt")) || (tuple.getSourceComponent().equals("ParseSpecialMetricBolt"))) {
             StormUser user;
-            LOGGER.warn("SourceComponent " + tuple.getClass()+" instanceof "+(tuple instanceof Map));
-            if (tuple instanceof Map) {
+            if (tuple.getValueByField("MetricField") instanceof TreeMap) {
                 TreeMap<String, OddeeyMetric> MetricList = (TreeMap<String, OddeeyMetric>) tuple;
                 user = UserList.get(MetricList.firstEntry().getValue().getTags().get("UUID"));
                 user.getTmpconsumption().doConsumption(messageprice, MetricList.size());
-                LOGGER.warn("SourceComponent " + MetricList.size());
-                LOGGER.warn(user.getEmail() + " "+user.getTmpconsumption().getAmount()+" "+user.getTmpconsumption().getCount());                    
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("SourceComponent " + MetricList.size());
+                    LOGGER.debug(user.getEmail() + " " + user.getTmpconsumption().getAmount() + " " + user.getTmpconsumption().getCount());
+                }
+
             }
 
-            if (tuple instanceof OddeeyMetric) {
+            if (tuple.getValueByField("MetricField") instanceof OddeeyMetric) {
                 user = UserList.get(((OddeeyMetric) tuple).getTags().get("UUID"));
                 user.getTmpconsumption().doConsumption(messageprice);
             }
