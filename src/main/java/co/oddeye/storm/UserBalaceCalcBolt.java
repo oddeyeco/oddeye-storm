@@ -64,10 +64,11 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
 
         @Override
         public void run() {
-            LOGGER.warn("Write 10 minutes consumption");
+            LOGGER.warn("Write 10 minutes consumption to"+(new String(consumptiontable)));
             try {
-                for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {
+                for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {                    
                     if (userEntry.getValue().getTmpconsumption().getAmount() > 0) {
+                        LOGGER.warn(userEntry.getValue().getEmail() + " "+userEntry.getValue().getTmpconsumption().getAmount()+" "+userEntry.getValue().getTmpconsumption().getCount());                    
                         Calendar cal = Calendar.getInstance();
                         cal.set(Calendar.MILLISECOND, 0);
                         cal.set(Calendar.SECOND, 0);
@@ -82,6 +83,10 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
 
+                    }
+                    else
+                    {
+                            LOGGER.warn(userEntry.getValue().getEmail() + " EMPTY");                    
                     }
 
                 }
