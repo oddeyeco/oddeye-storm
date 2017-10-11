@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.Calendar;
+import java.util.logging.Level;
 import net.opentsdb.core.TSDB;
 import net.opentsdb.utils.Config;
 import org.apache.commons.lang.ArrayUtils;
@@ -25,6 +26,7 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.hbase.async.GetRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
 import org.hbase.async.Scanner;
@@ -64,23 +66,22 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
             try {
                 for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {
                     if (userEntry.getValue().getTmpconsumption().getAmount() > 0) {
-                        if (LOGGER.isDebugEnabled())
-                        {
+                        if (LOGGER.isDebugEnabled()) {
                             LOGGER.debug(userEntry.getValue().getEmail() + " " + userEntry.getValue().getTmpconsumption().getAmount() + " " + userEntry.getValue().getTmpconsumption().getCount());
-                        }                        
+                        }
                         Calendar cal = Calendar.getInstance();
                         cal.set(Calendar.MILLISECOND, 0);
                         cal.set(Calendar.SECOND, 0);
                         byte[] year_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.YEAR)).array();
                         byte[] month_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.MONTH)).array();
-                        byte[] time_key = ByteBuffer.allocate(8).putLong(cal.getTimeInMillis()).array();                        
-                        byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), ArrayUtils.addAll(year_key, month_key) );                        
+                        byte[] time_key = ByteBuffer.allocate(8).putLong(cal.getTimeInMillis()).array();
+                        byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), ArrayUtils.addAll(year_key, month_key));
                         byte[] qualifiers = time_key;
                         byte[] values = ByteBuffer.allocate(12).putDouble(userEntry.getValue().getTmpconsumption().getAmount()).putInt(userEntry.getValue().getTmpconsumption().getCount()).array();
                         userEntry.getValue().getTmpconsumption().clear();
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
-                    } 
+                    }
 
                 }
             } finally {
@@ -123,16 +124,15 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                 LOGGER.error("tsdb: " + tsdb);
             }
 
-            final Scanner user_scanner = globalFunctions.getSecindaryclient(clientconf).newScanner(usertable);
-            ArrayList<ArrayList<KeyValue>> rows;
-            while ((rows = user_scanner.nextRows(1000).joinUninterruptibly()) != null) {
-                for (final ArrayList<KeyValue> row : rows) {
-                    final StormUser User = new StormUser(row, parser);
-                    UserList.put(User.getId().toString(), User);
-                }
-            }
-            LOGGER.warn("UserList.size " + UserList.size());
-
+//            final Scanner user_scanner = globalFunctions.getSecindaryclient(clientconf).newScanner(usertable);
+//            ArrayList<ArrayList<KeyValue>> rows;
+//            while ((rows = user_scanner.nextRows(1000).joinUninterruptibly()) != null) {
+//                for (final ArrayList<KeyValue> row : rows) {
+//                    final StormUser User = new StormUser(row, parser);
+//                    UserList.put(User.getId().toString(), User);
+//                }
+//            }
+//            LOGGER.warn("UserList.size " + UserList.size());
         } catch (IOException ex) {
             LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
         } catch (Exception ex) {
@@ -151,17 +151,45 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
             if (tuple.getValueByField("MetricField") instanceof TreeMap) {
                 TreeMap<String, OddeeyMetric> MetricList = (TreeMap<String, OddeeyMetric>) tuple.getValueByField("MetricField");
                 user = UserList.get(MetricList.firstEntry().getValue().getTags().get("UUID"));
-                user.getTmpconsumption().doConsumption(messageprice, MetricList.size());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("SourceComponent " + MetricList.size());
-                    LOGGER.debug(user.getEmail() + " " + user.getTmpconsumption().getAmount() + " " + user.getTmpconsumption().getCount());
+
+                if (user == null) {
+                    GetRequest get = new GetRequest(usertable, MetricList.firstEntry().getValue().getTags().get("UUID").getBytes());
+                    try {
+                        final ArrayList<KeyValue> userkvs = globalFunctions.getSecindaryclient(clientconf).get(get).joinUninterruptibly();
+                        final StormUser User = new StormUser(userkvs, parser);
+                        UserList.put(User.getId().toString(), User);
+                    } catch (Exception ex) {
+                        LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
+                    }
+
+                }
+                if (user != null) {
+                    user.getTmpconsumption().doConsumption(messageprice, MetricList.size());
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("SourceComponent " + MetricList.size());
+                        LOGGER.debug(user.getEmail() + " " + user.getTmpconsumption().getAmount() + " " + user.getTmpconsumption().getCount());
+                    }
                 }
 
             }
 
             if (tuple.getValueByField("MetricField") instanceof OddeeyMetric) {
                 user = UserList.get(((OddeeyMetric) tuple.getValueByField("MetricField")).getTags().get("UUID"));
-                user.getTmpconsumption().doConsumption(messageprice);
+
+                if (user == null) {
+                    GetRequest get = new GetRequest(usertable, ((OddeeyMetric) tuple.getValueByField("MetricField")).getTags().get("UUID").getBytes());
+                    try {
+                        final ArrayList<KeyValue> userkvs = globalFunctions.getSecindaryclient(clientconf).get(get).joinUninterruptibly();
+                        final StormUser User = new StormUser(userkvs, parser);
+                        UserList.put(User.getId().toString(), User);
+                    } catch (Exception ex) {
+                        LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
+                    }
+
+                }
+                if (user != null) {
+                    user.getTmpconsumption().doConsumption(messageprice);
+                }
             }
         }
         collector.ack(tuple);
