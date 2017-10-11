@@ -156,8 +156,8 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
         LOGGER.warn("SourceComponent " + tuple.getSourceComponent());
         if ((tuple.getSourceComponent().equals("ParseMetricBolt"))||(tuple.getSourceComponent().equals("ParseSpecialMetricBolt"))) {
             StormUser user;
-            LOGGER.warn("SourceComponent " + tuple.getClass());
-            if (tuple instanceof TreeMap) {
+            LOGGER.warn("SourceComponent " + tuple.getClass()+" instanceof "+(tuple instanceof Map));
+            if (tuple instanceof Map) {
                 TreeMap<String, OddeeyMetric> MetricList = (TreeMap<String, OddeeyMetric>) tuple;
                 user = UserList.get(MetricList.firstEntry().getValue().getTags().get("UUID"));
                 user.getTmpconsumption().doConsumption(messageprice, MetricList.size());
