@@ -62,7 +62,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
 
         @Override
         public void run() {
-            LOGGER.warn("Write 10 minutes consumption to" + (new String(consumptiontable)));
+            LOGGER.warn("Write 10 minutes consumption to" + (new String(consumptiontable))+" from users "+UserList.size());
             try {
                 for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {
                     if (userEntry.getValue().getTmpconsumption().getAmount() > 0) {
