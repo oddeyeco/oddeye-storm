@@ -145,6 +145,10 @@ public class SendNotifierBolt extends BaseRichBolt {
             }
 
             if (metricMeta.getErrorState().getState() != 1) {
+
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Metric Realy to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
+                }
                 final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
                 if (ErrorsList.containsKey(metricMeta.hashCode())) {
                     User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
