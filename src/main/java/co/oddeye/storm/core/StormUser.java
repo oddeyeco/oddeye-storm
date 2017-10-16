@@ -88,7 +88,7 @@ public class StormUser implements Serializable {
     private String region;
     private String timezone = null;
     private Double balance;
-    private Consumption tmpconsumption = new Consumption();
+    private final Consumption tmpconsumption = new Consumption();
     private final Map<String, String> FiltertemplateList = new HashMap<>();
     private final Map<String, Map<String, String>> FiltertemplateMap = new HashMap<>();
 
@@ -397,4 +397,10 @@ public class StormUser implements Serializable {
         return tmpconsumption;
     }
 
+    public void doBalance(Double amount) {
+        if (balance != null) {
+            balance = balance - amount;
+        }
+
+    }
 }

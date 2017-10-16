@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.Calendar;
-import java.util.logging.Level;
 import net.opentsdb.core.TSDB;
 import net.opentsdb.utils.Config;
 import org.apache.commons.lang.ArrayUtils;
@@ -29,7 +28,6 @@ import org.apache.storm.tuple.Tuple;
 import org.hbase.async.GetRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
-import org.hbase.async.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,6 +79,10 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         userEntry.getValue().getTmpconsumption().clear();
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
+                        userEntry.getValue().doBalance(userEntry.getValue().getTmpconsumption().getAmount());
+                        putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(),ByteBuffer.allocate(8).putDouble( userEntry.getValue().getBalance()).array() );
+                        globalFunctions.getClient(clientconf).put(putvalue);
+                        //TODO Send kafka
                     }
 
                 }
