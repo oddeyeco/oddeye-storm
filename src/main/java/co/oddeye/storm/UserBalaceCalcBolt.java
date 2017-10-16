@@ -60,7 +60,9 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
 
         @Override
         public void run() {
-            LOGGER.warn("Write 10 minutes consumption to" + (new String(consumptiontable))+" from users "+UserList.size());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Write 10 minutes consumption to" + (new String(consumptiontable)) + " from users " + UserList.size());
+            }
             try {
                 for (Map.Entry<String, StormUser> userEntry : UserList.entrySet()) {
                     if (userEntry.getValue().getTmpconsumption().getAmount() > 0) {
@@ -80,14 +82,16 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
                         userEntry.getValue().doBalance(userEntry.getValue().getTmpconsumption().getAmount());
-                        putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(),ByteBuffer.allocate(8).putDouble( userEntry.getValue().getBalance()).array() );
+                        putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
                         globalFunctions.getClient(clientconf).put(putvalue);
                         //TODO Send kafka
                     }
 
                 }
             } finally {
-                LOGGER.warn("Write end 10 minutes consumption");
+                if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Write end 10 minutes consumption");
+                }
             }
 
         }
