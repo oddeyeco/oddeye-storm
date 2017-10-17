@@ -218,6 +218,14 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 mtrsc = mtrscList.get(mtrsc.hashCode());
                 qualifiers = new byte[1][];
                 values = new byte[1][];
+
+                if ((metric.getTimestamp() <= mtrsc.getLasttime())) {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Metric Negativ interval: " + mtrsc.hashCode() + " " + mtrsc.getName() + " " + mtrsc.getLasttime() + " " + (mtrsc.getLasttime() - metric.getTimestamp()));
+                    }
+
+                    return;
+                }
                 if (metric.getType() != mtrsc.getType()) {
                     qualifiers = new byte[2][];
                     values = new byte[2][];
@@ -233,11 +241,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 }
                 globalFunctions.getSecindaryclient(clientconf).put(putvalue);
             }
-
-//                if (metric.getName().equals("check_hbase_regionserver"))
-//                {
-//                    LOGGER.warn("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " getType " + metric.getType()+" by "+mtrsc.getType());
-//                }
+            mtrsc.setLasttime(metric.getTimestamp());
             mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
 
             if (metric.getReaction() > 0) {

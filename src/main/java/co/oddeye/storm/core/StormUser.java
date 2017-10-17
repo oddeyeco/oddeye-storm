@@ -213,6 +213,9 @@ public class StormUser implements Serializable {
             }
         }
 
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Metric for Sendlist.set filtred" + metric.getName() + " State:" + metric.getErrorState().getState() + " level:" + metric.getErrorState().getLevel() + " tags:" + metric.getTags());
+        }
         if (filtred) {
             if (metric != null) {
                 for (Map.Entry<String, String> targetEntry : NotifiersList.entrySet()) {
