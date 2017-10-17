@@ -78,10 +78,10 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), ArrayUtils.addAll(year_key, month_key));
                         byte[] qualifiers = time_key;
                         byte[] values = ByteBuffer.allocate(12).putDouble(userEntry.getValue().getTmpconsumption().getAmount()).putInt(userEntry.getValue().getTmpconsumption().getCount()).array();
+                        userEntry.getValue().doBalance(userEntry.getValue().getTmpconsumption().getAmount());
                         userEntry.getValue().getTmpconsumption().clear();
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
-                        globalFunctions.getClient(clientconf).put(putvalue);
-                        userEntry.getValue().doBalance(userEntry.getValue().getTmpconsumption().getAmount());
+                        globalFunctions.getClient(clientconf).put(putvalue);                        
                         if (userEntry.getValue().getBalance() != null) {
                             putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
                             globalFunctions.getClient(clientconf).put(putvalue);
