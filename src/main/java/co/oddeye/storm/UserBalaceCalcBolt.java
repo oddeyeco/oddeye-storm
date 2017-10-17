@@ -82,15 +82,17 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
                         userEntry.getValue().doBalance(userEntry.getValue().getTmpconsumption().getAmount());
-                        putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
-                        globalFunctions.getClient(clientconf).put(putvalue);
+                        if (userEntry.getValue().getBalance() != null) {
+                            putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
+                            globalFunctions.getClient(clientconf).put(putvalue);
+                        }
                         //TODO Send kafka
                     }
 
                 }
             } finally {
                 if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Write end 10 minutes consumption");
+                    LOGGER.debug("Write end 10 minutes consumption");
                 }
             }
 
