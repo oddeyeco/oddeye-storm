@@ -97,6 +97,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                                 Jsonmessage.addProperty("UUID", userEntry.getValue().getId().toString());
                                 Jsonmessage.addProperty("action", "updateuser");                                
                                 Jsonmessage.addProperty("node", context.getThisComponentId());
+                                Jsonmessage.addProperty("fromuser", "Storm:"+context.getThisComponentId());
                                 Jsondata.addProperty("balance", userEntry.getValue().getBalance());
                                 Jsonchangedata.add("technicalinfo", Jsondata);
                                 Jsonmessage.add("changedata", Jsonchangedata);
