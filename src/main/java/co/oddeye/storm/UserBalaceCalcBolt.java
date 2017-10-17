@@ -8,6 +8,7 @@ package co.oddeye.storm;
 import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.globalFunctions;
 import co.oddeye.storm.core.StormUser;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,7 +25,9 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.hbase.async.GetRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
@@ -50,10 +53,11 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
     double messageprice;
 
     private final java.util.Map<String, Object> conf;
+    private TopologyContext context;
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
-
+        ofd.declare(new Fields("message"));
     }
 
     class SaveTask extends TimerTask {
@@ -78,13 +82,26 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         byte[] key = ArrayUtils.addAll(userEntry.getValue().getId().toString().getBytes(), ArrayUtils.addAll(year_key, month_key));
                         byte[] qualifiers = time_key;
                         byte[] values = ByteBuffer.allocate(12).putDouble(userEntry.getValue().getTmpconsumption().getAmount()).putInt(userEntry.getValue().getTmpconsumption().getCount()).array();
-                        userEntry.getValue().doBalance(userEntry.getValue().getTmpconsumption().getAmount());
+                        Double amount = userEntry.getValue().getTmpconsumption().getAmount();
+                        userEntry.getValue().doBalance(amount);
                         userEntry.getValue().getTmpconsumption().clear();
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
-                        globalFunctions.getClient(clientconf).put(putvalue);                        
-                        if (userEntry.getValue().getBalance() != null) {
-                            putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
-                            globalFunctions.getClient(clientconf).put(putvalue);
+                        globalFunctions.getClient(clientconf).put(putvalue);
+                        if (amount > 0) {
+                            if (userEntry.getValue().getBalance() != null) {
+                                putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
+                                globalFunctions.getClient(clientconf).put(putvalue);
+                                final JsonObject Jsonchangedata = new JsonObject();
+                                final JsonObject Jsondata = new JsonObject();
+                                final JsonObject Jsonmessage = new JsonObject();
+                                Jsonmessage.addProperty("UUID", userEntry.getValue().getId().toString());
+                                Jsonmessage.addProperty("action", "updateuser");                                
+                                Jsonmessage.addProperty("node", context.getThisComponentId());
+                                Jsondata.addProperty("balance", userEntry.getValue().getBalance());
+                                Jsonchangedata.add("technicalinfo", Jsondata);
+                                Jsonmessage.add("changedata", Jsonchangedata);
+                                collector.emit(new Values(Jsonmessage.toString()));
+                            }
                         }
                         //TODO Send kafka
                     }
@@ -113,6 +130,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
         try {
+            context = tc;
             collector = oc;
             parser = new JsonParser();
             UserList = new HashMap<>();
@@ -149,8 +167,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
-
+    public void execute(Tuple tuple) {         
         if (tuple.getSourceComponent().equals("TimerSpout10x")) {
             (new SaveTask()).run();
         }
