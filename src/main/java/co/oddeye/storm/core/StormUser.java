@@ -401,9 +401,16 @@ public class StormUser implements Serializable {
     }
 
     public void doBalance(Double amount) {
-        if (balance != null) {
-            balance = balance - amount;
+        if (getBalance() != null) {
+            setBalance((Double) getBalance() - amount);
         }
 
+    }
+
+    /**
+     * @param balance the balance to set
+     */
+    public void setBalance(Double balance) {
+        this.balance = balance;
     }
 }

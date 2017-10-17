@@ -8,11 +8,11 @@ package co.oddeye.storm;
 import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.globalFunctions;
 import co.oddeye.storm.core.StormUser;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
@@ -27,7 +27,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
 import org.hbase.async.GetRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
@@ -83,26 +82,29 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         byte[] qualifiers = time_key;
                         byte[] values = ByteBuffer.allocate(12).putDouble(userEntry.getValue().getTmpconsumption().getAmount()).putInt(userEntry.getValue().getTmpconsumption().getCount()).array();
                         Double amount = userEntry.getValue().getTmpconsumption().getAmount();
-                        userEntry.getValue().doBalance(amount);
+
                         userEntry.getValue().getTmpconsumption().clear();
                         PutRequest putvalue = new PutRequest(consumptiontable, key, consumptionfamily, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue);
                         if (amount > 0) {
-                            if (userEntry.getValue().getBalance() != null) {
-                                putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
-                                globalFunctions.getClient(clientconf).put(putvalue);
-                                final JsonObject Jsonchangedata = new JsonObject();
-                                final JsonObject Jsondata = new JsonObject();
-                                final JsonObject Jsonmessage = new JsonObject();
-                                Jsonmessage.addProperty("UUID", userEntry.getValue().getId().toString());
-                                Jsonmessage.addProperty("action", "updateuser");                                
-                                Jsonmessage.addProperty("node", context.getThisComponentId());
-                                Jsonmessage.addProperty("fromuser", "Storm:"+context.getThisComponentId());
-                                Jsondata.addProperty("balance", userEntry.getValue().getBalance());
-                                Jsonchangedata.add("technicalinfo", Jsondata);
-                                Jsonmessage.add("changedata", Jsonchangedata);
-                                collector.emit(new Values(Jsonmessage.toString()));
+
+                            GetRequest get = new GetRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes());
+                            try {
+                                final ArrayList<KeyValue> userkvs = globalFunctions.getSecindaryclient(clientconf).get(get).joinUninterruptibly();
+                                for (KeyValue property : userkvs) {
+                                    if (Arrays.equals(property.qualifier(), "balance".getBytes())) {
+                                        userEntry.getValue().setBalance(ByteBuffer.wrap(property.value()).getDouble());
+                                    }
+                                }
+                                userEntry.getValue().doBalance(amount);
+                                if (userEntry.getValue().getBalance() != null) {
+                                    putvalue = new PutRequest(usertable, userEntry.getValue().getId().toString().getBytes(), "technicalinfo".getBytes(), "balance".getBytes(), ByteBuffer.allocate(8).putDouble(userEntry.getValue().getBalance()).array());
+                                    globalFunctions.getClient(clientconf).put(putvalue);
+                                }
+                            } catch (Exception ex) {
+                                LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
                             }
+
                         }
                         //TODO Send kafka
                     }
@@ -168,7 +170,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {         
+    public void execute(Tuple tuple) {
         if (tuple.getSourceComponent().equals("TimerSpout10x")) {
             (new SaveTask()).run();
         }
