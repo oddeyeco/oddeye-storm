@@ -54,13 +54,13 @@ public class SendToEmail extends SendTo {
 
         // Get the default Session object.
         String username = String.valueOf(conf.get("mail.user"));
-        String password = String.valueOf(conf.get("mail.password"));        
+        String password = String.valueOf(conf.get("mail.password"));
         session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(username, password);
             }
-        });        
+        });
     }
 
     @Override
@@ -88,9 +88,12 @@ public class SendToEmail extends SendTo {
 //            LOGGER.warn("targetdata.getTargetValue(); " + targetdata.getTargetValue());
             try {
                 MimeMessage message = new MimeMessage(session);
-
+                message.addHeader("Content-type", "text/HTML; charset=UTF-8");
+                message.addHeader("format", "flowed");
+                message.addHeader("Content-Transfer-Encoding", "8bit");
                 // Set From: header field of the header.
-                message.setFrom(new InternetAddress(from,"OddEye Analytic"));
+                message.setFrom(new InternetAddress(from, "OddEye Analytic"));
+                message.setReplyTo(InternetAddress.parse(from, false));
 
                 // Set To: header field of the header.
                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
