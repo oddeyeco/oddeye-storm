@@ -53,8 +53,8 @@ public class SendToEmail extends SendTo {
         properties.put("mail.password", String.valueOf(conf.get("mail.password")));
 
         // Get the default Session object.
-        String username = "noreply@oddeye.co";
-        String password = "Rembo3Rembo4";        
+        String username = String.valueOf(conf.get("mail.user"));
+        String password = String.valueOf(conf.get("mail.password"));        
         session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
