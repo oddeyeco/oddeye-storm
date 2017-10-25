@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author vahan
  */
 public class SendNotifierBolt extends BaseRichBolt {
-
+    
     private final Map conf;
     public static final Logger LOGGER = LoggerFactory.getLogger(SendNotifierBolt.class);
     private OutputCollector collector;
@@ -49,21 +49,21 @@ public class SendNotifierBolt extends BaseRichBolt {
     private Map<Integer, OddeeyMetricMeta> ErrorsList;
     private ExecutorService executor;
     private Map<String, Object> mailconf;
-
+    
     public SendNotifierBolt(java.util.Map config) {
         this.conf = config;
     }
-
+    
     SendNotifierBolt(Map<String, Object> TSDBconfig, Map<String, Object> Mailconfig) {
         this.conf = TSDBconfig;
         this.mailconf = Mailconfig;
     }
-
+    
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
         ofd.declare(new Fields("metric"));
     }
-
+    
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
         try {
@@ -80,7 +80,7 @@ public class SendNotifierBolt extends BaseRichBolt {
             openTsdbConfig.overrideConfig("tsd.storage.enable_compaction", String.valueOf(conf.get("tsd.storage.enable_compaction")));
             openTsdbConfig.overrideConfig("tsd.storage.hbase.data_table", String.valueOf(conf.get("tsd.storage.hbase.data_table")));
             openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
-
+            
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
             clientconf.overrideConfig("hbase.rpcs.batch.size", String.valueOf(conf.get("hbase.rpcs.batch.size")));
@@ -104,7 +104,7 @@ public class SendNotifierBolt extends BaseRichBolt {
             LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
         }
     }
-
+    
     @Override
     public void execute(Tuple tuple) {
         if (tuple.getSourceComponent().equals("kafkaSemaphoreSpot")) {
@@ -136,25 +136,30 @@ public class SendNotifierBolt extends BaseRichBolt {
                 });
             });
         }
-
+        
         if (tuple.getSourceComponent().equals("CompareBolt") || tuple.getSourceComponent().equals("CheckSpecialErrorBolt")) {
             OddeeyMetricMeta metricMeta = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
-
+            
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("Metric prepare to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
             }
-
+            
             if (metricMeta.getErrorState().getState() != 1) {
-
+                
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("Metric Realy to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
                 }
                 final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
                 if (ErrorsList.containsKey(metricMeta.hashCode())) {
-                    User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
-                    if (metricMeta.getErrorState().getLevel() == -1) {
-                        ErrorsList.remove(metricMeta.hashCode());
+                    try {
+                        User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
+                        if (metricMeta.getErrorState().getLevel() == -1) {
+                            ErrorsList.remove(metricMeta.hashCode());
+                        }                        
+                    } catch (Exception e) {
+                        LOGGER.error(globalFunctions.stackTrace(e));
                     }
+                    
                 } else {
                     if (metricMeta.getErrorState().getLevel() > -1) {
                         User.PrepareNotifier(metricMeta, null, true);
@@ -163,8 +168,8 @@ public class SendNotifierBolt extends BaseRichBolt {
                 ErrorsList.put(metricMeta.hashCode(), metricMeta);
             }
         }
-
+        
         collector.ack(tuple);
     }
-
+    
 }
