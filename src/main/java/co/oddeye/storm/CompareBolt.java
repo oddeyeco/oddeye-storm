@@ -75,8 +75,9 @@ public class CompareBolt extends BaseRichBolt {
     /**
      *
      * @param config
+     * @param MetricMetaList
      */
-    public CompareBolt(java.util.Map config) {
+    public CompareBolt(java.util.Map config, OddeeyMetricMetaList MetricMetaList) {
         this.conf = config;
         this.metatable = String.valueOf(this.conf.get("metatable")).getBytes();
         this.usertable = String.valueOf(this.conf.get("usertable")).getBytes();
@@ -111,15 +112,15 @@ public class CompareBolt extends BaseRichBolt {
             LOGGER.error("OpenTSDB config execption : should not be here !!!");
         }
         try {
-            globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
-            try {
-                LOGGER.warn("Start read meta in hbase");
-                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), this.metatable);
-                LOGGER.warn("End read meta in hbase");
-            } catch (Exception ex) {
-                MetricMetaList = new OddeeyMetricMetaList();
-            }
-
+//            globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
+//            try {
+//                LOGGER.warn("Start read meta in hbase");
+//                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), this.metatable);
+//                LOGGER.warn("End read meta in hbase");
+//            } catch (Exception ex) {
+//                MetricMetaList = new OddeeyMetricMetaList();
+//            }
+             LOGGER.warn("Readed Meric meta in CompareBolt "+MetricMetaList.size());
             try {
                 Scanner scanner = globalFunctions.getSecindaryclient(clientconf).newScanner(usertable);
                 scanner.setServerBlockCache(false);
