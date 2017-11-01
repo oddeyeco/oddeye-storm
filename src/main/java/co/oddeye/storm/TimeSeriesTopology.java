@@ -93,115 +93,97 @@ public class TimeSeriesTopology {
         java.util.Map<String, Object> TSDBconfig = (java.util.Map<String, Object>) topologyconf.get("Tsdb");
 
         net.opentsdb.utils.Config openTsdbConfig;
-        try {
-            LOGGER.warn("start Read meta in Begin");
-            openTsdbConfig = new net.opentsdb.utils.Config(true);
 
-            openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(TSDBconfig.get("tsd.core.auto_create_metrics")));
-            openTsdbConfig.overrideConfig("tsd.storage.enable_compaction", String.valueOf(TSDBconfig.get("tsd.storage.enable_compaction")));
-            openTsdbConfig.overrideConfig("tsd.storage.hbase.data_table", String.valueOf(TSDBconfig.get("tsd.storage.hbase.data_table")));
-            openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(TSDBconfig.get("tsd.storage.hbase.uid_table")));
+        boolean CheckDisabled;
+        CheckDisabled = Boolean.valueOf(String.valueOf(tconf.get("DisableCheck")));
 
-            org.hbase.async.Config clientconf = new org.hbase.async.Config();
-            clientconf.overrideConfig("hbase.zookeeper.quorum", String.valueOf(TSDBconfig.get("zkHosts")));
-            clientconf.overrideConfig("hbase.rpcs.batch.size", String.valueOf(TSDBconfig.get("hbase.rpcs.batch.size")));
-            globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf);
-            //globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), String.valueOf(this.conf.get("metatable")).getBytes()
-            OddeeyMetricMetaList MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), String.valueOf(TSDBconfig.get("metatable")).getBytes());
-            LOGGER.warn("FINISH Read meta in Begin");
-            boolean CheckDisabled;
-            CheckDisabled = Boolean.valueOf(String.valueOf(tconf.get("DisableCheck")));
+        TSDBconfig.put("DisableCheck", Boolean.toString(CheckDisabled));
 
-            TSDBconfig.put("DisableCheck", Boolean.toString(CheckDisabled));
+        builder.setBolt("ParseMetricBolt",
+                new ParseMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
+                .shuffleGrouping("KafkaSpout");
 
-            builder.setBolt("ParseMetricBolt",
-                    new ParseMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
-                    .shuffleGrouping("KafkaSpout");
+        builder.setBolt("WriteToTSDBseries",
+                new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
+                .shuffleGrouping("ParseMetricBolt");
 
-            builder.setBolt("WriteToTSDBseries",
-                    new WriteToTSDBseries(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("WriteToTSDBseriesParallelism_hint"))))
-                    .shuffleGrouping("ParseMetricBolt");
+        builder.setBolt("CompareBolt",
+                new CompareBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
+                .customGrouping("ParseMetricBolt", new MerticListGrouper())
+                .allGrouping("SemaforProxyBolt");
 
-            builder.setBolt("CompareBolt",
-                    new CompareBolt(TSDBconfig,MetricMetaList), Integer.parseInt(String.valueOf(tconf.get("CompareBoltParallelism_hint"))))
-                    .customGrouping("ParseMetricBolt", new MerticListGrouper())
-                    .allGrouping("SemaforProxyBolt");
+        builder.setBolt("CalcRulesBolt",
+                new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
+                .customGrouping("ParseMetricBolt", new MerticListGrouper())
+                .allGrouping("SemaforProxyBolt");
 
-            builder.setBolt("CalcRulesBolt",
-                    new CalcRulesBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CalcRulesBoltParallelism_hint"))))
-                    .customGrouping("ParseMetricBolt", new MerticListGrouper())
-                    .allGrouping("SemaforProxyBolt");
+        builder.setBolt("ParseSpecialMetricBolt",
+                new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
+                .shuffleGrouping("KafkaSpout");
 
-            builder.setBolt("ParseSpecialMetricBolt",
-                    new ParseSpecialMetricBolt(), Integer.parseInt(String.valueOf(tconf.get("ParseMetricBoltParallelism_hint"))))
-                    .shuffleGrouping("KafkaSpout");
+        builder.setBolt("SemaforProxyBolt",
+                new SemaforProxyBolt(), Integer.parseInt(String.valueOf(tconf.get("SemaforProxyBoltParallelism_hint"))))
+                .shuffleGrouping("kafkaSemaphoreSpot");
 
-            builder.setBolt("SemaforProxyBolt",
-                    new SemaforProxyBolt(), Integer.parseInt(String.valueOf(tconf.get("SemaforProxyBoltParallelism_hint"))))
-                    .shuffleGrouping("kafkaSemaphoreSpot");
+        builder.setBolt("CheckSpecialErrorBolt",
+                new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
+                .customGrouping("ParseSpecialMetricBolt", new MerticListGrouper())
+                .allGrouping("TimerSpout")
+                .allGrouping("SemaforProxyBolt");
 
-            builder.setBolt("CheckSpecialErrorBolt",
-                    new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
-                    .customGrouping("ParseSpecialMetricBolt", new MerticListGrouper())
-                    .allGrouping("TimerSpout")
-                    .allGrouping("SemaforProxyBolt");
+        java.util.Map<String, Object> Mailconfig = (java.util.Map<String, Object>) topologyconf.get("mail");
 
-            java.util.Map<String, Object> Mailconfig = (java.util.Map<String, Object>) topologyconf.get("mail");
+        builder.setBolt("SendNotifierBolt",
+                new SendNotifierBolt(TSDBconfig, Mailconfig), Integer.parseInt(String.valueOf(tconf.get("SendNotifierBoltParallelism_hint"))))
+                .customGrouping("CompareBolt", new MetaByUserGrouper())
+                .customGrouping("CheckSpecialErrorBolt", new MetaByUserGrouper())
+                .allGrouping("TimerSpout2x")
+                .allGrouping("kafkaSemaphoreSpot");
 
-            builder.setBolt("SendNotifierBolt",
-                    new SendNotifierBolt(TSDBconfig, Mailconfig), Integer.parseInt(String.valueOf(tconf.get("SendNotifierBoltParallelism_hint"))))
-                    .customGrouping("CompareBolt", new MetaByUserGrouper())
-                    .customGrouping("CheckSpecialErrorBolt", new MetaByUserGrouper())
-                    .allGrouping("TimerSpout2x")
-                    .allGrouping("kafkaSemaphoreSpot");
+        builder.setBolt("UserBalaceCalcBolt",
+                new UserBalaceCalcBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("UserBalaceCalcBoltParallelism_hint"))))
+                .customGrouping("ParseMetricBolt", new MerticListGrouperByUser())
+                .customGrouping("ParseSpecialMetricBolt", new MerticListGrouperByUser())
+                .allGrouping("TimerSpout10x");
 
-            builder.setBolt("UserBalaceCalcBolt",
-                    new UserBalaceCalcBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("UserBalaceCalcBoltParallelism_hint"))))
-                    .customGrouping("ParseMetricBolt", new MerticListGrouperByUser())
-                    .customGrouping("ParseSpecialMetricBolt", new MerticListGrouperByUser())
-                    .allGrouping("TimerSpout10x");
+        builder.setBolt("MetricErrorToHbase",
+                new MetricErrorToHbase(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("MetricErrorToHbaseParallelism_hint"))))
+                .shuffleGrouping("CompareBolt")
+                .shuffleGrouping("CheckSpecialErrorBolt");
 
-            builder.setBolt("MetricErrorToHbase",
-                    new MetricErrorToHbase(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("MetricErrorToHbaseParallelism_hint"))))
-                    .shuffleGrouping("CompareBolt")
-                    .shuffleGrouping("CheckSpecialErrorBolt");
+        java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");
+        Properties props = new Properties();
+        props.put("bootstrap.servers", String.valueOf(errorKafkaConf.get("bootstrap.servers")));
+        props.put("acks", "all");
+        props.put("retries", 0);
+        props.put("batch.size", 16384);
+        props.put("linger.ms", 1);
+        props.put("buffer.memory", 33554432);
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-            java.util.Map<String, Object> errorKafkaConf = (java.util.Map<String, Object>) topologyconf.get("ErrorKafka");
-            Properties props = new Properties();
-            props.put("bootstrap.servers", String.valueOf(errorKafkaConf.get("bootstrap.servers")));
-            props.put("acks", "all");
-            props.put("retries", 0);
-            props.put("batch.size", 16384);
-            props.put("linger.ms", 1);
-            props.put("buffer.memory", 33554432);
-            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-
-            String topic = String.valueOf(errorKafkaConf.get("topic"));
-            builder.setBolt("ErrorKafkaHandlerBolt",
-                    new ErrorKafkaHandlerBolt(props, topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
-                    .shuffleGrouping("CompareBolt")
-                    .shuffleGrouping("CheckSpecialErrorBolt");
+        String topic = String.valueOf(errorKafkaConf.get("topic"));
+        builder.setBolt("ErrorKafkaHandlerBolt",
+                new ErrorKafkaHandlerBolt(props, topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
+                .shuffleGrouping("CompareBolt")
+                .shuffleGrouping("CheckSpecialErrorBolt");
 ////                .shuffleGrouping("CheckLastTimeBolt");
 
-            Config conf = new Config();
-            conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
+        Config conf = new Config();
+        conf.setNumWorkers(Integer.parseInt(String.valueOf(tconf.get("NumWorkers"))));
 //        conf.put(Config.TOPOLOGY_DEBUG, true);
-            conf.setMaxSpoutPending(Integer.parseInt(String.valueOf(tconf.get("topology.max.spout.pending"))));
-            conf.setDebug(Boolean.getBoolean(String.valueOf(tconf.get("Debug"))));
-            conf.setMessageTimeoutSecs(Integer.parseInt(String.valueOf(tconf.get("topology.message.timeout.secs"))));
-            try {
+        conf.setMaxSpoutPending(Integer.parseInt(String.valueOf(tconf.get("topology.max.spout.pending"))));
+        conf.setDebug(Boolean.getBoolean(String.valueOf(tconf.get("Debug"))));
+        conf.setMessageTimeoutSecs(Integer.parseInt(String.valueOf(tconf.get("topology.message.timeout.secs"))));
+        try {
 // This statement submit the topology on remote cluster. // args[0] = name of topology StormSubmitter.
-                topologyname = String.valueOf(tconf.get("topologi.display.name"));
-                if (CheckDisabled) {
-                    topologyname = topologyname + "_NoCheck";
-                }
-                StormSubmitter.submitTopology(topologyname, conf, builder.createTopology());
-            } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException alreadyAliveException) {
-                System.out.println(alreadyAliveException);
+            topologyname = String.valueOf(tconf.get("topologi.display.name"));
+            if (CheckDisabled) {
+                topologyname = topologyname + "_NoCheck";
             }
-        } catch (IOException ex) {            
-            LOGGER.error(globalFunctions.stackTrace(ex));
+            StormSubmitter.submitTopology(topologyname, conf, builder.createTopology());
+        } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException alreadyAliveException) {
+            System.out.println(alreadyAliveException);
         }
     }
 }
