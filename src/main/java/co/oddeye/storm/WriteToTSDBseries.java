@@ -91,5 +91,6 @@ public class WriteToTSDBseries extends BaseRichBolt {
             LOGGER.info("Write Metric: " + metric.getName() + " in Time:" + date + " by Value: " + metric.getValue() + " vs tags: " + metric.getTSDBTags());
         }
         collector.ack(tuple);
+//        globalFunctions.getTSDB(openTsdbConfig, clientconf).flush();
     }
 }
