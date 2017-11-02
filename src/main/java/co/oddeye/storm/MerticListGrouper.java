@@ -36,7 +36,7 @@ public class MerticListGrouper implements CustomStreamGrouping {
         for (Object o : values) {
             if (o instanceof TreeMap)
             {
-                metric = ((TreeMap<String, OddeeyMetric>) o).firstEntry().getValue();
+                metric = ((TreeMap<Integer, OddeeyMetric>) o).firstEntry().getValue();                
             }
             if (o instanceof OddeeyMetric)
             {
@@ -45,7 +45,7 @@ public class MerticListGrouper implements CustomStreamGrouping {
             if (metric!= null)
             {
                 rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
-                LOGGER.info("metric" +metric.getName() +" tags:"+ metric.getTags()+ " values"+rvalue);
+                LOGGER.info("metric " +metric.getName() +" tags:"+ metric.getTags()+ " values"+rvalue);
             }
             else
             {
