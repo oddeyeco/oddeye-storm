@@ -10,6 +10,7 @@ import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
+import java.util.logging.Level;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -91,6 +92,10 @@ public class WriteToTSDBseries extends BaseRichBolt {
             LOGGER.info("Write Metric: " + metric.getName() + " in Time:" + date + " by Value: " + metric.getValue() + " vs tags: " + metric.getTSDBTags());
         }
         collector.ack(tuple);
-//        globalFunctions.getTSDB(openTsdbConfig, clientconf).flush();
+        try {
+            globalFunctions.getTSDB(openTsdbConfig, clientconf).flush().joinUninterruptibly();
+        } catch (Exception ex) {
+            LOGGER.error(globalFunctions.stackTrace(ex));
+        }
     }
 }
