@@ -107,6 +107,7 @@ public class SendNotifierBolt extends BaseRichBolt {
     
     @Override
     public void execute(Tuple tuple) {
+        try {            
         if (tuple.getSourceComponent().equals("kafkaSemaphoreSpot")) {
             JsonObject jsonResult = this.parser.parse(tuple.getString(0)).getAsJsonObject();
             if (jsonResult.get("action").getAsString().equals("changefilter")) {
@@ -167,6 +168,9 @@ public class SendNotifierBolt extends BaseRichBolt {
                 }
                 ErrorsList.put(metricMeta.hashCode(), metricMeta);
             }
+        }
+        } catch (Exception e) {
+            LOGGER.error(globalFunctions.stackTrace(e));
         }
         
         collector.ack(tuple);
