@@ -24,8 +24,7 @@ public class TimeSpout extends BaseRichSpout {
     private SpoutOutputCollector outputCollector;
     private long interval;
     private long emitlasttime = 0;
-    private long ctime;
-    private long itime;
+    private long ctime;    
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TimeSpout.class);
 
     public TimeSpout(long _interval) {
@@ -45,11 +44,10 @@ public class TimeSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         try {
-            ctime = System.currentTimeMillis();
-            itime = ctime % interval;
-            if ((itime == 0) && (ctime != emitlasttime)) {
+            ctime = System.currentTimeMillis()/interval;            
+            if (ctime != emitlasttime) {
                 emitlasttime = ctime;
-                LOGGER.warn("time: " + ctime + " interval " + interval + "time emit " + (itime));
+                LOGGER.warn("time: " + ctime + " interval " + interval + "time emit " + (System.currentTimeMillis()%interval));
                 outputCollector.emit(new Values(ctime));
             }
 
