@@ -67,6 +67,7 @@ public class TimeSeriesTopology {
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 
         builder.setSpout("KafkaSpout", new KafkaSpout(kafkaConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutParallelism_hint"))));
+        builder.setSpout("TimeSpout", new TimeSpout(TimeUnit.MINUTES.toMillis(1)), 1);
         builder.setSpout("TimerSpout", new TimerSpout(TimeUnit.MINUTES.toMillis(1)), 1);
         builder.setSpout("TimerSpout2x", new TimerSpout(TimeUnit.MINUTES.toMillis(2)), 1);
         builder.setSpout("TimerSpout10x", new TimerSpout(TimeUnit.MINUTES.toMillis(10)), 1);
