@@ -46,12 +46,13 @@ public class TimeSpout extends BaseRichSpout {
         try {
             ctime = System.currentTimeMillis()/interval;            
             if (ctime != emitlasttime) {
+                outputCollector.emit(new Values(System.currentTimeMillis()));
                 emitlasttime = ctime;
-                LOGGER.warn("time: " + ctime + " interval " + interval + "time emit " + (System.currentTimeMillis()%interval));
-                outputCollector.emit(new Values(ctime));
+                if (LOGGER.isInfoEnabled())
+                {
+                    LOGGER.info("time: " + ctime + " interval " + interval + "time emit " + (System.currentTimeMillis()%interval));
+                }                                
             }
-
-            
 
         } catch (Exception ex) {
             LOGGER.error(globalFunctions.stackTrace(ex));

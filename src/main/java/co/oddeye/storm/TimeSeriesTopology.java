@@ -70,9 +70,9 @@ public class TimeSeriesTopology {
         builder.setSpout("TimeSpout", new TimeSpout(TimeUnit.MINUTES.toMillis(1)), 1);
         builder.setSpout("TimeSpout2x", new TimeSpout(TimeUnit.MINUTES.toMillis(2)), 1);
         builder.setSpout("TimeSpout10x", new TimeSpout(TimeUnit.MINUTES.toMillis(10)), 1);
-        builder.setSpout("TimerSpout", new TimerSpout(TimeUnit.MINUTES.toMillis(1)), 1);
-        builder.setSpout("TimerSpout2x", new TimerSpout(TimeUnit.MINUTES.toMillis(2)), 1);
-        builder.setSpout("TimerSpout10x", new TimerSpout(TimeUnit.MINUTES.toMillis(10)), 1);
+//        builder.setSpout("TimerSpout", new TimerSpout(TimeUnit.MINUTES.toMillis(1)), 1);
+//        builder.setSpout("TimerSpout2x", new TimerSpout(TimeUnit.MINUTES.toMillis(2)), 1);
+//        builder.setSpout("TimerSpout10x", new TimerSpout(TimeUnit.MINUTES.toMillis(10)), 1);
         // Semaphore Spout        
         BrokerHosts zkSemaphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
 
@@ -131,7 +131,7 @@ public class TimeSeriesTopology {
         builder.setBolt("CheckSpecialErrorBolt",
                 new CheckSpecialErrorBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("CheckSpecialErrorBoltParallelism_hint"))))
                 .customGrouping("ParseSpecialMetricBolt", new MerticListGrouper())
-                .allGrouping("TimerSpout")
+                .allGrouping("TimeSpout")
                 .allGrouping("SemaforProxyBolt");
 
         java.util.Map<String, Object> Mailconfig = (java.util.Map<String, Object>) topologyconf.get("mail");
@@ -140,14 +140,14 @@ public class TimeSeriesTopology {
                 new SendNotifierBolt(TSDBconfig, Mailconfig), Integer.parseInt(String.valueOf(tconf.get("SendNotifierBoltParallelism_hint"))))
                 .customGrouping("CompareBolt", new MetaByUserGrouper())
                 .customGrouping("CheckSpecialErrorBolt", new MetaByUserGrouper())
-                .allGrouping("TimerSpout2x")
+                .allGrouping("TimeSpout2x")
                 .allGrouping("kafkaSemaphoreSpot");
 
         builder.setBolt("UserBalaceCalcBolt",
                 new UserBalaceCalcBolt(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("UserBalaceCalcBoltParallelism_hint"))))
                 .customGrouping("ParseMetricBolt", new MerticListGrouperByUser())
                 .customGrouping("ParseSpecialMetricBolt", new MerticListGrouperByUser())
-                .allGrouping("TimerSpout10x");
+                .allGrouping("TimeSpout10x");
 
         builder.setBolt("MetricErrorToHbase",
                 new MetricErrorToHbase(TSDBconfig), Integer.parseInt(String.valueOf(tconf.get("MetricErrorToHbaseParallelism_hint"))))
