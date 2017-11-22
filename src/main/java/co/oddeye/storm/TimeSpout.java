@@ -42,7 +42,8 @@ public class TimeSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         try {
-            LOGGER.warn("time: "+System.currentTimeMillis()+ " interval" +interval+ "time seconds" +(System.currentTimeMillis()/1000));
+            
+            LOGGER.warn("time: "+System.currentTimeMillis()+ " interval " +interval+ "time emit " +(System.currentTimeMillis() % interval));
             
             outputCollector.emit(new Values(System.currentTimeMillis()));
             
