@@ -118,7 +118,7 @@ public class SendNotifierBolt extends BaseRichBolt {
                 UserList.get(jsonResult.get("UUID").getAsString()).getFiltertemplateMap().put(jsonResult.get("filtername").getAsString(), map);
             }
         }
-        if (tuple.getSourceComponent().equals("TimerSpout2x")) {
+        if (tuple.getSourceComponent().equals("TimeSpout2x")) {
             UserList.entrySet().forEach((Map.Entry<String, StormUser> user) -> {
                 user.getValue().getTargetList().entrySet().stream().map((Map.Entry<String, OddeeySenderMetricMetaList> target) -> {
                     Runnable Sender = null;

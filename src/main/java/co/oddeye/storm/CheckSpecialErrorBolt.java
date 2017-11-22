@@ -134,7 +134,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
         }
 
-        if (input.getSourceComponent().equals("TimerSpout")) {
+        if (input.getSourceComponent().equals("TimeSpout")) {
             for (Iterator<Map.Entry<Integer, OddeeysSpecialMetric>> it = lastTimeSpecialMap.entrySet().iterator(); it.hasNext();) {
                 Map.Entry<Integer, OddeeysSpecialMetric> metricEntry = it.next();
                 final OddeeysSpecialMetric metric = metricEntry.getValue();

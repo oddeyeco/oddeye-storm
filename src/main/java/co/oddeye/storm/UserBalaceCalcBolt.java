@@ -171,7 +171,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        if (tuple.getSourceComponent().equals("TimerSpout10x")) {
+        if (tuple.getSourceComponent().equals("TimeSpout10x")) {
             (new SaveTask()).run();
         }
         if ((tuple.getSourceComponent().equals("ParseMetricBolt")) || (tuple.getSourceComponent().equals("ParseSpecialMetricBolt"))) {
