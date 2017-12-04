@@ -23,11 +23,16 @@ import org.slf4j.LoggerFactory;
 public class SendToTelegram extends SendTo {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SendToTelegram.class);
-    private final OddeeySenderMetricMetaList targetdata;
+    private OddeeySenderMetricMetaList targetdata;
     private final Map.Entry<String, StormUser> targetuser;
 
     public SendToTelegram(OddeeySenderMetricMetaList value, Map.Entry<String, StormUser> user) {
-        targetdata = value;
+        try {
+            targetdata = value.clone();
+        } catch (CloneNotSupportedException ex) {
+            targetdata = new OddeeySenderMetricMetaList();
+            LOGGER.error(globalFunctions.stackTrace(ex));
+        }
         targetuser = user;
     }
 
