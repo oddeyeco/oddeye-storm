@@ -37,13 +37,20 @@ import org.slf4j.LoggerFactory;
 public class SendToEmail extends SendTo {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SendToEmail.class);
-    private final OddeeySenderMetricMetaList targetdata;
+    private OddeeySenderMetricMetaList targetdata;
     private final Map.Entry<String, StormUser> targetuser;
     private final Session session;
     private final String from;
 
     public SendToEmail(OddeeySenderMetricMetaList value, Map.Entry<String, StormUser> user, Map conf) {
-        targetdata = value;
+
+        try {
+            targetdata = value.clone();
+        } catch (CloneNotSupportedException ex) {
+            targetdata = new OddeeySenderMetricMetaList();
+            LOGGER.error(globalFunctions.stackTrace(ex));
+        }
+
         targetuser = user;
 
         // Sender's email ID needs to be mentioned
@@ -119,7 +126,7 @@ public class SendToEmail extends SendTo {
                 textPart.setContent(Text, "text/plain");
                 // HTML version
                 final MimeBodyPart htmlPart = new MimeBodyPart();
-                htmlPart.setContent("<html lang=\"en\"><body>"+HTML+"</body></html>", "text/html");
+                htmlPart.setContent("<html lang=\"en\"><body>" + HTML + "</body></html>", "text/html");
 
                 final Multipart mp = new MimeMultipart("alternative");
                 mp.addBodyPart(textPart);
@@ -130,7 +137,6 @@ public class SendToEmail extends SendTo {
                 // Send the actual HTML message, as big as you like
 //                message.setContent(HTML, "text/html");
 //                message.setHeader("Message-ID", Math.random()+"@oddeye.co");
-
 // Send message
                 Transport.send(message);
 //                LOGGER.warn("mail sended");
