@@ -234,13 +234,13 @@ public class CalcRulesBolt extends BaseRichBolt {
                     for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
                         if (rule.getValue().getQualifier() == null) {
                             qualifiers[index] = "null".getBytes();
-                            LOGGER.error("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
+                            LOGGER.info("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
                         } else {
                             qualifiers[index] = rule.getValue().getQualifier();
                         }
                         if (rule.getValue().getValues() == null) {
                             values[index] = "null".getBytes();
-                            LOGGER.error("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
+                            LOGGER.info("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
                         } else {
                             values[index] = rule.getValue().getValues();
                         }
