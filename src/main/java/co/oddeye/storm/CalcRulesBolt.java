@@ -164,8 +164,8 @@ public class CalcRulesBolt extends BaseRichBolt {
                         mtrsc = MetricMetaList.get(mtrsc.hashCode());
                     }
                     try {
-                        calcRules(mtrsc, metric, code);
                         MetricMetaList.set(mtrsc);
+                        calcRules(mtrsc, metric, code);                        
                     } catch (Exception ex) {
                         LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
                     }
