@@ -69,7 +69,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
-        LOGGER.warn("DoPrepare WriteToTSDBseries");
+        LOGGER.warn("DoPrepare CalcRulesBolt");
         collector = oc;
         parser = new JsonParser();
 
@@ -89,20 +89,20 @@ public class CalcRulesBolt extends BaseRichBolt {
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
 
-            try {
-                LOGGER.warn("Start read meta in hbase");
-                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
-                LOGGER.warn("End read meta in hbase");
-            } catch (Exception ex) {
+//            try {
+//                LOGGER.warn("Start read meta in hbase");
+//                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+//                LOGGER.warn("End read meta in hbase");
+//            } catch (Exception ex) {
                 MetricMetaList = new OddeeyMetricMetaList();
-            }
+//            }
 
         } catch (IOException ex) {
             LOGGER.error("OpenTSDB config execption : should not be here !!!");
         } catch (Exception ex) {
             LOGGER.error("OpenTSDB config execption : " + ex.toString());
         }
-        LOGGER.info("DoPrepare KafkaOddeyeMsgToTSDBBolt Finish");
+        LOGGER.info("DoPrepare CalcRulesBolt Finish");
     }
 
     @Override
@@ -234,7 +234,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 
                 for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
                     if (rule.getValue().getQualifier() == null) {
-                        qualifiers[index] = "null".getBytes();
+                        qualifiers[index] = "null".getBytes();                        
                         LOGGER.info("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
                     } else {
                         qualifiers[index] = rule.getValue().getQualifier();
