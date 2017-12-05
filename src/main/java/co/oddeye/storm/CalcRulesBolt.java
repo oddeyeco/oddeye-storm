@@ -89,13 +89,13 @@ public class CalcRulesBolt extends BaseRichBolt {
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
 
-//            try {
-//                LOGGER.warn("Start read meta in hbase");
-//                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
-//                LOGGER.warn("End read meta in hbase");
-//            } catch (Exception ex) {
+            try {
+                LOGGER.warn("Start read meta in hbase");
+                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+                LOGGER.warn("End read meta in hbase");
+            } catch (Exception ex) {
                 MetricMetaList = new OddeeyMetricMetaList();
-//            }
+            }
 
         } catch (IOException ex) {
             LOGGER.error("OpenTSDB config execption : should not be here !!!");
@@ -164,8 +164,8 @@ public class CalcRulesBolt extends BaseRichBolt {
                         mtrsc = MetricMetaList.get(mtrsc.hashCode());
                     }
                     try {
+                        calcRules(mtrsc, metric, code);
                         MetricMetaList.set(mtrsc);
-                        calcRules(mtrsc, metric, code);                        
                     } catch (Exception ex) {
                         LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
                     }
