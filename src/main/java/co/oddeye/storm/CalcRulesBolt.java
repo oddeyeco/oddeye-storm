@@ -209,70 +209,71 @@ public class CalcRulesBolt extends BaseRichBolt {
                 ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
                 deferreds.addAll(rule_deferreds);
             }
-            if (deferreds.size() > 0) {
-                needsave = true;
-                starttime = System.currentTimeMillis();
-                Deferred.groupInOrder(deferreds).joinUninterruptibly();
-                endtime = System.currentTimeMillis() - starttime;
-                LOGGER.info("Rule joinUninterruptibly " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
-            } else {
-                LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-            }
-            try {
-                if (needsave) {
+        }
+        if (deferreds.size() > 0) {
+            needsave = true;
+            starttime = System.currentTimeMillis();
+            Deferred.groupInOrder(deferreds).joinUninterruptibly();
+            endtime = System.currentTimeMillis() - starttime;
+            LOGGER.warn("Rule joinUninterruptibly " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+        } else {
+            LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+        }
+        try {
+            if (needsave) {
 //            if (false) {
-                    key = mtrsc.getKey();
-                    byte[][] qualifiers;
-                    byte[][] values;
-                    ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getCalcedRulesMap();
-                    qualifiers = new byte[rulesmap.size()][];
-                    values = new byte[rulesmap.size()][];
-                    int index = 0;
+                key = mtrsc.getKey();
+                byte[][] qualifiers;
+                byte[][] values;
+                ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getCalcedRulesMap();
+                qualifiers = new byte[rulesmap.size()][];
+                values = new byte[rulesmap.size()][];
+                int index = 0;
 
-                    for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
-                        if (rule.getValue().getQualifier() == null) {
-                            qualifiers[index] = "null".getBytes();
-                            LOGGER.warn("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
-                        } else {
-                            qualifiers[index] = rule.getValue().getQualifier();
-                        }
-                        if (rule.getValue().getValues() == null) {
-                            values[index] = "null".getBytes();
-                            LOGGER.warn("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
-                        } else {
-                            values[index] = rule.getValue().getValues();
-                        }
-
-                        index++;
+                for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
+                    if (rule.getValue().getQualifier() == null) {
+                        qualifiers[index] = "null".getBytes();
+                        LOGGER.warn("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
+                    } else {
+                        qualifiers[index] = rule.getValue().getQualifier();
+                    }
+                    if (rule.getValue().getValues() == null) {
+                        values[index] = "null".getBytes();
+                        LOGGER.warn("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
+                    } else {
+                        values[index] = rule.getValue().getValues();
                     }
 
-                    if (qualifiers.length > 0) {
-                        try {
-                            PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
-                            globalFunctions.getClient(clientconf).put(putvalue);
-                        } catch (Exception e) {
-                            LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
-                            LOGGER.warn("catch In Multi qualifiers metatable: " + Arrays.toString(metatable) + " key " + Arrays.toString(key) + "family" + family);
-                            LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + Arrays.deepToString(qualifiers) + "values" + Arrays.deepToString(values));
-                            LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
+                    index++;
+                }
 
-                        }
-                    } else {
-                        try {
-                            PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
-                            globalFunctions.getClient(clientconf).put(putvalue);
-                        } catch (Exception e) {
-                            LOGGER.error("catch In Single qualifiers " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
-                        }
+                if (qualifiers.length > 0) {
+                    try {
+                        PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
+                        globalFunctions.getClient(clientconf).put(putvalue);
+                    } catch (Exception e) {
+                        LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
+                        LOGGER.warn("catch In Multi qualifiers metatable: " + Arrays.toString(metatable) + " key " + Arrays.toString(key) + "family" + family);
+                        LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + Arrays.deepToString(qualifiers) + "values" + Arrays.deepToString(values));
+                        LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
 
+                    }
+                } else {
+                    try {
+                        PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
+                        globalFunctions.getClient(clientconf).put(putvalue);
+                    } catch (Exception e) {
+                        LOGGER.error("catch In Single qualifiers " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
                     }
 
                 }
 
-            } catch (Exception e) {
-                LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
             }
+
+        } catch (Exception e) {
+            LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
         }
+
     }
 
 }
