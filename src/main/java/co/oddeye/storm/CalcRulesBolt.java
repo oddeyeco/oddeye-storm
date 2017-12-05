@@ -94,7 +94,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 //                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
 //                LOGGER.warn("End read meta in hbase");
 //            } catch (Exception ex) {
-                MetricMetaList = new OddeeyMetricMetaList();
+            MetricMetaList = new OddeeyMetricMetaList();
 //            }
 
         } catch (IOException ex) {
@@ -223,7 +223,8 @@ public class CalcRulesBolt extends BaseRichBolt {
         }
         try {
 
-            if (needsave) {
+//            if (needsave) {
+            if (false) {
                 key = mtrsc.getKey();
                 byte[][] qualifiers;
                 byte[][] values;
@@ -234,7 +235,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 
                 for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
                     if (rule.getValue().getQualifier() == null) {
-                        qualifiers[index] = "null".getBytes();                        
+                        qualifiers[index] = "null".getBytes();
                         LOGGER.warn("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
                     } else {
                         qualifiers[index] = rule.getValue().getQualifier();
