@@ -5,11 +5,8 @@
  */
 package co.oddeye.storm;
 
-import co.oddeye.core.OddeeyMetricMetaList;
-import co.oddeye.core.globalFunctions;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;

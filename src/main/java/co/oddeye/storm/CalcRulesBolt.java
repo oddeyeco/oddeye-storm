@@ -220,8 +220,8 @@ public class CalcRulesBolt extends BaseRichBolt {
             LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
         }
         try {
-            if (needsave) {
-//            if (false) {
+//            if (needsave) {
+            if (false) {
                 key = mtrsc.getKey();
                 byte[][] qualifiers;
                 byte[][] values;
@@ -258,15 +258,15 @@ public class CalcRulesBolt extends BaseRichBolt {
                         LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
 
                     }
-                } else {
-                    try {
-                        PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
-                        globalFunctions.getClient(clientconf).put(putvalue);
-                    } catch (Exception e) {
-                        LOGGER.error("catch In Single qualifiers " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
-                    }
-
-                }
+                } 
+//                else {
+//                    try {
+//                        PutRequest putvalue = new PutRequest(metatable, key, family, "n".getBytes(), key);
+//                        globalFunctions.getClient(clientconf).put(putvalue);
+//                    } catch (Exception e) {
+//                        LOGGER.error("catch In Single qualifiers " + globalFunctions.stackTrace(e) + " qualifiers " + qualifiers + "values" + values);
+//                    }
+//                }
 
             }
 
