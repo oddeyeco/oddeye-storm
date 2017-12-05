@@ -209,7 +209,6 @@ public class CalcRulesBolt extends BaseRichBolt {
                 ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
                 deferreds.addAll(rule_deferreds);
             }
-
             if (deferreds.size() > 0) {
                 needsave = true;
                 starttime = System.currentTimeMillis();
