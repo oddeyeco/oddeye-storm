@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>co.oddeye.storm</groupId>
     <artifactId>TimeSeriesTopology</artifactId>
-    <version>0.8.0</version>
+    <version>0.9.0</version>
     <packaging>jar</packaging>
       
     <properties>
@@ -201,7 +201,7 @@
         <dependency>
             <groupId>net.opentsdb</groupId>
             <artifactId>opentsdb</artifactId>
-            <version>2.3.0-RC1</version>  
+            <version>2.4.0RC1</version>  
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.zookeeper</groupId>
@@ -258,7 +258,7 @@
         <dependency>
             <groupId>co.oddeye</groupId>
             <artifactId>oddeye-core</artifactId>
-            <version>0.3</version>
+            <version>0.4</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
