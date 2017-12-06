@@ -43,8 +43,7 @@ public class CalcRulesBolt extends BaseRichBolt {
     private org.hbase.async.Config clientconf;
     private byte[] metatable;
     private OddeeyMetricMetaList MetricMetaList;
-    private Calendar CalendarObjRules;
-    private Map<String, MetriccheckRule> Rules;
+    private Calendar CalendarObjRules;    
     private boolean needsave;
     private long starttime;
     private long endtime;
@@ -195,7 +194,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         CalendarObjRules.add(Calendar.HOUR, 1);
         CalendarObjRules.add(Calendar.DATE, -1);
 
-        Rules = mtrsc.getRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
+        Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
         needsave = false;
         final ArrayList<Deferred<DataPoints[]>> deferreds = new ArrayList<>();
         mtrsc.clearCalcedRulesMap();
