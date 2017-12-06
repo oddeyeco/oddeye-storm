@@ -43,7 +43,7 @@ public class CalcRulesBolt extends BaseRichBolt {
     private org.hbase.async.Config clientconf;
     private byte[] metatable;
     private OddeeyMetricMetaList MetricMetaList;
-    private Calendar CalendarObjRules;    
+    private Calendar CalendarObjRules;
     private boolean needsave;
     private long starttime;
     private long endtime;
@@ -213,13 +213,8 @@ public class CalcRulesBolt extends BaseRichBolt {
             needsave = true;
             starttime = System.currentTimeMillis();
             Deferred.groupInOrder(deferreds).joinUninterruptibly();
-            endtime = System.currentTimeMillis() - starttime;
-            if (deferreds.size() > 1) {
-                LOGGER.warn("Rule joinUninterruptibly " + deferreds.size()+" getCalcedRulesMap "+mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
-            } else {
-                LOGGER.info("Rule joinUninterruptibly " + deferreds.size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
-            }
-
+            endtime = System.currentTimeMillis() - starttime;            
+            LOGGER.info("Rule joinUninterruptibly " + deferreds.size() + " getCalcedRulesMap " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
         } else {
             LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
         }
@@ -227,45 +222,46 @@ public class CalcRulesBolt extends BaseRichBolt {
             if (needsave) {
 //            if (false) {
                 key = mtrsc.getKey();
-                byte[][] qualifiers;
-                byte[][] values;
                 ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getCalcedRulesMap();
-                qualifiers = new byte[rulesmap.size()][];
-                values = new byte[rulesmap.size()][];
-                int index = 0;
-
-                for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
-                    if (rule.getValue().getQualifier() == null) {
-                        qualifiers[index] = "null".getBytes();
-                        LOGGER.warn("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
-                    } else {
-                        qualifiers[index] = rule.getValue().getQualifier();
-                    }
-                    if (rule.getValue().getValues() == null) {
-                        values[index] = "null".getBytes();
-                        LOGGER.warn("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
-                    } else {
-                        values[index] = rule.getValue().getValues();
-                    }
-
-                    index++;
-                }
-
-                if (qualifiers.length > 0) {
-                    try {
-                        PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
-                        globalFunctions.getClient(clientconf).put(putvalue).join();
-                        if (qualifiers.length > 1) {
-                            LOGGER.warn("Client putvalue " +deferreds.size()+" qualifiers "+ qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                if (rulesmap.size() > 0) {
+                    byte[][] qualifiers;
+                    byte[][] values;
+                    qualifiers = new byte[rulesmap.size()][];
+                    values = new byte[rulesmap.size()][];
+                    int index = 0;
+                    for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
+                        if (rule.getValue().getQualifier() == null) {
+                            qualifiers[index] = "null".getBytes();
+                            LOGGER.warn("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
                         } else {
-                            LOGGER.info("Client putvalue "+qualifiers.length +" Count" + CalendarObjRules.getTime() +" Hash "+mtrsc.hashCode() +" Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                            qualifiers[index] = rule.getValue().getQualifier();
                         }
-                    } catch (Exception e) {
-                        LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
-                        LOGGER.warn("catch In Multi qualifiers metatable: " + Arrays.toString(metatable) + " key " + Arrays.toString(key) + "family" + family);
-                        LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + Arrays.deepToString(qualifiers) + "values" + Arrays.deepToString(values));
-                        LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
+                        if (rule.getValue().getValues() == null) {
+                            values[index] = "null".getBytes();
+                            LOGGER.warn("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
+                        } else {
+                            values[index] = rule.getValue().getValues();
+                        }
 
+                        index++;
+                    }
+
+                    if (qualifiers.length > 0) {
+                        try {
+                            PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
+                            globalFunctions.getClient(clientconf).put(putvalue).join();
+                            if (qualifiers.length > 1) {
+                                LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                            } else {
+                                LOGGER.info("Client putvalue " + qualifiers.length + " Count" + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                            }
+                        } catch (Exception e) {
+                            LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
+                            LOGGER.warn("catch In Multi qualifiers metatable: " + Arrays.toString(metatable) + " key " + Arrays.toString(key) + "family" + family);
+                            LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + Arrays.deepToString(qualifiers) + "values" + Arrays.deepToString(values));
+                            LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
+
+                        }
                     }
                 }
 //                else {
