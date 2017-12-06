@@ -216,7 +216,7 @@ public class CalcRulesBolt extends BaseRichBolt {
             Deferred.groupInOrder(deferreds).joinUninterruptibly();
             endtime = System.currentTimeMillis() - starttime;
             if (deferreds.size() > 1) {
-                LOGGER.warn("Rule joinUninterruptibly " + deferreds.size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                LOGGER.warn("Rule joinUninterruptibly " + deferreds.size()+" getCalcedRulesMap "+mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
             } else {
                 LOGGER.info("Rule joinUninterruptibly " + deferreds.size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
             }
@@ -257,7 +257,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                         PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                         globalFunctions.getClient(clientconf).put(putvalue).join();
                         if (qualifiers.length > 1) {
-                            LOGGER.warn("Client putvalue " + qualifiers.length + " Count" + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                            LOGGER.warn("Client putvalue " +deferreds.size()+" qualifiers "+ qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
                         } else {
                             LOGGER.info("Client putvalue "+qualifiers.length +" Count" + CalendarObjRules.getTime() +" Hash "+mtrsc.hashCode() +" Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
                         }
