@@ -213,7 +213,7 @@ public class CalcRulesBolt extends BaseRichBolt {
             needsave = true;
             starttime = System.currentTimeMillis();
             Deferred.groupInOrder(deferreds).joinUninterruptibly();
-            endtime = System.currentTimeMillis() - starttime;            
+            endtime = System.currentTimeMillis() - starttime;
             LOGGER.info("Rule joinUninterruptibly " + deferreds.size() + " getCalcedRulesMap " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
         } else {
             LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
@@ -250,11 +250,9 @@ public class CalcRulesBolt extends BaseRichBolt {
                         try {
                             PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                             globalFunctions.getClient(clientconf).put(putvalue).join();
-                            if (qualifiers.length > 1) {
-                                LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
-                            } else {
-                                LOGGER.info("Client putvalue " + qualifiers.length + " Count" + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
-                            }
+
+                            LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+
                         } catch (Exception e) {
                             LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
                             LOGGER.warn("catch In Multi qualifiers metatable: " + Arrays.toString(metatable) + " key " + Arrays.toString(key) + "family" + family);
