@@ -194,7 +194,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         CalendarObjRules.add(Calendar.HOUR, 1);
         CalendarObjRules.add(Calendar.DATE, -1);
 
-        Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules, 7, metatable, globalFunctions.getClient(clientconf));
+        Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
         needsave = false;
         final ArrayList<Deferred<DataPoints[]>> deferreds = new ArrayList<>();
         mtrsc.clearCalcedRulesMap();
@@ -250,8 +250,15 @@ public class CalcRulesBolt extends BaseRichBolt {
                         try {
                             PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                             globalFunctions.getClient(clientconf).put(putvalue).join();
-
-                            LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                            if ((deferreds.size()>1)||(qualifiers.length>1))
+                            {
+                                LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                            }
+                            else
+                            {
+                                LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                            }
+                            
 
                         } catch (Exception e) {
                             LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
