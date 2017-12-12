@@ -44,7 +44,7 @@ public class MerticListGrouper implements CustomStreamGrouping {
             }            
             if (metric!= null)
             {
-                rvalue.add(tasks.get(Math.abs(metric.getTags().hashCode()) % tasks.size()));
+                rvalue.add(tasks.get(Math.abs(metric.hashCode()) % tasks.size()));
                 LOGGER.info("metric " +metric.getName() +" tags:"+ metric.getTags()+ " values"+rvalue);
             }
             else
