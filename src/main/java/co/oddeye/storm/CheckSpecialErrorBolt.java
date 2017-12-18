@@ -243,15 +243,21 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
             }
             mtrsc.setLasttime(metric.getTimestamp());
             mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
+            if (metric.getReaction() == 0) {
+                lastTimeSpecialLiveMap.remove(mtrsc.hashCode());
+                lastTimeSpecialMap.remove(mtrsc.hashCode());
 
+            }
             if (metric.getReaction() > 0) {
                 if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()) == null) {
                     lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
                 } else if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()).getTimestamp() < metric.getTimestamp()) {
                     lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
                 }
+                lastTimeSpecialMap.remove(mtrsc.hashCode());
             } else if (metric.getReaction() < 0) {
                 lastTimeSpecialMap.put(mtrsc.hashCode(), metric);
+                lastTimeSpecialLiveMap.remove(mtrsc.hashCode());
             }
 //                }
 
