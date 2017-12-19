@@ -203,7 +203,7 @@ public class CalcRulesBolt extends BaseRichBolt {
             Calendar CalObjRules = MetriccheckRule.QualifierToCalendar(l_Rule.getQualifier());
             Calendar CalObjRulesEnd = (Calendar) CalObjRules.clone();
             CalObjRulesEnd.add(Calendar.HOUR, 1);
-            CalObjRulesEnd.add(Calendar.MILLISECOND, -1);
+            CalObjRulesEnd.add(Calendar.MILLISECOND, -1);            
             if ((!l_Rule.isIsValidRule()) && (!l_Rule.isHasNotData())) {
                 ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
                 deferreds.addAll(rule_deferreds);
