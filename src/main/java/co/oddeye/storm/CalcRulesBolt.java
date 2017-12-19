@@ -252,11 +252,11 @@ public class CalcRulesBolt extends BaseRichBolt {
                             globalFunctions.getClient(clientconf).put(putvalue).join();
                             if ((deferreds.size()>1)||(qualifiers.length>1))
                             {
-                                LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                                LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
                             }
                             else
                             {
-                                LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                                LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
                             }
                             
 
