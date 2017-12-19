@@ -115,6 +115,8 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 final int hash = jsonResult.get("hash").getAsInt();
                 if (mtrscList.containsKey(hash)) {
                     mtrscList.remove(hash);
+                    lastTimeSpecialLiveMap.remove(hash);
+                    lastTimeSpecialMap.remove(hash);
                 }
             }
         }
