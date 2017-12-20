@@ -33,6 +33,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
+import java.util.TimeZone;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
 import org.hbase.async.Scanner;
@@ -81,8 +82,8 @@ public class CompareBolt extends BaseRichBolt {
         this.metatable = String.valueOf(this.conf.get("metatable")).getBytes();
         this.usertable = String.valueOf(this.conf.get("usertable")).getBytes();
         this.errortable = String.valueOf(conf.get("errorstable")).getBytes();
-        CalendarObjRules = Calendar.getInstance();
-        CalendarObj = Calendar.getInstance();
+        CalendarObjRules = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        CalendarObj = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     }
 
     @Override

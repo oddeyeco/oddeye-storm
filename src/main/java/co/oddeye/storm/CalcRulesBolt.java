@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentMap;
 import net.opentsdb.core.DataPoints;
 import net.opentsdb.utils.Config;
@@ -84,7 +85,7 @@ public class CalcRulesBolt extends BaseRichBolt {
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
             clientconf.overrideConfig("hbase.rpcs.batch.size", String.valueOf(conf.get("hbase.rpcs.batch.size")));
             globalFunctions.getTSDB(openTsdbConfig, clientconf);
-            CalendarObjRules = Calendar.getInstance();
+            CalendarObjRules = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
 

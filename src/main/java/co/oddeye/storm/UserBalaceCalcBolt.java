@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.Calendar;
+import java.util.TimeZone;
 import net.opentsdb.core.TSDB;
 import net.opentsdb.utils.Config;
 import org.apache.commons.lang.ArrayUtils;
@@ -72,7 +73,7 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER.debug(userEntry.getValue().getEmail() + " " + userEntry.getValue().getTmpconsumption().getAmount() + " " + userEntry.getValue().getTmpconsumption().getCount());
                         }
-                        Calendar cal = Calendar.getInstance();
+                        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
                         cal.set(Calendar.MILLISECOND, 0);
                         cal.set(Calendar.SECOND, 0);
                         byte[] year_key = ByteBuffer.allocate(4).putInt(cal.get(Calendar.YEAR)).array();

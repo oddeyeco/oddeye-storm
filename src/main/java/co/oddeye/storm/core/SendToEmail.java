@@ -15,6 +15,7 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import javax.mail.Authenticator;
 import javax.mail.Session;
 import javax.mail.Message;
@@ -110,7 +111,7 @@ public class SendToEmail extends SendTo {
 
                 String pattern = "EEE, dd MMM yyyy HH:mm:ss Z";
                 SimpleDateFormat format = new SimpleDateFormat(pattern);
-                message.addHeader("Date", format.format(Calendar.getInstance().getTime()));
+                message.addHeader("Date", format.format(Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime()));
 
                 // Set From: header field of the header.
                 message.setFrom(new InternetAddress(from, "OddEye Analytic"));
