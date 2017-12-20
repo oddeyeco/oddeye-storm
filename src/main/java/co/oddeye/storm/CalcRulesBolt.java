@@ -206,21 +206,22 @@ public class CalcRulesBolt extends BaseRichBolt {
             CalObjRulesEnd.add(Calendar.HOUR, 1);
             CalObjRulesEnd.add(Calendar.MILLISECOND, -1);            
             if ((!l_Rule.isIsValidRule()) && (!l_Rule.isHasNotData())) {
-                ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
-                deferreds.addAll(rule_deferreds);
+                  mtrsc.CalculateRulesApachMathSinq(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
+//                ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
+//                deferreds.addAll(rule_deferreds);
             }
         }
-        if (deferreds.size() > 0) {
-            needsave = true;
-            starttime = System.currentTimeMillis();
-            Deferred.groupInOrder(deferreds).joinUninterruptibly();
-            endtime = System.currentTimeMillis() - starttime;
-            LOGGER.info("Rule joinUninterruptibly " + deferreds.size() + " getCalcedRulesMap " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
-        } else {
-            LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
-        }
+//        if (deferreds.size() > 0) {
+//            needsave = true;
+//            starttime = System.currentTimeMillis();
+//            Deferred.groupInOrder(deferreds).joinUninterruptibly();
+//            endtime = System.currentTimeMillis() - starttime;
+//            LOGGER.info("Rule joinUninterruptibly " + deferreds.size() + " getCalcedRulesMap " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+//        } else {
+//            LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+//        }
         try {
-            if (needsave) {
+//            if (needsave) {
 //            if (false) {
                 key = mtrsc.getKey();
                 ConcurrentMap<String, MetriccheckRule> rulesmap = mtrsc.getCalcedRulesMap();
@@ -279,7 +280,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 //                    }
 //                }
 
-            }
+//            }
 
         } catch (Exception e) {
             LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
