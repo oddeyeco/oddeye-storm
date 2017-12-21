@@ -221,9 +221,9 @@ public class CalcRulesBolt extends BaseRichBolt {
             Deferred.groupInOrder(deferreds).join();
             endtime = System.currentTimeMillis() - starttime;
             if (endtime > 500) {
-                LOGGER.warn("Rules join SLOW" + deferreds.size() + " Calced Rules Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                LOGGER.warn("   Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
             } else {
-                LOGGER.info("Rules join " + deferreds.size() + " Calced Rules Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+                LOGGER.info("   Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
             }
 
         } else {
