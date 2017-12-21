@@ -7,7 +7,7 @@ package co.oddeye.storm;
 
 import co.oddeye.core.MetriccheckRule;
 import co.oddeye.core.OddeeyMetric;
-import co.oddeye.core.OddeeyMetricMeta;
+import co.oddeye.core.OddeeyMetricMetaCalculeted;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
 import com.google.gson.JsonObject;
@@ -140,7 +140,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         try {
 //                OddeeyMetric metric = (OddeeyMetric) tuple.getValueByField("metric");
             if (metric != null) {
-                OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
+                OddeeyMetricMetaCalculeted mtrsc = new OddeeyMetricMetaCalculeted(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
                 if (MetricMetaList == null) {
                     LOGGER.error("Es anasunucjun@ vonca null darel");
                     try {
@@ -161,7 +161,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 
                 if (code != 0) {
                     if (MetricMetaList.containsKey(mtrsc.hashCode())) {
-                        mtrsc = MetricMetaList.get(mtrsc.hashCode());
+                        mtrsc = (OddeeyMetricMetaCalculeted) MetricMetaList.get(mtrsc.hashCode());
                     }
                     try {
                         calcRules(mtrsc, metric, code);
@@ -181,8 +181,14 @@ public class CalcRulesBolt extends BaseRichBolt {
         }
     }
 
-    private void calcRules(OddeeyMetricMeta mtrsc, OddeeyMetric metric, Integer code) throws Exception {
+    private void calcRules(OddeeyMetricMetaCalculeted mtrsc, OddeeyMetric metric, Integer code) throws Exception {
 
+        if (mtrsc.isInProcess())
+        {
+            LOGGER.warn("Metric long calc "+ "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+            return;
+        }
+        mtrsc.setInProcess(true);
         if (metric == null) {
             LOGGER.warn("Metric Null Hash:" + code);
             return;
@@ -281,10 +287,10 @@ public class CalcRulesBolt extends BaseRichBolt {
 
             }
 
-        } catch (Exception e) {
+        } catch (Exception e) {            
             LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
         }
-
+       mtrsc.setInProcess(false); 
     }
 
 }
