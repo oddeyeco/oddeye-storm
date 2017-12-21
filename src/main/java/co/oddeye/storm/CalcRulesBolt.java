@@ -183,9 +183,8 @@ public class CalcRulesBolt extends BaseRichBolt {
 
     private void calcRules(OddeeyMetricMetaCalculeted mtrsc, OddeeyMetric metric, Integer code) throws Exception {
 
-        if (mtrsc.isInProcess())
-        {
-            LOGGER.warn("Metric long calc "+ "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+        if (mtrsc.isInProcess()) {
+            LOGGER.warn("Metric long calc " + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
             return;
         }
         mtrsc.setInProcess(true);
@@ -210,7 +209,7 @@ public class CalcRulesBolt extends BaseRichBolt {
             Calendar CalObjRules = MetriccheckRule.QualifierToCalendar(l_Rule.getQualifier());
             Calendar CalObjRulesEnd = (Calendar) CalObjRules.clone();
             CalObjRulesEnd.add(Calendar.HOUR, 1);
-            CalObjRulesEnd.add(Calendar.MILLISECOND, -1);            
+            CalObjRulesEnd.add(Calendar.MILLISECOND, -1);
             if ((!l_Rule.isIsValidRule()) && (!l_Rule.isHasNotData())) {
                 ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
                 deferreds.addAll(rule_deferreds);
@@ -219,9 +218,14 @@ public class CalcRulesBolt extends BaseRichBolt {
         if (deferreds.size() > 0) {
             needsave = true;
             starttime = System.currentTimeMillis();
-            Deferred.groupInOrder(deferreds).joinUninterruptibly();
+            Deferred.groupInOrder(deferreds).join();
             endtime = System.currentTimeMillis() - starttime;
-            LOGGER.info("Rule joinUninterruptibly " + deferreds.size() + " getCalcedRulesMap " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+            if (endtime > 500) {
+                LOGGER.warn("Rules join SLOW" + deferreds.size() + " Calced Rules Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+            } else {
+                LOGGER.info("Rules join " + deferreds.size() + " Calced Rules Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " to 1 houre time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host" + mtrsc.getTags().get("host").getValue());
+            }
+
         } else {
             LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
         }
@@ -257,15 +261,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                         try {
                             PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                             globalFunctions.getClient(clientconf).put(putvalue).join();
-                            if ((deferreds.size()>1)||(qualifiers.length>1))
-                            {
-                                LOGGER.warn("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
-                            }
-                            else
-                            {
-                                LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
-                            }
-                            
+                            LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
 
                         } catch (Exception e) {
                             LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
@@ -287,10 +283,10 @@ public class CalcRulesBolt extends BaseRichBolt {
 
             }
 
-        } catch (Exception e) {            
+        } catch (Exception e) {
             LOGGER.error("catch In save " + globalFunctions.stackTrace(e));
         }
-       mtrsc.setInProcess(false); 
+        mtrsc.setInProcess(false);
     }
 
 }
