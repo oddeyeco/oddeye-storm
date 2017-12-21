@@ -212,8 +212,8 @@ public class CalcRulesBolt extends BaseRichBolt {
             CalObjRulesEnd.add(Calendar.HOUR, 1);
             CalObjRulesEnd.add(Calendar.MILLISECOND, -1);            
             if ((!l_Rule.isIsValidRule()) && (!l_Rule.isHasNotData())) {
-//                ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
-//                deferreds.addAll(rule_deferreds);
+                ArrayList<Deferred<DataPoints[]>> rule_deferreds = mtrsc.CalculateRulesApachMath(CalObjRules.getTimeInMillis(), CalObjRulesEnd.getTimeInMillis(), globalFunctions.getTSDB(openTsdbConfig, clientconf));
+                deferreds.addAll(rule_deferreds);
             }
         }
         if (deferreds.size() > 0) {
