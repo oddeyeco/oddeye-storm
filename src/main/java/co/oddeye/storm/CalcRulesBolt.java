@@ -83,7 +83,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 
             if (bean == null) {
                 MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-                ObjectName mbeanName = new ObjectName("co.oddeye.oddeyetestkit:type=BoltStats,name=CalcRulesBolt");
+                ObjectName mbeanName = new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt");
                 bean = new BoltUsingMBeanImpl();
 //            bean.setNewAttribute0(threads);
                 server.registerMBean(bean, mbeanName);
