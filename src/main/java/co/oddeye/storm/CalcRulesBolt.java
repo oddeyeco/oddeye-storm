@@ -88,6 +88,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 //            bean.setNewAttribute0(threads);
                 server.registerMBean(bean, mbeanName);
             }
+            
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
             openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
@@ -213,7 +214,14 @@ public class CalcRulesBolt extends BaseRichBolt {
             LOGGER.warn("Metric getTimestamp Null Metric:" +metric.getName()+" tags "+metric.getTags() );
             return;
         }
-        CalendarObjRules.setTimeInMillis(metric.getTimestamp());
+        try {
+            CalendarObjRules.setTimeInMillis(metric.getTimestamp());    
+        } catch (Exception e) {
+            LOGGER.error(globalFunctions.stackTrace(e));
+            LOGGER.warn("Metric getTimestamp Null Metric:"+CalendarObjRules.getTime()+" " +metric.getName()+" tags "+metric.getTags() );
+            return;            
+        }
+        
         CalendarObjRules.add(Calendar.HOUR, 1);
         CalendarObjRules.add(Calendar.DATE, -1);
 
