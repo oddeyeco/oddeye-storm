@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentMap;
 import javax.management.MBeanServer;
@@ -102,17 +103,27 @@ public class CalcRulesBolt extends BaseRichBolt {
 //            } catch (Exception ex) {
             MetricMetaList = new OddeeyMetricMetaList();
 //            }
-            if (bean == null) {
-                MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-                ObjectName mbeanName = new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt");
-                bean = new BoltUsingMBeanImpl();
-//            bean.setNewAttribute0(threads);
-                server.registerMBean(bean, mbeanName);
-            }
+
         } catch (IOException ex) {
             LOGGER.error("OpenTSDB config execption : should not be here !!!");
         } catch (Exception ex) {
             LOGGER.error("OpenTSDB config execption : " + ex.toString());
+        }
+
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            Set<ObjectName> instances = server.queryNames(new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt"), null);
+            if (instances.isEmpty()) {
+                if (bean == null) {
+                    ObjectName mbeanName = new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt");
+                    bean = new BoltUsingMBeanImpl();
+                    server.registerMBean(bean, mbeanName);
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error(globalFunctions.stackTrace(e));
+
         }
         LOGGER.info("DoPrepare CalcRulesBolt Finish");
     }
