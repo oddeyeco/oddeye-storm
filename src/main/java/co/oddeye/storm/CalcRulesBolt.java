@@ -88,7 +88,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 //            bean.setNewAttribute0(threads);
                 server.registerMBean(bean, mbeanName);
             }
-            
+
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
             openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
@@ -149,7 +149,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                 prepareandcalc((OddeeyMetric) tuple.getValueByField("MetricField"));
             }
         }
-        bean.AddTimeStats(System.currentTimeMillis()-tt);
+        bean.AddTimeStats(System.currentTimeMillis() - tt);
 
     }
 
@@ -211,17 +211,14 @@ public class CalcRulesBolt extends BaseRichBolt {
         }
 
         if (metric.getTimestamp() == null) {
-            LOGGER.warn("Metric getTimestamp Null Metric:" +metric.getName()+" tags "+metric.getTags() );
+            LOGGER.warn("Metric getTimestamp Null Metric:" + metric.getName() + " tags " + metric.getTags());
             return;
         }
-        try {
-            CalendarObjRules.setTimeInMillis(metric.getTimestamp());    
-        } catch (Exception e) {
-            LOGGER.error(globalFunctions.stackTrace(e));
-            LOGGER.warn("Metric getTimestamp Null Metric:"+CalendarObjRules.getTime()+" " +metric.getName()+" tags "+metric.getTags() );
-            return;            
+        if (CalendarObjRules == null) {
+            LOGGER.warn("Es inch qaqa");
+            CalendarObjRules = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
         }
-        
+        CalendarObjRules.setTimeInMillis(metric.getTimestamp());
         CalendarObjRules.add(Calendar.HOUR, 1);
         CalendarObjRules.add(Calendar.DATE, -1);
 
