@@ -80,15 +80,6 @@ public class CalcRulesBolt extends BaseRichBolt {
         parser = new JsonParser();
 
         try {
-
-            if (bean == null) {
-                MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-                ObjectName mbeanName = new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt");
-                bean = new BoltUsingMBeanImpl();
-//            bean.setNewAttribute0(threads);
-                server.registerMBean(bean, mbeanName);
-            }
-
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
             openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
@@ -111,7 +102,13 @@ public class CalcRulesBolt extends BaseRichBolt {
 //            } catch (Exception ex) {
             MetricMetaList = new OddeeyMetricMetaList();
 //            }
-
+            if (bean == null) {
+                MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+                ObjectName mbeanName = new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt");
+                bean = new BoltUsingMBeanImpl();
+//            bean.setNewAttribute0(threads);
+                server.registerMBean(bean, mbeanName);
+            }
         } catch (IOException ex) {
             LOGGER.error("OpenTSDB config execption : should not be here !!!");
         } catch (Exception ex) {
