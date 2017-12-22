@@ -59,7 +59,9 @@ public class CalcRulesBolt extends BaseRichBolt {
     private JsonParser parser = null;
     private JsonObject jsonResult = null;
 
-    private static BoltUsingMBeanImpl bean;
+    private static BoltUsingMBeanImpl bean = new BoltUsingMBeanImpl();
+
+    ;
 
     /**
      *
@@ -114,11 +116,8 @@ public class CalcRulesBolt extends BaseRichBolt {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             Set<ObjectName> instances = server.queryNames(new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt"), null);
             if (instances.isEmpty()) {
-                if (bean == null) {
-                    ObjectName mbeanName = new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt");
-                    bean = new BoltUsingMBeanImpl();
-                    server.registerMBean(bean, mbeanName);
-                }
+                ObjectName mbeanName = new ObjectName("co.oddeye.storm:type=BoltStats,name=CalcRulesBolt");
+                server.registerMBean(bean, mbeanName);
             }
 
         } catch (Exception e) {
