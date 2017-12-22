@@ -10,16 +10,20 @@ import co.oddeye.core.OddeeyMetric;
 import co.oddeye.core.OddeeyMetricMetaCalculeted;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
+import co.oddeye.storm.core.BoltUsingMBeanImpl;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.stumbleupon.async.Deferred;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentMap;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import net.opentsdb.core.DataPoints;
 import net.opentsdb.utils.Config;
 import org.apache.storm.task.OutputCollector;
@@ -54,6 +58,8 @@ public class CalcRulesBolt extends BaseRichBolt {
     private JsonParser parser = null;
     private JsonObject jsonResult = null;
 
+    private static BoltUsingMBeanImpl bean;
+
     /**
      *
      * @param config
@@ -74,6 +80,14 @@ public class CalcRulesBolt extends BaseRichBolt {
         parser = new JsonParser();
 
         try {
+
+            if (bean == null) {
+                MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+                ObjectName mbeanName = new ObjectName("co.oddeye.oddeyetestkit:type=BoltStats,name=CalcRulesBolt");
+                bean = new BoltUsingMBeanImpl();
+//            bean.setNewAttribute0(threads);
+                server.registerMBean(bean, mbeanName);
+            }
             String quorum = String.valueOf(conf.get("zkHosts"));
             openTsdbConfig = new net.opentsdb.utils.Config(true);
             openTsdbConfig.overrideConfig("tsd.core.auto_create_metrics", String.valueOf(conf.get("tsd.core.auto_create_metrics")));
@@ -108,6 +122,7 @@ public class CalcRulesBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         this.collector.ack(tuple);
+        long tt = System.currentTimeMillis();
 
         if (tuple.getSourceComponent().equals("SemaforProxyBolt")) {
 
@@ -133,6 +148,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                 prepareandcalc((OddeeyMetric) tuple.getValueByField("MetricField"));
             }
         }
+        bean.AddTimeStats(System.currentTimeMillis()-tt);
 
     }
 
