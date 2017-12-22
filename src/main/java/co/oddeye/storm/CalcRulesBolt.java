@@ -210,7 +210,8 @@ public class CalcRulesBolt extends BaseRichBolt {
         }
 
         if (metric.getTimestamp() == null) {
-            LOGGER.warn("Metric getTimestamp Null Hash:" + code);
+            LOGGER.warn("Metric getTimestamp Null Metric:" +metric.getName()+" tags "+metric.getTags() );
+            return;
         }
         CalendarObjRules.setTimeInMillis(metric.getTimestamp());
         CalendarObjRules.add(Calendar.HOUR, 1);
