@@ -236,11 +236,9 @@ public class StormUser implements Serializable {
                                 LOGGER.info("Metric Sendlist.set: " + metric.getName() + " State:" + metric.getErrorState().getState() + " level:" + metric.getErrorState().getLevel() + " tags:" + metric.getTags());
                             }
                             //TODO Stugel 1(Continue) i vra
-                            if (metric.getErrorState().getState() != ErrorState.ALERT_STATE_CONT) {
-                                Sendlist.set(metric);
-                                Sendlist.setTargetType(target);
-                                Sendlist.setTargetValue(targetEntry.getValue());
-                            }
+                            Sendlist.set(metric);
+                            Sendlist.setTargetType(target);
+                            Sendlist.setTargetValue(targetEntry.getValue());
 
                         }
 
