@@ -148,30 +148,30 @@ public class SendNotifierBolt extends BaseRichBolt {
             }
             
             if (metricMeta.getErrorState().getState() != ErrorState.ALERT_STATE_CONT) {
-                OddeeyMetricMeta localmeta = metricMeta.dublicate();
+                
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("Metric Realy to send: " + localmeta.getName() + " State:" + localmeta.getErrorState().getState() + " level:" + localmeta.getErrorState().getLevel() + " tags:" + localmeta.getTags());
+                    LOGGER.info("Metric Realy to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
                 }
-                final StormUser User = UserList.get(localmeta.getTags().get("UUID").getValue());
-                if (ErrorsList.containsKey(localmeta.hashCode())) {
+                final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
+                if (ErrorsList.containsKey(metricMeta.hashCode())) {
                     try {
-                        User.PrepareNotifier(localmeta, ErrorsList.get(localmeta.hashCode()), false);
-                        if (localmeta.getErrorState().getLevel() == -1) {
-                            ErrorsList.remove(localmeta.hashCode());
+                        User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
+                        if (metricMeta.getErrorState().getLevel() == -1) {
+                            ErrorsList.remove(metricMeta.hashCode());
                         }                        
                     } catch (Exception e) {
                         LOGGER.error(globalFunctions.stackTrace(e));
                     }
                     
                 } else {
-                    if (localmeta.getErrorState().getLevel() > -1) {
-                        User.PrepareNotifier(localmeta, null, true);
+                    if (metricMeta.getErrorState().getLevel() > -1) {
+                        User.PrepareNotifier(metricMeta, null, true);
                     }
                 }
                 ErrorsList.put(metricMeta.hashCode(), metricMeta);
             }
         }
-        } catch (JsonSyntaxException | IOException | ClassNotFoundException e) {
+        } catch (JsonSyntaxException e) {
             LOGGER.error(globalFunctions.stackTrace(e));
         }
         
