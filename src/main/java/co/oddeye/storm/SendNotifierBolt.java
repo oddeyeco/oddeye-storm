@@ -5,6 +5,7 @@
  */
 package co.oddeye.storm;
 
+import co.oddeye.core.ErrorState;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeySenderMetricMetaList;
 import co.oddeye.core.globalFunctions;
@@ -13,6 +14,7 @@ import co.oddeye.storm.core.SendToTelegram;
 import co.oddeye.storm.core.StormUser;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -145,31 +147,31 @@ public class SendNotifierBolt extends BaseRichBolt {
                 LOGGER.info("Metric prepare to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
             }
             
-            if (metricMeta.getErrorState().getState() != 1) {
-                
+            if (metricMeta.getErrorState().getState() != ErrorState.ALERT_STATE_CONT) {
+                OddeeyMetricMeta localmeta = metricMeta.dublicate();
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("Metric Realy to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
+                    LOGGER.info("Metric Realy to send: " + localmeta.getName() + " State:" + localmeta.getErrorState().getState() + " level:" + localmeta.getErrorState().getLevel() + " tags:" + localmeta.getTags());
                 }
-                final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
-                if (ErrorsList.containsKey(metricMeta.hashCode())) {
+                final StormUser User = UserList.get(localmeta.getTags().get("UUID").getValue());
+                if (ErrorsList.containsKey(localmeta.hashCode())) {
                     try {
-                        User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
-                        if (metricMeta.getErrorState().getLevel() == -1) {
-                            ErrorsList.remove(metricMeta.hashCode());
+                        User.PrepareNotifier(localmeta, ErrorsList.get(localmeta.hashCode()), false);
+                        if (localmeta.getErrorState().getLevel() == -1) {
+                            ErrorsList.remove(localmeta.hashCode());
                         }                        
                     } catch (Exception e) {
                         LOGGER.error(globalFunctions.stackTrace(e));
                     }
                     
                 } else {
-                    if (metricMeta.getErrorState().getLevel() > -1) {
-                        User.PrepareNotifier(metricMeta, null, true);
+                    if (localmeta.getErrorState().getLevel() > -1) {
+                        User.PrepareNotifier(localmeta, null, true);
                     }
                 }
                 ErrorsList.put(metricMeta.hashCode(), metricMeta);
             }
         }
-        } catch (Exception e) {
+        } catch (JsonSyntaxException | IOException | ClassNotFoundException e) {
             LOGGER.error(globalFunctions.stackTrace(e));
         }
         
