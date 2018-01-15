@@ -6,6 +6,7 @@
 package co.oddeye.storm.core;
 
 import co.oddeye.core.AlertLevel;
+import co.oddeye.core.ErrorState;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeySenderMetricMetaList;
 import co.oddeye.core.OddeyeTag;
@@ -234,9 +235,13 @@ public class StormUser implements Serializable {
                             if (LOGGER.isInfoEnabled()) {
                                 LOGGER.info("Metric Sendlist.set: " + metric.getName() + " State:" + metric.getErrorState().getState() + " level:" + metric.getErrorState().getLevel() + " tags:" + metric.getTags());
                             }
-                            Sendlist.set(metric);
-                            Sendlist.setTargetType(target);
-                            Sendlist.setTargetValue(targetEntry.getValue());
+                            //TODO Stugel 1(Continue) i vra
+                            if (metric.getErrorState().getState() != ErrorState.ALERT_STATE_CONT) {
+                                Sendlist.set(metric);
+                                Sendlist.setTargetType(target);
+                                Sendlist.setTargetValue(targetEntry.getValue());
+                            }
+
                         }
 
                     } catch (Exception ex) {
