@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @author vahan
  */
 public class SendNotifierBolt extends BaseRichBolt {
-    
+
     private final Map conf;
     public static final Logger LOGGER = LoggerFactory.getLogger(SendNotifierBolt.class);
     private OutputCollector collector;
@@ -51,21 +51,21 @@ public class SendNotifierBolt extends BaseRichBolt {
     private Map<Integer, OddeeyMetricMeta> ErrorsList;
     private ExecutorService executor;
     private Map<String, Object> mailconf;
-    
+
     public SendNotifierBolt(java.util.Map config) {
         this.conf = config;
     }
-    
+
     SendNotifierBolt(Map<String, Object> TSDBconfig, Map<String, Object> Mailconfig) {
         this.conf = TSDBconfig;
         this.mailconf = Mailconfig;
     }
-    
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
         ofd.declare(new Fields("metric"));
     }
-    
+
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
         try {
@@ -82,7 +82,7 @@ public class SendNotifierBolt extends BaseRichBolt {
             openTsdbConfig.overrideConfig("tsd.storage.enable_compaction", String.valueOf(conf.get("tsd.storage.enable_compaction")));
             openTsdbConfig.overrideConfig("tsd.storage.hbase.data_table", String.valueOf(conf.get("tsd.storage.hbase.data_table")));
             openTsdbConfig.overrideConfig("tsd.storage.hbase.uid_table", String.valueOf(conf.get("tsd.storage.hbase.uid_table")));
-            
+
             clientconf = new org.hbase.async.Config();
             clientconf.overrideConfig("hbase.zookeeper.quorum", quorum);
             clientconf.overrideConfig("hbase.rpcs.batch.size", String.valueOf(conf.get("hbase.rpcs.batch.size")));
@@ -106,76 +106,79 @@ public class SendNotifierBolt extends BaseRichBolt {
             LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
         }
     }
-    
+
     @Override
     public void execute(Tuple tuple) {
-        try {            
-        if (tuple.getSourceComponent().equals("kafkaSemaphoreSpot")) {
-            JsonObject jsonResult = this.parser.parse(tuple.getString(0)).getAsJsonObject();
-            if (jsonResult.get("action").getAsString().equals("changefilter")) {
-                String filter = jsonResult.get("filter").getAsString();
-                UserList.get(jsonResult.get("UUID").getAsString()).getFiltertemplateList().put(jsonResult.get("filtername").getAsString(), filter);
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>) globalFunctions.getGson().fromJson(filter, map.getClass());
-                UserList.get(jsonResult.get("UUID").getAsString()).getFiltertemplateMap().put(jsonResult.get("filtername").getAsString(), map);
-            }
-        }
-        if (tuple.getSourceComponent().equals("TimeSpout2x")) {
-            UserList.entrySet().forEach((Map.Entry<String, StormUser> user) -> {
-                user.getValue().getTargetList().entrySet().stream().map((Map.Entry<String, OddeeySenderMetricMetaList> target) -> {
-                    Runnable Sender = null;
-                    if (target.getValue().size() > 0) {
-//                        LOGGER.warn("Ancav mi rope "+target.getKey());
-                        if (target.getKey().equals("telegram")) {
-                            Sender = new SendToTelegram(target.getValue(), user);
-                        }
-                        if (target.getKey().equals("email")) {
-                            Sender = new SendToEmail(target.getValue(), user, mailconf);
-                        }
-                    }
-                    return Sender;
-                }).filter((Sender) -> (Sender != null)).forEachOrdered((Sender) -> {
-                    executor.submit(Sender);
-                });
-            });
-        }
-        
-        if (tuple.getSourceComponent().equals("CompareBolt") || tuple.getSourceComponent().equals("CheckSpecialErrorBolt")) {
-            OddeeyMetricMeta metricMeta = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
-            
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Metric prepare to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
-            }
-            
-            if (metricMeta.getErrorState().getState() != ErrorState.ALERT_STATE_CONT) {
-                
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("Metric Realy to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
+        try {
+            if (tuple.getSourceComponent().equals("kafkaSemaphoreSpot")) {
+                JsonObject jsonResult = this.parser.parse(tuple.getString(0)).getAsJsonObject();
+                if (jsonResult.get("action").getAsString().equals("changefilter")) {
+                    String filter = jsonResult.get("filter").getAsString();
+                    UserList.get(jsonResult.get("UUID").getAsString()).getFiltertemplateList().put(jsonResult.get("filtername").getAsString(), filter);
+                    Map<String, String> map = new HashMap<>();
+                    map = (Map<String, String>) globalFunctions.getGson().fromJson(filter, map.getClass());
+                    UserList.get(jsonResult.get("UUID").getAsString()).getFiltertemplateMap().put(jsonResult.get("filtername").getAsString(), map);
                 }
-                final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
-                if (ErrorsList.containsKey(metricMeta.hashCode())) {
+            }
+            if (tuple.getSourceComponent().equals("TimeSpout2x")) {
+                UserList.entrySet().forEach((Map.Entry<String, StormUser> user) -> {
+                    user.getValue().getTargetList().entrySet().stream().map((Map.Entry<String, OddeeySenderMetricMetaList> target) -> {
+                        Runnable Sender = null;
+                        if (target.getValue().size() > 0) {
+//                        LOGGER.warn("Ancav mi rope "+target.getKey());
+                            if (target.getKey().equals("telegram")) {
+                                Sender = new SendToTelegram(target.getValue(), user);
+                            }
+                            if (target.getKey().equals("email")) {
+                                Sender = new SendToEmail(target.getValue(), user, mailconf);
+                            }
+                        }
+                        return Sender;
+                    }).filter((Sender) -> (Sender != null)).forEachOrdered((Sender) -> {
+                        executor.submit(Sender);
+                    });
+                });
+            }
+
+            if (tuple.getSourceComponent().equals("CompareBolt") || tuple.getSourceComponent().equals("CheckSpecialErrorBolt")) {
+                OddeeyMetricMeta metricMeta = (OddeeyMetricMeta) tuple.getValueByField("mtrsc");
+
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Metric prepare to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
+                }
+
+                if (metricMeta.getErrorState().getState() != ErrorState.ALERT_STATE_CONT) {
+
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Metric Realy to send: " + metricMeta.getName() + " State:" + metricMeta.getErrorState().getState() + " level:" + metricMeta.getErrorState().getLevel() + " tags:" + metricMeta.getTags());
+                    }
+                    final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
                     try {
-                        User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
-                        if (metricMeta.getErrorState().getLevel() == -1) {
-                            ErrorsList.remove(metricMeta.hashCode());
-                        }                        
+                        if (ErrorsList.containsKey(metricMeta.hashCode())) {
+                            User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
+                            if (metricMeta.getErrorState().getLevel() == -1) {
+                                ErrorsList.remove(metricMeta.hashCode());
+                            } else {
+                                ErrorsList.put(metricMeta.hashCode(), metricMeta);
+                            }
+                        } else {
+                            if (metricMeta.getErrorState().getLevel() > -1) {
+                                User.PrepareNotifier(metricMeta, null, true);
+                                ErrorsList.put(metricMeta.hashCode(), metricMeta);
+                            }
+
+                        }
                     } catch (Exception e) {
                         LOGGER.error(globalFunctions.stackTrace(e));
                     }
-                    
-                } else {
-                    if (metricMeta.getErrorState().getLevel() > -1) {
-                        User.PrepareNotifier(metricMeta, null, true);
-                    }
+
                 }
-                ErrorsList.put(metricMeta.hashCode(), metricMeta);
             }
-        }
         } catch (JsonSyntaxException e) {
             LOGGER.error(globalFunctions.stackTrace(e));
         }
-        
+
         collector.ack(tuple);
     }
-    
+
 }
