@@ -100,9 +100,9 @@ public class CalcRulesBolt extends BaseRichBolt {
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
 
             try {
-                LOGGER.warn("Start read meta in hbase");
+                LOGGER.warn("Start read meta in hbase in Calculator");
                 MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
-                LOGGER.warn("End read meta in hbase");
+                LOGGER.warn("End read meta in hbase in Calculator");
             } catch (Exception ex) {
                 MetricMetaList = new OddeeyMetricMetaList();
             }
