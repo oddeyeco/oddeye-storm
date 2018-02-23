@@ -7,6 +7,7 @@ package co.oddeye.storm;
 
 import co.oddeye.core.MetriccheckRule;
 import co.oddeye.core.OddeeyMetric;
+import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaCalculeted;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
@@ -98,13 +99,13 @@ public class CalcRulesBolt extends BaseRichBolt {
 
             this.metatable = String.valueOf(conf.get("metatable")).getBytes();
 
-//            try {
-//                LOGGER.warn("Start read meta in hbase");
-//                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
-//                LOGGER.warn("End read meta in hbase");
-//            } catch (Exception ex) {
-            MetricMetaList = new OddeeyMetricMetaList();
-//            }
+            try {
+                LOGGER.warn("Start read meta in hbase");
+                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
+                LOGGER.warn("End read meta in hbase");
+            } catch (Exception ex) {
+                MetricMetaList = new OddeeyMetricMetaList();
+            }
 
         } catch (IOException ex) {
             LOGGER.error("OpenTSDB config execption : should not be here !!!");
@@ -185,7 +186,12 @@ public class CalcRulesBolt extends BaseRichBolt {
 
                 if (code != 0) {
                     if (MetricMetaList.containsKey(mtrsc.hashCode())) {
-                        mtrsc = (OddeeyMetricMetaCalculeted) MetricMetaList.get(mtrsc.hashCode());
+                        OddeeyMetricMeta mm = MetricMetaList.get(mtrsc.hashCode());
+                        if (mm instanceof OddeeyMetricMetaCalculeted) {
+                            mtrsc = (OddeeyMetricMetaCalculeted) mm;
+                        } else {
+                            mtrsc.setInittime(mm.getInittime());
+                        }
                     }
                     try {
                         calcRules(mtrsc, metric, code);
@@ -229,7 +235,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         CalendarObjRules.add(Calendar.HOUR, 1);
         CalendarObjRules.add(Calendar.DATE, -1);
 
-        Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
+        Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules,  Integer.min(7, mtrsc.getLivedays()), metatable, globalFunctions.getSecindaryclient(clientconf));
         needsave = false;
         final ArrayList<Deferred<DataPoints[]>> deferreds = new ArrayList<>();
         mtrsc.clearCalcedRulesMap();
