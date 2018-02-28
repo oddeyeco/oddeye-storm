@@ -190,8 +190,12 @@ public class CalcRulesBolt extends BaseRichBolt {
                         if (mm instanceof OddeeyMetricMetaCalculeted) {
                             mtrsc = (OddeeyMetricMetaCalculeted) mm;
                         } else {
-                            mtrsc.setInittime(mm.getInittime());
+                            mtrsc.setInittime(mm.getInittime());                            
                         }
+                    }
+                    if (mtrsc.getLivedays()<1)
+                    {
+                        LOGGER.warn("getLivedays "+ mtrsc.getLivedays() + "-" + mtrsc.getName() + " " + mtrsc.getTags());
                     }
                     try {
                         calcRules(mtrsc, metric, code);
