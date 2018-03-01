@@ -156,7 +156,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                         LOGGER.warn("PIPEC for lastTimeSpecialMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
                         if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " count:" + lastTimeSpecialMap.size());
+                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags() + " count:" + lastTimeSpecialMap.size());
                         }
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, System.currentTimeMillis());
                         mtrscList.set(mtrsc);
@@ -185,7 +185,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                         LOGGER.warn("PIPEC for lastTimeSpecialLiveMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
                         if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags().get("host").getValue() + " count:" + lastTimeSpecialMap.size());
+                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags() + " count:" + lastTimeSpecialMap.size());
                         }
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                         mtrscList.set(mtrsc);

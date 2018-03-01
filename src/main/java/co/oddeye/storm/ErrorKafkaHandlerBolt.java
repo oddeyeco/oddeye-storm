@@ -98,7 +98,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
                 OddeeysSpecialMetric Specmetric = (OddeeysSpecialMetric) metric;
                 jsonResult.addProperty("message", Specmetric.getMessage());
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags().get("host"));
+                    LOGGER.info(jsonResult.toString() + " Name:" + metric.getName() + "Host:" + metric.getTags());
                 }
             }
         }
@@ -125,7 +125,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         }
 
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Send Data:" + jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags().get("host"));
+            LOGGER.info("Send Data:" + jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags());
         }
 //        }
 

@@ -144,7 +144,7 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
                         continue;
                     }
                     date = new Date(mtrsc.getTimestamp());
-                    baseLOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));
+                    baseLOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags());
                     MetricList.put(mtrsc.hashCode(), mtrsc);
 
                 } catch (Exception e) {
@@ -197,7 +197,7 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
                 return null;
             }
             date = new Date(mtrsc.getTimestamp());
-            baseLOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));
+            baseLOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags());
             return mtrsc;
 //            Compare.execute(mtrsc);
 //                    MetricList.put(mtrsc.getName(), mtrsc);
@@ -256,7 +256,7 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
                         continue;
                     }
                     date = new Date(mtrsc.getTimestamp());
-                    baseLOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags().get("host"));
+                    baseLOGGER.trace("Time " + date + " Metris: " + mtrsc.getName() + " Host: " + mtrsc.getTags());
                     MetricList.put(mtrsc.hashCode(), mtrsc);
 
                 } catch (Exception e) {

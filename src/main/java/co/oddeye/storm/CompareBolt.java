@@ -326,14 +326,14 @@ public class CompareBolt extends BaseRichBolt {
 
                 if ((input_weight < 1) && (input_weight > -3)) {
                     int curent_DW = CalendarObj.get(Calendar.DAY_OF_WEEK);
-                    LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags().get("host"));
+                    LOGGER.info(CalendarObj.getTime() + "-" + metric.getName() + " " + metric.getTags());
                     double tmp_weight_per = 0;
 //                    tmp_weight_per = 0;
                     for (Map.Entry<String, MetriccheckRule> RuleEntry : Rules.entrySet()) {
                         loop++;
                         final MetriccheckRule Rule = RuleEntry.getValue();
                         if (Rule == null) {
-                            LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                            LOGGER.warn("Rule is NUll: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                             continue;
                         }
 
@@ -341,13 +341,13 @@ public class CompareBolt extends BaseRichBolt {
 
                         if (!Rule.isIsValidRule()) {
                             if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                                LOGGER.info("No rule for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                             }
                             continue;
                         }
                         if (Rule.isHasNotData()) {
                             if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                                LOGGER.info("rule Has no data for check in cache: " + CalendarObjRules.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                             }
                             continue;
                         }
@@ -386,7 +386,7 @@ public class CompareBolt extends BaseRichBolt {
                             }
                         } else {
                             if (LOGGER.isInfoEnabled()) {
-                                LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                                LOGGER.info("Check Up Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                             }
                         }
 
@@ -403,7 +403,7 @@ public class CompareBolt extends BaseRichBolt {
                                 }
                             }
                         } else {
-                            LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                            LOGGER.warn("Check Down Disabled : Withs weight" + input_weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                         }
                     }
 
@@ -415,14 +415,14 @@ public class CompareBolt extends BaseRichBolt {
                     }
                 } else if (input_weight == -4) {
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                        LOGGER.info("Check disabled by so old messge: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                     }
                 } else if (input_weight == -5) {
-                    LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                    LOGGER.warn("Check disabled by Topology: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                 } else {
                     weight = 0;
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                        LOGGER.info("Check disabled by user: " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                     }
                 }
                 if (input_weight != -3) {
@@ -446,7 +446,7 @@ public class CompareBolt extends BaseRichBolt {
                         putvalue = new PutRequest(errortable, key, error_family, mtrscMetaLocal.getKey(), ByteBuffer.allocate(26).putShort((short) weight).putDouble(weight_per).putDouble(metric.getValue()).putDouble(predict_value_per).array());
                         globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                         if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags().get("host").getValue());
+                            LOGGER.info("Put Error" + weight + " " + CalendarObj.getTime() + "-" + mtrscMetaLocal.getName() + " " + mtrscMetaLocal.getTags());
                         }
                     } else {
                         metricsmap.put("lever", -1);

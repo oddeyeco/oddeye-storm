@@ -215,7 +215,7 @@ public class CalcRulesBolt extends BaseRichBolt {
     private void calcRules(OddeeyMetricMetaCalculeted mtrsc, OddeeyMetric metric, Integer code) throws Exception {
 
         if (mtrsc.isInProcess()) {
-            LOGGER.warn("Metric long calc " + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+            LOGGER.warn("Metric long calc " + "-" + mtrsc.getName() + " " + mtrsc.getTags());
             return;
         }
         mtrsc.setInProcess(true);
@@ -259,13 +259,13 @@ public class CalcRulesBolt extends BaseRichBolt {
             Deferred.groupInOrder(deferreds).join();
             endtime = System.currentTimeMillis() - starttime;
             if (endtime > 5000) {
-                LOGGER.warn("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
+                LOGGER.warn("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
             } else {
-                LOGGER.info("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
+                LOGGER.info("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
             }
 
         } else {
-            LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags().get("host").getValue());
+            LOGGER.info("All Rule is Exist: " + CalendarObjRules.getTime() + "-" + mtrsc.getName() + " " + mtrsc.getTags());
         }
         try {
             if (needsave) {
@@ -299,7 +299,7 @@ public class CalcRulesBolt extends BaseRichBolt {
                         try {
                             PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                             globalFunctions.getClient(clientconf).put(putvalue).join();
-                            LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags().get("host").getValue());
+                            LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
 
                         } catch (Exception e) {
                             LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
