@@ -188,14 +188,11 @@ public class CalcRulesBolt extends BaseRichBolt {
                     if (MetricMetaList.containsKey(mtrsc.hashCode())) {
                         OddeeyMetricMeta mm = MetricMetaList.get(mtrsc.hashCode());
                         if (mm instanceof OddeeyMetricMetaCalculeted) {
-                            mtrsc = (OddeeyMetricMetaCalculeted) mm;
+                            mtrsc = (OddeeyMetricMetaCalculeted) mm;                            
                         } else {
-                            mtrsc.setInittime(mm.getInittime());                            
+                            mtrsc.setInittime(mm.getInittime());
                         }
-                    }
-                    if (mtrsc.getLivedays()<1)
-                    {
-                        LOGGER.warn("getLivedays "+ mtrsc.getLivedays() + "-" + mtrsc.getName() + " " + mtrsc.getTags());
+                        
                     }
                     try {
                         calcRules(mtrsc, metric, code);
@@ -238,8 +235,10 @@ public class CalcRulesBolt extends BaseRichBolt {
         CalendarObjRules.setTimeInMillis(metric.getTimestamp());
         CalendarObjRules.add(Calendar.HOUR, 1);
         CalendarObjRules.add(Calendar.DATE, -1);
-
-        Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules,  Integer.min(7, mtrsc.getLivedays()), metatable, globalFunctions.getSecindaryclient(clientconf));
+        if (mtrsc.getLivedays() < 7) {
+            LOGGER.warn("GETLivedays " + mtrsc.getLivedays() + "-" + mtrsc.getName() + " " + mtrsc.getTags());
+        }
+        Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules, 7, metatable, globalFunctions.getSecindaryclient(clientconf));
         needsave = false;
         final ArrayList<Deferred<DataPoints[]>> deferreds = new ArrayList<>();
         mtrsc.clearCalcedRulesMap();
