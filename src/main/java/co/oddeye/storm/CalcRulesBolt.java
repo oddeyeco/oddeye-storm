@@ -104,7 +104,7 @@ public class CalcRulesBolt extends BaseRichBolt {
 //                MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable);
 //                LOGGER.warn("End read meta in hbase in Calculator");
 //            } catch (Exception ex) {
-            MetricMetaList = new OddeeyMetricMetaList();
+                MetricMetaList = new OddeeyMetricMetaList();
 //            }
 
         } catch (IOException ex) {
@@ -185,21 +185,15 @@ public class CalcRulesBolt extends BaseRichBolt {
                 }
 
                 if (code != 0) {
-//                    if (MetricMetaList.containsKey(mtrsc.hashCode())) {
-//                        OddeeyMetricMeta mm = MetricMetaList.get(mtrsc.hashCode());
-//                        if (mm instanceof OddeeyMetricMetaCalculeted) {
-//                            mtrsc = (OddeeyMetricMetaCalculeted) mm;                            
-//                        } else {
-//                            mtrsc.setInittime(mm.getInittime());
-//                        }
-//                        
-//                    }
-//                    try {
-                    calcRules(mtrsc, metric, code);
-                    MetricMetaList.set(mtrsc);
-//                    } catch (Exception ex) {
-//                        LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
-//                    }
+                    if (MetricMetaList.containsKey(mtrsc.hashCode())) {
+                        mtrsc =(OddeeyMetricMetaCalculeted) MetricMetaList.get(mtrsc.hashCode());                        
+                    }
+                    try {
+                        calcRules(mtrsc, metric, code);
+                        MetricMetaList.set(mtrsc);
+                    } catch (Exception ex) {
+                        LOGGER.error("in metric: " + globalFunctions.stackTrace(ex));
+                    }
                 } else {
                     LOGGER.error("code is 0: ");
                 }
