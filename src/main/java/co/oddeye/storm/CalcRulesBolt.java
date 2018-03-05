@@ -7,7 +7,6 @@ package co.oddeye.storm;
 
 import co.oddeye.core.MetriccheckRule;
 import co.oddeye.core.OddeeyMetric;
-import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeyMetricMetaCalculeted;
 import co.oddeye.core.OddeeyMetricMetaList;
 import co.oddeye.core.globalFunctions;
