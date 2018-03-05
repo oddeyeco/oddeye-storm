@@ -274,7 +274,8 @@ public class CompareBolt extends BaseRichBolt {
 //                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                     AppendRequest appendvalue = new AppendRequest(metatable, key, meta_family, qualifiers, values);
                     LOGGER.warn("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
-                    globalFunctions.getSecindaryclient(clientconf).append(appendvalue).join();
+                    globalFunctions.getSecindaryclient(clientconf).append(appendvalue);
+//                    globalFunctions.getSecindaryclient(clientconf).append(appendvalue).join();
 //                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 } else {
                     mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
