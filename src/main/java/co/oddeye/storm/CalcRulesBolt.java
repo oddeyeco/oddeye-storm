@@ -236,7 +236,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         CalendarObjRules.add(Calendar.HOUR, 1);
         CalendarObjRules.add(Calendar.DATE, -1);
         if (mtrsc.getLivedays() < 2) {
-            LOGGER.warn("GETLivedays " + mtrsc.getLivedays() + "-" + mtrsc.getName() + " " + mtrsc.getTags());
+            LOGGER.warn("GETLivedays " + mtrsc.getLivedays() + "- Inittime " + mtrsc.getInittime()+"- Lasttime "+ mtrsc.getLasttime()+" - "+mtrsc.getName() + " " + mtrsc.getTags());
         }
         Map<String, MetriccheckRule> Rules = mtrsc.prepareRules(CalendarObjRules, 2, metatable, globalFunctions.getSecindaryclient(clientconf));
         needsave = false;
