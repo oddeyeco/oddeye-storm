@@ -26,6 +26,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.hbase.async.AppendRequest;
 import org.hbase.async.PutRequest;
 import org.slf4j.LoggerFactory;
 
@@ -214,8 +215,10 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 values[0] = key;
                 values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
                 values[2] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
-                putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-                globalFunctions.getSecindaryclient(clientconf).put(putvalue).joinUninterruptibly();
+//                putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
+                AppendRequest appendvalue = new AppendRequest(metatable, key, meta_family, qualifiers, values);
+                LOGGER.warn("Add metric Meta to hbase Special:" + metric.getName() + " tags " + metric.getTags() + " newcode: " + metric.hashCode());
+                globalFunctions.getSecindaryclient(clientconf).append(appendvalue);
             } else {
                 mtrsc = mtrscList.get(mtrsc.hashCode());
                 qualifiers = new byte[1][];
