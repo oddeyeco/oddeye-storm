@@ -150,7 +150,7 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
                 } catch (Exception e) {
                     baseLOGGER.error("Exception: " + globalFunctions.stackTrace(e));
                     baseLOGGER.error("Exception Wits Metriq: " + Metric);
-                    baseLOGGER.error("Exception Wits Input: " + msg);
+                    baseLOGGER.info("Exception Wits Input: " + msg);
                 }
 
             }
@@ -206,7 +206,7 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
         } catch (Exception e) {
             baseLOGGER.error("Exception: " + globalFunctions.stackTrace(e));
             baseLOGGER.error("Exception Wits Metriq: " + Metric);
-            baseLOGGER.error("Exception Wits Input: " + msg);
+            baseLOGGER.info("Exception Wits Input: " + msg);
         }
         return null;
     }
@@ -262,7 +262,7 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
                 } catch (Exception e) {
                     baseLOGGER.error("Exception: " + globalFunctions.stackTrace(e));
                     baseLOGGER.error("Exception Wits Metriq: " + Metric);
-                    baseLOGGER.error("Exception Wits Input: " + msg);
+                    baseLOGGER.info("Exception Wits Input: " + msg);
                 }
 
             }
