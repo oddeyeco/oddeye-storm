@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author vahan
  */
+
 public class ErrorKafkaHandlerBolt extends BaseRichBolt {
 
     protected OutputCollector collector;
@@ -35,7 +36,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
 //    private static final Logger LOGGER = Logger.getLogger(KafkaOddeyeMsgToTSDBBolt.class);
     public static final Logger LOGGER = LoggerFactory.getLogger(ErrorKafkaHandlerBolt.class);
     private final Properties conf;
-    private final String topic;
+//    private final String topic;
     private KafkaProducer<String, String> producer;
     private Gson gson;
 
@@ -44,9 +45,9 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
      * @param config
      * @param s_topic
      */
-    public ErrorKafkaHandlerBolt(Properties config, String s_topic) {
+    public ErrorKafkaHandlerBolt(Properties config) {
         this.conf = config;
-        this.topic = s_topic;
+//        this.topic = s_topic;
     }
 
     @Override
@@ -118,11 +119,11 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
             producer.send(dataprev);
         }
 
-        if (mtrsc.getErrorState().getState() != 1) {
-            jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
-            final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
-            producer.send(data);
-        }
+//        if (mtrsc.getErrorState().getState() != 1) {
+//            jsonResult.addProperty("UUID", mtrsc.getTags().get("UUID").toString());
+//            final ProducerRecord<String, String> data = new ProducerRecord<>(topic, jsonResult.toString());
+//            producer.send(data);
+//        }
 
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Send Data:" + jsonResult.toString() + " Name:" + mtrsc.getName() + "Host:" + mtrsc.getTags());

@@ -162,9 +162,9 @@ public class TimeSeriesTopology {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        String topic = String.valueOf(errorKafkaConf.get("topic"));
+//        String topic_errors = String.valueOf(errorKafkaConf.get("topic"));
         builder.setBolt("ErrorKafkaHandlerBolt",
-                new ErrorKafkaHandlerBolt(props, topic), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
+                new ErrorKafkaHandlerBolt(props), Integer.parseInt(String.valueOf(tconf.get("ErrorKafkaHandlerParallelism_hint"))))
                 .shuffleGrouping("CompareBolt")
                 .shuffleGrouping("CheckSpecialErrorBolt");
 ////                .shuffleGrouping("CheckLastTimeBolt");
