@@ -44,14 +44,7 @@ public class SendToEmail extends SendTo {
     private final String from;
 
     public SendToEmail(OddeeySenderMetricMetaList value, Map.Entry<String, StormUser> user, Map conf) {
-
-        try {
-            targetdata = value.clone();
-        } catch (CloneNotSupportedException ex) {
-            targetdata = new OddeeySenderMetricMetaList();
-            LOGGER.error(globalFunctions.stackTrace(ex));
-        }
-
+        targetdata = value;
         targetuser = user;
 
         // Sender's email ID needs to be mentioned
