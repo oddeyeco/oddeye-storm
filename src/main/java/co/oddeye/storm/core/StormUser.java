@@ -6,7 +6,6 @@
 package co.oddeye.storm.core;
 
 import co.oddeye.core.AlertLevel;
-import co.oddeye.core.ErrorState;
 import co.oddeye.core.OddeeyMetricMeta;
 import co.oddeye.core.OddeeySenderMetricMetaList;
 import co.oddeye.core.OddeyeTag;
@@ -19,10 +18,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.hbase.async.GetRequest;
+import org.hbase.async.HBaseClient;
 import org.hbase.async.KeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,11 +93,18 @@ public class StormUser implements Serializable {
     private Double balance;
     private final Consumption tmpconsumption = new Consumption();
     private final Map<String, String> FiltertemplateList = new HashMap<>();
+
+    private Map<String, String> OptionsList = new HashMap<>();
+
     private final Map<String, Map<String, String>> FiltertemplateMap = new HashMap<>();
 
     private final AlertLevel AlertLevels = new AlertLevel();
     private final Map<String, OddeeySenderMetricMetaList> TargetList = new HashMap<>();
 //    private final OddeeySenderMetricMetaList TelegramList = new OddeeySenderMetricMetaList();
+
+    //New notifier
+//    private final Map<Integer, OddeeyMetricMeta> ErrorsList = new HashMap<>();
+    private final Map<String, Map<String, OddeeySenderMetricMetaList>> SenderListList = new HashMap<>();
 
     public StormUser(ArrayList<KeyValue> row, JsonParser parser) {
 
@@ -150,6 +159,7 @@ public class StormUser implements Serializable {
 
     }
 
+    @Deprecated
     public void PrepareNotifier(OddeeyMetricMeta metric, OddeeyMetricMeta oldmetric, boolean isStart) {
 
         boolean filtred = false;
@@ -252,6 +262,7 @@ public class StormUser implements Serializable {
         }
     }
 
+    @Deprecated
     private boolean Checkforfilter(Map<String, String> filter, OddeeyMetricMeta metric) {
 
         boolean result = false;
@@ -296,6 +307,16 @@ public class StormUser implements Serializable {
 
 //        LOGGER.warn(result+" Level "+metric.getErrorState().getLevel());
         return result;
+    }
+
+    public void UpdateOptionsList(byte[] optionstable, HBaseClient client) throws Exception {
+        OptionsList = new TreeMap<>();
+        GetRequest get = new GetRequest(optionstable, id.toString().getBytes());
+        ArrayList<KeyValue> KVOptionsList = client.get(get).joinUninterruptibly();
+        KVOptionsList.stream().forEach((Options) -> {
+            String name = new String(Options.qualifier());
+            getOptionsList().put(name, new String(Options.value()));
+        });
     }
 
     /**
@@ -415,5 +436,19 @@ public class StormUser implements Serializable {
      */
     public void setBalance(Double balance) {
         this.balance = balance;
+    }
+
+    /**
+     * @return the ErrorsList
+     */
+    public  Map<String, Map<String, OddeeySenderMetricMetaList>> getErrorsList() {
+        return SenderListList;
+    }    
+    
+    /**
+     * @return the OptionsList
+     */
+    public Map<String, String> getOptionsList() {
+        return OptionsList;
     }
 }

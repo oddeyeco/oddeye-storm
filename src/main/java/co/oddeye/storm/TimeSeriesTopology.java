@@ -133,8 +133,8 @@ public class TimeSeriesTopology {
 
         java.util.Map<String, Object> Mailconfig = (java.util.Map<String, Object>) topologyconf.get("mail");
 
-        builder.setBolt("SendNotifierBolt",
-                new SendNotifierBolt(TSDBconfig, Mailconfig), Integer.parseInt(String.valueOf(tconf.get("SendNotifierBoltParallelism_hint"))))
+        builder.setBolt("NotifierSenderBolt",
+                new NotifierSenderBolt(TSDBconfig, Mailconfig), Integer.parseInt(String.valueOf(tconf.get("SendNotifierBoltParallelism_hint"))))
                 .customGrouping("CompareBolt", new MetaByUserGrouper())
                 .customGrouping("CheckSpecialErrorBolt", new MetaByUserGrouper())
                 .allGrouping("TimeSpout2x")

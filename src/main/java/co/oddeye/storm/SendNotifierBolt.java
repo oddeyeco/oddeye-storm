@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author vahan
  */
+@Deprecated
 public class SendNotifierBolt extends BaseRichBolt {
 
     private final Map conf;

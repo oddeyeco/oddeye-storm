@@ -89,8 +89,8 @@ public class SendToEmail extends SendTo {
             Map.Entry<Integer, OddeeyMetricMeta> entry = iter.next();
 
             if (entry.getValue().getErrorState().getLevel() == -1) {
-                HTML = "<div>" + HTML + "<br>Mertic:" + entry.getValue().getName() + "<br>Tags:<br>" + entry.getValue().getDisplayTags("<br>") + " Already not in Error " + "</div>";
-                Text = "/n" + Text + "/nMertic:" + entry.getValue().getName() + "/nTags:/n" + entry.getValue().getDisplayTags("/n") + " Already not in Error " + "/n";
+                HTML = "<div>" + HTML + "<br>Mertic:" + entry.getValue().getName() + "<br>Tags:<br>" + entry.getValue().getDisplayTags("<br>") + " Already not Error " + "</div>";
+                Text = "/n" + Text + "/nMertic:" + entry.getValue().getName() + "/nTags:/n" + entry.getValue().getDisplayTags("/n") + " Already not Error " + "/n";
             } else {
                 HTML = "<div>" + HTML + "<br>Level For Metric:" + entry.getValue().getName() + "<br>Tags:<br>" + entry.getValue().getDisplayTags("<br>") + " " + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</div>";
                 Text = "/n" + Text + "/nLevel For Metric:" + entry.getValue().getName() + "/nTags:/n" + entry.getValue().getDisplayTags("/n") + " " + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "/n";
