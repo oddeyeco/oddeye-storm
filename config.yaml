@@ -27,6 +27,7 @@ Tsdb:
   errorslasttable: test_oddeye-error-last
   usertable: oddeyeusers  
   consumptionusertable: oddeye-consumption  
+  optionstable: oddeyeOptionstable  
   messageprice: 1.16674133811e-06  
   
   tsd.core.auto_create_metrics: true
