@@ -51,9 +51,8 @@ public class NotifierSenderBolt extends BaseRichBolt {
     private byte[] userstable;
     private JsonParser parser;
     private Map<String, StormUser> UserList;
-    private Map<Integer, OddeeyMetricMeta> ErrorsList;
-    private ExecutorService executor;
     private Map<String, Object> mailconf;
+    
 
     public NotifierSenderBolt(java.util.Map config) {
         this.conf = config;
@@ -74,8 +73,6 @@ public class NotifierSenderBolt extends BaseRichBolt {
         try {
             parser = new JsonParser();
             UserList = new HashMap<>();
-            ErrorsList = new HashMap<>();
-            executor = Executors.newFixedThreadPool(3);
             LOGGER.warn("DoPrepare NotifierSenderBolt");
             collector = oc;
             String quorum = String.valueOf(conf.get("zkHosts"));
@@ -181,7 +178,9 @@ public class NotifierSenderBolt extends BaseRichBolt {
                                         }
                                         try {
                                             User.getErrorsList().get(notifierjson.getKey()).get(notifierjsonitem.getAsString()).put(metricMeta.hashCode(), (OddeeyMetricMeta) metricMeta.clone());
-                                            LOGGER.error("Send to " + notifierjson.getKey() + "--" + notifierjsonitem.getAsString());
+                                            if (LOGGER.isInfoEnabled()) {
+                                                LOGGER.info("Send to " + notifierjson.getKey() + "--" + notifierjsonitem.getAsString());
+                                            }
                                         } catch (CloneNotSupportedException ex) {
                                             LOGGER.error(globalFunctions.stackTrace(ex));
                                         }

@@ -24,7 +24,7 @@ public class SendToTelegram extends SendTo {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SendToTelegram.class);
     private final OddeeySenderMetricMetaList targetdata;
-    private final Map.Entry<String, StormUser> targetuser;
+    private final Map.Entry<String, StormUser> targetuser;    
 
     public SendToTelegram(OddeeySenderMetricMetaList value, Map.Entry<String, StormUser> user) {
         targetdata = value;
@@ -41,8 +41,18 @@ public class SendToTelegram extends SendTo {
         String Text = "";
         int Counter = 0;
         while (iter.hasNext()) {
-            Counter++;
             Map.Entry<Integer, OddeeyMetricMeta> entry = iter.next();
+            if (targetdata.getLastSendList().containsKey(entry.getValue().hashCode())) {
+                if (entry.getValue().getErrorState().getLevel() == targetdata.getLastSendList().get(entry.getValue().hashCode())) {
+                    if (LOGGER.isInfoEnabled())
+                    {
+                        LOGGER.info("Not send returned level");
+                    }                    
+                    iter.remove();
+                    continue;
+                }
+            }                        
+            Counter++;            
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("Sent metric " + entry.getValue().hashCode()+" Name:"+entry.getValue().getName() + " State " + entry.getValue().getErrorState().getStateName() + " to Level " + entry.getValue().getErrorState().getLevelName() + "Tags:  " + entry.getValue().getTags());
             }            
@@ -51,7 +61,8 @@ public class SendToTelegram extends SendTo {
                     Text = Text + "\nMertic " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().hashCode() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> Already not Error </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
                 } else {
                     Text = Text + "\nLevel For " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().hashCode() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>";
-                }
+                }                
+                targetdata.getLastSendList().put(entry.getValue().hashCode(), entry.getValue().getErrorState().getLevel());
                 iter.remove();
             }
             else

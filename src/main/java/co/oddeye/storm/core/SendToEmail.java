@@ -78,8 +78,16 @@ public class SendToEmail extends SendTo {
         String HTML = "";
 
         while (iter.hasNext()) {
-
             Map.Entry<Integer, OddeeyMetricMeta> entry = iter.next();
+            if (targetdata.getLastSendList().containsKey(entry.getValue().hashCode())) {
+                if (entry.getValue().getErrorState().getLevel() == targetdata.getLastSendList().get(entry.getValue().hashCode())) {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Not send returned level");
+                    }
+                    iter.remove();
+                    continue;
+                }
+            }
 
             if (entry.getValue().getErrorState().getLevel() == -1) {
                 HTML = "<div>" + HTML + "<br>Mertic:" + entry.getValue().getName() + "<br>Tags:<br>" + entry.getValue().getDisplayTags("<br>") + " Already not Error " + "</div>";
@@ -88,7 +96,7 @@ public class SendToEmail extends SendTo {
                 HTML = "<div>" + HTML + "<br>Level For Metric:" + entry.getValue().getName() + "<br>Tags:<br>" + entry.getValue().getDisplayTags("<br>") + " " + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</div>";
                 Text = "/n" + Text + "/nLevel For Metric:" + entry.getValue().getName() + "/nTags:/n" + entry.getValue().getDisplayTags("/n") + " " + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "/n";
             }
-
+            targetdata.getLastSendList().put(entry.getValue().hashCode(), entry.getValue().getErrorState().getLevel());
             iter.remove();
         }
 //        LOGGER.warn(Text);
