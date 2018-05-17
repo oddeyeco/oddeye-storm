@@ -214,7 +214,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 qualifiers[2] = "type".getBytes();
                 values[0] = key;
                 values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                values[2] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
+                values[2] = ByteBuffer.allocate(2).putShort(metric.getType().getShort()).array();
 //                putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                 AppendRequest appendvalue = new AppendRequest(metatable, key, meta_family, qualifiers, values);
                 LOGGER.warn("Add metric Meta to hbase Special:" + metric.getName() + " tags " + metric.getTags() + " newcode: " + metric.hashCode());
@@ -235,7 +235,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                     qualifiers = new byte[2][];
                     values = new byte[2][];
                     qualifiers[1] = "type".getBytes();
-                    values[1] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
+                    values[1] = ByteBuffer.allocate(2).putShort(metric.getType().getShort()).array();
                     mtrsc.setType(metric.getType());
                 }
                 qualifiers[0] = "timestamp".getBytes();

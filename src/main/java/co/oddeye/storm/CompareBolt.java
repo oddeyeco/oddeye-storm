@@ -270,7 +270,7 @@ public class CompareBolt extends BaseRichBolt {
                         LOGGER.error("In getSerializedRegression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
                         values[2] = new byte[0];
                     }
-                    values[3] = ByteBuffer.allocate(2).putShort(metric.getType()).array();
+                    values[3] = ByteBuffer.allocate(2).putShort(metric.getType().getShort()).array();
 //                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
                     AppendRequest appendvalue = new AppendRequest(metatable, key, meta_family, qualifiers, values);
                     LOGGER.warn("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
@@ -300,7 +300,7 @@ public class CompareBolt extends BaseRichBolt {
                         qualifiers = new byte[3][];
                         values = new byte[3][];
                         qualifiers[2] = "type".getBytes();
-                        values[2] = ByteBuffer.allocate(2).putShort(mtrscMetaInput.getType()).array();
+                        values[2] = ByteBuffer.allocate(2).putShort(mtrscMetaInput.getType().getShort()).array();
                         mtrscMetaLocal.setType(mtrscMetaInput.getType());
                     }
 

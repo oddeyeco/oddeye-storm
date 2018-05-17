@@ -4,7 +4,7 @@
   <groupId>co.oddeye.storm</groupId>
   <artifactId>TimeSeriesTopology</artifactId>
   <name>TimeSeriesTopology</name>
-  <version>0.11.0</version>
+  <version>0.12.0</version>
   <build>
     <plugins>
       <plugin>

@@ -92,7 +92,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
         }
         if (metric != null) {
             jsonResult.addProperty("time", metric.getTimestamp());
-            jsonResult.addProperty("type", metric.getType());
+            jsonResult.addProperty("type", metric.getType().toString());
             jsonResult.addProperty("reaction", metric.getReaction());
             jsonResult.addProperty("startvalue", metric.getValue());
             if (metric instanceof OddeeysSpecialMetric) {
