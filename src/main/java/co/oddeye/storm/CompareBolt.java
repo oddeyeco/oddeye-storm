@@ -255,66 +255,66 @@ public class CompareBolt extends BaseRichBolt {
             if (code != 0) {
                 if (!MetricMetaList.containsKey(code)) {
                     mtrscMetaLocal = mtrscMetaInput;
-                    mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
-                    qualifiers = new byte[4][];
-                    values = new byte[4][];
-                    qualifiers[0] = "n".getBytes();
-                    qualifiers[1] = "timestamp".getBytes();
-                    qualifiers[2] = "Regression".getBytes();
-                    qualifiers[3] = "type".getBytes();
-                    values[0] = key;
-                    values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                    try {
-                        values[2] = mtrscMetaLocal.getSerializedRegression();
-                    } catch (IOException ex) {
-                        LOGGER.error("In getSerializedRegression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
-                        values[2] = new byte[0];
-                    }
-                    values[3] = ByteBuffer.allocate(2).putShort(metric.getType().getShort()).array();
-//                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-                    AppendRequest appendvalue = new AppendRequest(metatable, key, meta_family, qualifiers, values);
-                    LOGGER.warn("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
-                    globalFunctions.getSecindaryclient(clientconf).append(appendvalue);
+//                    mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
+//                    qualifiers = new byte[4][];
+//                    values = new byte[4][];
+//                    qualifiers[0] = "n".getBytes();
+//                    qualifiers[1] = "timestamp".getBytes();
+//                    qualifiers[2] = "Regression".getBytes();
+//                    qualifiers[3] = "type".getBytes();
+//                    values[0] = key;
+//                    values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+//                    try {
+//                        values[2] = mtrscMetaLocal.getSerializedRegression();
+//                    } catch (IOException ex) {
+//                        LOGGER.error("In getSerializedRegression: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+//                        values[2] = new byte[0];
+//                    }
+//                    values[3] = ByteBuffer.allocate(2).putShort(metric.getType().getShort()).array();
+////                    putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
+//                    AppendRequest appendvalue = new AppendRequest(metatable, key, meta_family, qualifiers, values);
+//                    LOGGER.warn("Add metric Meta to hbase:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " code " + code + " newcode: " + mtrscMetaLocal.hashCode());
+//                    globalFunctions.getSecindaryclient(clientconf).append(appendvalue);
 //                    globalFunctions.getSecindaryclient(clientconf).append(appendvalue).join();
 //                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
                 } else {
                     mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():" + mtrscMetaLocal.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
-                    }
-                    if ((mtrscMetaInput.getLasttime() <= mtrscMetaLocal.getLasttime())) {
-                        if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
-                        }
-
-                        return;
-                    }
-                    mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
-
-                    if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
-                        LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
-                    }
-                    qualifiers = new byte[2][];
-                    values = new byte[2][];
-                    if (mtrscMetaInput.getType() != mtrscMetaLocal.getType()) {
-                        qualifiers = new byte[3][];
-                        values = new byte[3][];
-                        qualifiers[2] = "type".getBytes();
-                        values[2] = ByteBuffer.allocate(2).putShort(mtrscMetaInput.getType().getShort()).array();
-                        mtrscMetaLocal.setType(mtrscMetaInput.getType());
-                    }
-
-                    qualifiers[0] = "timestamp".getBytes();
-                    qualifiers[1] = "Regression".getBytes();
-                    values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                    values[1] = mtrscMetaLocal.getSerializedRegression();
-                    putvalue = new PutRequest(metatable, mtrscMetaLocal.getKey(), meta_family, qualifiers, values);
-                    LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
-                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-                    mtrscMetaLocal.setLasttime(mtrscMetaInput.getLasttime());
+//                    if (LOGGER.isInfoEnabled()) {
+//                        LOGGER.info("metric interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " mtrscMetaInput.getLasttime: " + mtrscMetaInput.getLasttime() + " mtrscMetaLocal.getLasttime():" + mtrscMetaLocal.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+//                    }
+//                    if ((mtrscMetaInput.getLasttime() <= mtrscMetaLocal.getLasttime())) {
+//                        if (LOGGER.isInfoEnabled()) {
+//                            LOGGER.info("Metric Negativ interval: " + mtrscMetaInput.hashCode() + " " + mtrscMetaInput.getName() + " " + mtrscMetaInput.getLasttime() + " " + (mtrscMetaInput.getLasttime() - mtrscMetaLocal.getLasttime()));
+//                        }
+//
+//                        return;
+//                    }
+//                    mtrscMetaLocal.getRegression().addData(metric.getTimestamp() / 1000, metric.getValue());
+//
+//                    if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
+//                        LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
+//                    }
+//                    qualifiers = new byte[2][];
+//                    values = new byte[2][];
+//                    if (mtrscMetaInput.getType() != mtrscMetaLocal.getType()) {
+//                        qualifiers = new byte[3][];
+//                        values = new byte[3][];
+//                        qualifiers[2] = "type".getBytes();
+//                        values[2] = ByteBuffer.allocate(2).putShort(mtrscMetaInput.getType().getShort()).array();
+//                        mtrscMetaLocal.setType(mtrscMetaInput.getType());
+//                    }
+//
+//                    qualifiers[0] = "timestamp".getBytes();
+//                    qualifiers[1] = "Regression".getBytes();
+//                    values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
+//                    values[1] = mtrscMetaLocal.getSerializedRegression();
+//                    putvalue = new PutRequest(metatable, mtrscMetaLocal.getKey(), meta_family, qualifiers, values);
+//                    LOGGER.info("Update timastamp:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + " Stamp " + metric.getTimestamp());
+//                    globalFunctions.getSecindaryclient(clientconf).put(putvalue);
+//                    mtrscMetaLocal.setLasttime(mtrscMetaInput.getLasttime());
                 }
 //                        System.out.println(mtrscMetaLocal.getErrorState().getLevel()); 
-
+                globalFunctions.saveMetric(mtrscMetaLocal,metric,MetricMetaList,clientconf,metatable);
                 MetricMetaList.set(mtrscMetaLocal);
 
                 CalendarObj.setTimeInMillis(metric.getTimestamp());

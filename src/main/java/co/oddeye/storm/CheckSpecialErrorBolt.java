@@ -42,11 +42,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     private org.hbase.async.Config clientconf;
     private final Map conf;
     private byte[] metatable;
-    private OddeeyMetricMetaList mtrscList;
-    private byte[] key;
-    private byte[][] qualifiers;
-    private byte[][] values;
-    private final byte[] meta_family = "d".getBytes();
+    private OddeeyMetricMetaList mtrscList;    
     private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialMap = new HashMap<>();
     private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialLiveMap = new HashMap<>();
     private JsonParser parser = null;
@@ -204,48 +200,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
         try {
 //                OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
-            PutRequest putvalue;
-            key = mtrsc.getKey();
-            if (!mtrscList.containsKey(mtrsc.hashCode())) {
-                qualifiers = new byte[3][];
-                values = new byte[3][];
-                qualifiers[0] = "n".getBytes();
-                qualifiers[1] = "timestamp".getBytes();
-                qualifiers[2] = "type".getBytes();
-                values[0] = key;
-                values[1] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                values[2] = ByteBuffer.allocate(2).putShort(metric.getType().getShort()).array();
-//                putvalue = new PutRequest(metatable, key, meta_family, qualifiers, values);
-                AppendRequest appendvalue = new AppendRequest(metatable, key, meta_family, qualifiers, values);
-                LOGGER.warn("Add metric Meta to hbase Special:" + metric.getName() + " tags " + metric.getTags() + " newcode: " + metric.hashCode());
-                globalFunctions.getSecindaryclient(clientconf).append(appendvalue);
-            } else {
-                mtrsc = mtrscList.get(mtrsc.hashCode());
-                qualifiers = new byte[1][];
-                values = new byte[1][];
-
-                if ((metric.getTimestamp() <= mtrsc.getLasttime())) {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Metric Negativ interval: " + mtrsc.hashCode() + " " + mtrsc.getName() + " " + mtrsc.getLasttime() + " " + (mtrsc.getLasttime() - metric.getTimestamp()));
-                    }
-
-                    return;
-                }
-                if (metric.getType() != mtrsc.getType()) {
-                    qualifiers = new byte[2][];
-                    values = new byte[2][];
-                    qualifiers[1] = "type".getBytes();
-                    values[1] = ByteBuffer.allocate(2).putShort(metric.getType().getShort()).array();
-                    mtrsc.setType(metric.getType());
-                }
-                qualifiers[0] = "timestamp".getBytes();
-                values[0] = ByteBuffer.allocate(8).putLong(metric.getTimestamp()).array();
-                putvalue = new PutRequest(metatable, mtrsc.getKey(), meta_family, qualifiers, values);
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("Update timastamp:" + mtrsc.getName() + " tags " + mtrsc.getTags() + " Stamp " + metric.getTimestamp());
-                }
-                globalFunctions.getSecindaryclient(clientconf).put(putvalue);
-            }
+            
+            globalFunctions.saveMetric(mtrsc,metric,mtrscList,clientconf,metatable);
+            
             mtrsc.setLasttime(metric.getTimestamp());
             mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
             if (metric.getReaction() == 0) {
