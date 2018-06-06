@@ -14,7 +14,6 @@ import co.oddeye.core.globalFunctions;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -26,8 +25,6 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.hbase.async.AppendRequest;
-import org.hbase.async.PutRequest;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -42,7 +39,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     private org.hbase.async.Config clientconf;
     private final Map conf;
     private byte[] metatable;
-    private OddeeyMetricMetaList mtrscList;    
+    private OddeeyMetricMetaList mtrscList;
     private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialMap = new HashMap<>();
     private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialLiveMap = new HashMap<>();
     private JsonParser parser = null;
@@ -80,9 +77,20 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 
             try {
                 LOGGER.warn("Start read meta in hbase");
-//                final OddeeyMetricMetaList mtrscListtmp = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable,true);
-                LOGGER.warn("End read meta in hbase");
                 mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable, true);
+                for (Map.Entry<Integer, OddeeyMetricMeta> mtr : mtrscList.entrySet()) {
+                    if ((mtr.getValue().isSpecial()) && (mtr.getValue().getLastreaction() > 0)) {
+                        OddeeyMetricMeta mt = mtr.getValue();
+                        if ((System.currentTimeMillis() - mt.getLasttime()) > Math.abs(60000 * mt.getLastreaction())) {
+                            if (lastTimeSpecialLiveMap.get(mt.hashCode()) == null) {
+                                final OddeeysSpecialMetric metric = new OddeeysSpecialMetric(mt);
+                                lastTimeSpecialLiveMap.put(mt.hashCode(), metric);
+                                mt.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
+                            }
+                        }
+                    }
+                }
+                LOGGER.warn("End read meta in hbase");
             } catch (Exception ex) {
                 LOGGER.error(globalFunctions.stackTrace(ex));
                 mtrscList = new OddeeyMetricMetaList();
@@ -200,9 +208,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
         try {
 //                OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
-            
-            globalFunctions.saveMetric(mtrsc,metric,mtrscList,clientconf,metatable);
-            
+
+            globalFunctions.saveMetric(mtrsc, metric, mtrscList, clientconf, metatable);
+
             mtrsc.setLasttime(metric.getTimestamp());
             mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
             if (metric.getReaction() == 0) {
