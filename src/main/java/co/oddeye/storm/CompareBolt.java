@@ -34,7 +34,6 @@ import org.apache.storm.tuple.Values;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.TimeZone;
-import org.hbase.async.AppendRequest;
 import org.hbase.async.KeyValue;
 import org.hbase.async.PutRequest;
 import org.hbase.async.Scanner;
