@@ -169,7 +169,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                         LOGGER.warn("PIPEC for lastTimeSpecialMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
                         if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags() + " count:" + lastTimeSpecialMap.size());
+                            LOGGER.info("End whait Error " + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags() + " count:" + lastTimeSpecialMap.size());
                         }
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_END_ERROR, System.currentTimeMillis());
                         mtrscList.set(mtrsc);
@@ -198,7 +198,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                         LOGGER.warn("PIPEC for lastTimeSpecialLiveMap Metric Meta not found " + metricEntry.getKey() + " metric name " + metric.getName() + " tags " + metric.getTags());
                     } else {
                         if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info("end error" + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags() + " count:" + lastTimeSpecialMap.size());
+                            LOGGER.info("Start Live error " + System.currentTimeMillis() + " " + lastTime + " Name:" + mtrsc.getName() + " Host:" + mtrsc.getTags() + " count:" + lastTimeSpecialMap.size());
                         }
                         mtrsc.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                         mtrscList.set(mtrsc);
@@ -217,6 +217,11 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 //                OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
 
+            if (mtrscList.containsKey(mtrsc.hashCode())) 
+            {
+                mtrsc = mtrscList.get(mtrsc.hashCode());
+            }
+            
             globalFunctions.saveMetric(mtrsc, metric, mtrscList, clientconf, metatable);
 
             mtrsc.setLasttime(metric.getTimestamp());
