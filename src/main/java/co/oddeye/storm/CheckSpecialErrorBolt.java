@@ -89,7 +89,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                             if (lastTimeSpecialLiveMap.get(mt.hashCode()) == null) {
                                 final OddeeysSpecialMetric metric = new OddeeysSpecialMetric(mt);
                                 if (tasks.get(Math.abs(metric.hashCode()) % tasks.size()) == TaskId) {
-                                    LOGGER.warn("Task test: hash " + metric.hashCode() + " PPPP " + tasks.get(Math.abs(metric.hashCode()) % tasks.size()) + " TaskId:" + TaskId + " TaskIndex:" + TaskIndex);
+                                    LOGGER.warn("Task test: "+"Metahash " + mt.hashCode() + " Metrichash " + metric.hashCode() + " PPPP " + tasks.get(Math.abs(metric.hashCode()) % tasks.size()) + " TaskId:" + TaskId + " TaskIndex:" + TaskIndex);
                                     lastTimeSpecialLiveMap.put(mt.hashCode(), metric);
                                     mt.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                                 }

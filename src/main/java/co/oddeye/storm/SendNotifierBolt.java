@@ -100,7 +100,7 @@ public class SendNotifierBolt extends BaseRichBolt {
                     UserList.put(User.getId().toString(), User);
                 }
             }
-            LOGGER.warn("UserList.size " + UserList.size());
+//            LOGGER.warn("UserList.size " + UserList.size());
         } catch (IOException ex) {
             LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
         } catch (Exception ex) {
