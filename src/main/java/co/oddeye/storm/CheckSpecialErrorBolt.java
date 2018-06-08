@@ -16,6 +16,7 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import net.opentsdb.utils.Config;
 import org.apache.storm.task.OutputCollector;
@@ -78,18 +79,24 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
             try {
                 LOGGER.warn("Start read meta in hbase");
                 mtrscList = new OddeeyMetricMetaList(globalFunctions.getTSDB(openTsdbConfig, clientconf), this.metatable, true);
-//                for (Map.Entry<Integer, OddeeyMetricMeta> mtr : mtrscList.entrySet()) {
-//                    if ((mtr.getValue().isSpecial()) && (mtr.getValue().getLastreaction() > 0)) {
-//                        OddeeyMetricMeta mt = mtr.getValue();
-//                        if ((System.currentTimeMillis() - mt.getLasttime()) > Math.abs(60000 * mt.getLastreaction())) {
-//                            if (lastTimeSpecialLiveMap.get(mt.hashCode()) == null) {
-//                                final OddeeysSpecialMetric metric = new OddeeysSpecialMetric(mt);
+                int TaskId = context.getThisTaskId();
+                int TaskIndex = context.getThisTaskIndex();
+                List<Integer> tasks = context.getComponentTasks(context.getThisComponentId());
+                for (Map.Entry<Integer, OddeeyMetricMeta> mtr : mtrscList.entrySet()) {
+                    if ((mtr.getValue().isSpecial()) && (mtr.getValue().getLastreaction() > 0)) {
+                        OddeeyMetricMeta mt = mtr.getValue();
+                        if ((System.currentTimeMillis() - mt.getLasttime()) > Math.abs(60000 * mt.getLastreaction())) {
+                            if (lastTimeSpecialLiveMap.get(mt.hashCode()) == null) {
+                                final OddeeysSpecialMetric metric = new OddeeysSpecialMetric(mt);
+                                
+                                LOGGER.warn("Task test: hash "+metric.hashCode()+" PPPP "+tasks.get(Math.abs(metric.hashCode()) % tasks.size()) +" TaskId:"+TaskId+" TaskIndex:"+TaskIndex);
+                                
 //                                lastTimeSpecialLiveMap.put(mt.hashCode(), metric);
 //                                mt.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
-//                            }
-//                        }
-//                    }
-//                }
+                            }
+                        }
+                    }
+                }
                 LOGGER.warn("End read meta in hbase");
             } catch (Exception ex) {
                 LOGGER.error(globalFunctions.stackTrace(ex));
