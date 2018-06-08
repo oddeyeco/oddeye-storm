@@ -242,10 +242,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(" Name:" + mtrsc.getName() + " State:" + mtrsc.getErrorState().getState() + " Oldlevel:" + mtrsc.getErrorState().getLevel() + " Newlevel:" + AlertLevel.getPyName(metric.getStatus()) + "Tags:" + mtrsc.getTags());
             }
-            mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
-
             collector.emit(new Values(mtrsc, metric, System.currentTimeMillis()));
-
             mtrscList.set(mtrsc);
         } catch (Exception ex) {
             LOGGER.error("in bolt: " + globalFunctions.stackTrace(ex));
