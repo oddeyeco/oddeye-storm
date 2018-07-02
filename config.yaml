@@ -1,30 +1,30 @@
 ## YAML Template.
 ---
 Kafka:
-   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"       
+   zkHosts: "pve4.office.loc:2181"       
    tsdbtopic: "oddeyetsdb"   
    zkRoot: "/storm_oddeye"
    zkKey: "oddeye-staus"
    zkKeyTSDB: "oddeye-TSDBstat"
    
 ErrorKafka:
-    bootstrap.servers: "node0.netangels.net:9092,node1.netangels.net:9092,node2.netangels.net:9092" 
+    bootstrap.servers: "pve1.office.loc:9092,pve2.office.loc:9092,pve3.office.loc:9092" 
     topic: "errors"
 
 KafkaSemaphore:
-   zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"       
+   zkHosts: "pve4.office.loc:2181"       
    topic: "semaphore"   
    zkRoot: "/semaphore_oddeye"
    zkKey: "semaphore-staus"       
    
    
 Tsdb:
-  zkHosts: "nn1.netangels.net:2181,nn2.netangels.net:2181,rm1.netangels.net:2181"   
+  zkHosts: "pve4.office.loc:2181"   
   hbase.rpcs.batch.size: 4096 
-  metatable: test_oddeye-meta
-  errorstable: test_oddeye-errors
-  errorshistorytable: test_oddeye-error-history
-  errorslasttable: test_oddeye-error-last
+  metatable: oddeye-meta
+  errorstable: oddeye-errors
+  errorshistorytable: oddeye-error-history
+  errorslasttable: oddeye-error-last
   usertable: oddeyeusers  
   consumptionusertable: oddeye-consumption  
   optionstable: oddeyeOptionstable  
@@ -49,17 +49,17 @@ Topology:
     NumWorkers: 3
     SpoutParallelism_hint: 1
     SpoutSemaphoreParallelism_hint: 1
-    ParseMetricBoltParallelism_hint: 2
-    SemaforProxyBoltParallelism_hint: 2
-    WriteToTSDBseriesParallelism_hint: 6
-    CompareBoltParallelism_hint: 6
-    CalcRulesBoltParallelism_hint: 6
-    ErrorKafkaHandlerParallelism_hint: 6
-    CheckSpecialErrorBoltParallelism_hint: 3
-    UserBalaceCalcBoltParallelism_hint: 3
+    ParseMetricBoltParallelism_hint: 1
+    SemaforProxyBoltParallelism_hint: 1
+    WriteToTSDBseriesParallelism_hint: 3
+    CompareBoltParallelism_hint: 3
+    CalcRulesBoltParallelism_hint: 3
+    ErrorKafkaHandlerParallelism_hint: 3
+    CheckSpecialErrorBoltParallelism_hint: 1
+    UserBalaceCalcBoltParallelism_hint: 1
    
-    MetricErrorToHbaseParallelism_hint: 3
-    SendNotifierBoltParallelism_hint: 6    
+    MetricErrorToHbaseParallelism_hint: 1
+    SendNotifierBoltParallelism_hint: 3    
 #    TSDBMsgBoltParallelism_hint: 4
 #    WarningParallelism_hint: 8
     Debug: false
