@@ -116,7 +116,7 @@ public class CompareBolt extends BaseRichBolt {
             try {
                 LOGGER.warn("Start read meta in hbase");
                 MetricMetaList = new OddeeyMetricMetaList(globalFunctions.getSecindarytsdb(openTsdbConfig, clientconf), this.metatable);
-                LOGGER.warn("End read meta in hbase");
+                LOGGER.warn("End read meta in hbase "+MetricMetaList.size());
             } catch (Exception ex) {
                 MetricMetaList = new OddeeyMetricMetaList();
             }
