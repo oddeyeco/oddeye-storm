@@ -52,7 +52,6 @@ public class NotifierSenderBolt extends BaseRichBolt {
     private JsonParser parser;
     private Map<String, StormUser> UserList;
     private Map<String, Object> mailconf;
-    
 
     public NotifierSenderBolt(java.util.Map config) {
         this.conf = config;
@@ -96,8 +95,10 @@ public class NotifierSenderBolt extends BaseRichBolt {
             while ((rows = user_scanner.nextRows(1000).joinUninterruptibly()) != null) {
                 for (final ArrayList<KeyValue> row : rows) {
                     final StormUser User = new StormUser(row, parser);
-                    User.UpdateOptionsList(String.valueOf(conf.get("optionstable")).getBytes(), globalFunctions.getSecindaryclient(clientconf));
-                    UserList.put(User.getId().toString(), User);
+                    if (User.getId() != null) {
+                        User.UpdateOptionsList(String.valueOf(conf.get("optionstable")).getBytes(), globalFunctions.getSecindaryclient(clientconf));
+                        UserList.put(User.getId().toString(), User);
+                    }
                 }
             }
 //            LOGGER.warn("UserList.size " + UserList.size());

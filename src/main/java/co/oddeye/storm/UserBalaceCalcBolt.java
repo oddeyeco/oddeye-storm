@@ -186,7 +186,9 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                     try {
                         final ArrayList<KeyValue> userkvs = globalFunctions.getSecindaryclient(clientconf).get(get).joinUninterruptibly();
                         final StormUser User = new StormUser(userkvs, parser);
-                        UserList.put(User.getId().toString(), User);
+                        if (User.getId() != null) {
+                            UserList.put(User.getId().toString(), User);
+                        }
                     } catch (Exception ex) {
                         LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
                     }
@@ -210,7 +212,9 @@ public class UserBalaceCalcBolt extends BaseRichBolt {
                     try {
                         final ArrayList<KeyValue> userkvs = globalFunctions.getSecindaryclient(clientconf).get(get).joinUninterruptibly();
                         final StormUser User = new StormUser(userkvs, parser);
-                        UserList.put(User.getId().toString(), User);
+                        if (User.getId() != null) {
+                            UserList.put(User.getId().toString(), User);
+                        }
                     } catch (Exception ex) {
                         LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
                     }

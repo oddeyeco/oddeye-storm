@@ -97,7 +97,9 @@ public class SendNotifierBolt extends BaseRichBolt {
             while ((rows = user_scanner.nextRows(1000).joinUninterruptibly()) != null) {
                 for (final ArrayList<KeyValue> row : rows) {
                     final StormUser User = new StormUser(row, parser);
-                    UserList.put(User.getId().toString(), User);
+                    if (User.getId() != null) {
+                        UserList.put(User.getId().toString(), User);
+                    }
                 }
             }
 //            LOGGER.warn("UserList.size " + UserList.size());
