@@ -178,7 +178,7 @@ public class NotifierSenderBolt extends BaseRichBolt {
                                             User.getErrorsList().get(notifierjson.getKey()).put(notifierjsonitem.getAsString(), new OddeeySenderMetricMetaList(notifierjson.getKey(), notifierjsonitem.getAsString()));
                                         }
                                         try {
-                                            User.getErrorsList().get(notifierjson.getKey()).get(notifierjsonitem.getAsString()).put(metricMeta.hashCode(), (OddeeyMetricMeta) metricMeta.clone());
+                                            User.getErrorsList().get(notifierjson.getKey()).get(notifierjsonitem.getAsString()).put(metricMeta.sha256Code(), (OddeeyMetricMeta) metricMeta.clone());
                                             if (LOGGER.isInfoEnabled()) {
                                                 LOGGER.info("Send to " + notifierjson.getKey() + "--" + notifierjsonitem.getAsString());
                                             }

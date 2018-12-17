@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>co.oddeye.storm</groupId>
     <artifactId>TimeSeriesTopology</artifactId>
-    <version>0.14.0</version>
+    <version>0.15.0</version>
     <packaging>jar</packaging>
       
     <properties>
@@ -235,7 +235,7 @@
         <dependency>
             <groupId>co.oddeye</groupId>
             <artifactId>oddeye-core</artifactId>
-            <version>0.6</version>
+            <version>0.7</version>
         </dependency>                
         <dependency>
             <groupId>javax.mail</groupId>

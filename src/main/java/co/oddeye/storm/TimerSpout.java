@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class TimerSpout extends BaseRichSpout {
 
     private SpoutOutputCollector outputCollector;
-    private long interval;
+    private final long interval;
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TimerSpout.class);  
      
     public TimerSpout (long _interval)

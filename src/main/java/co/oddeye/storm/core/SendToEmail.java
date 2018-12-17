@@ -73,14 +73,14 @@ public class SendToEmail extends SendTo {
     @Override
     public void run() {
 //        LOGGER.warn("Sent for user " + targetuser.getValue().getEmail() + " to Email " + targetdata.size() + " Messages");
-        Iterator<Map.Entry<Integer, OddeeyMetricMeta>> iter = targetdata.entrySet().iterator();
+        Iterator<Map.Entry<String, OddeeyMetricMeta>> iter = targetdata.entrySet().iterator();
         String Text = "";
         String HTML = "";
 
         while (iter.hasNext()) {
-            Map.Entry<Integer, OddeeyMetricMeta> entry = iter.next();
-            if (targetdata.getLastSendList().containsKey(entry.getValue().hashCode())) {
-                if (entry.getValue().getErrorState().getLevel() == targetdata.getLastSendList().get(entry.getValue().hashCode())) {
+            Map.Entry<String, OddeeyMetricMeta> entry = iter.next();
+            if (targetdata.getLastSendList().containsKey(entry.getValue().sha256Code())) {
+                if (entry.getValue().getErrorState().getLevel() == targetdata.getLastSendList().get(entry.getValue().sha256Code())) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("Not send returned level");
                     }
@@ -96,7 +96,7 @@ public class SendToEmail extends SendTo {
                 HTML = "<div>" + HTML + "<br>Level For Metric:" + entry.getValue().getName() + "<br>Tags:<br>" + entry.getValue().getDisplayTags("<br>") + " " + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</div>";
                 Text = "/n" + Text + "/nLevel For Metric:" + entry.getValue().getName() + "/nTags:/n" + entry.getValue().getDisplayTags("/n") + " " + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "/n";
             }
-            targetdata.getLastSendList().put(entry.getValue().hashCode(), entry.getValue().getErrorState().getLevel());
+            targetdata.getLastSendList().put(entry.getValue().sha256Code(), entry.getValue().getErrorState().getLevel());
             iter.remove();
         }
 //        LOGGER.warn(Text);

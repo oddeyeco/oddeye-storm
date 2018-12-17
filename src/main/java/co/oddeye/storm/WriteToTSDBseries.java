@@ -10,7 +10,6 @@ import co.oddeye.core.globalFunctions;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
-import java.util.logging.Level;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;

@@ -37,13 +37,13 @@ public class SendToTelegram extends SendTo {
             LOGGER.info("Sent for user " + targetuser.getValue().getEmail() + " to Telegram " + targetdata.size() + " Messages");
         }
 
-        Iterator<Map.Entry<Integer, OddeeyMetricMeta>> iter = targetdata.entrySet().iterator();
+        Iterator<Map.Entry<String, OddeeyMetricMeta>> iter = targetdata.entrySet().iterator();
         String Text = "";
         int Counter = 0;
         while (iter.hasNext()) {
-            Map.Entry<Integer, OddeeyMetricMeta> entry = iter.next();
-            if (targetdata.getLastSendList().containsKey(entry.getValue().hashCode())) {
-                if (entry.getValue().getErrorState().getLevel() == targetdata.getLastSendList().get(entry.getValue().hashCode())) {
+            Map.Entry<String, OddeeyMetricMeta> entry = iter.next();
+            if (targetdata.getLastSendList().containsKey(entry.getValue().sha256Code())) {
+                if (entry.getValue().getErrorState().getLevel() == targetdata.getLastSendList().get(entry.getValue().sha256Code())) {
                     if (LOGGER.isInfoEnabled())
                     {
                         LOGGER.info("Not send returned level");
@@ -54,15 +54,15 @@ public class SendToTelegram extends SendTo {
             }                        
             Counter++;            
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Sent metric " + entry.getValue().hashCode()+" Name:"+entry.getValue().getName() + " State " + entry.getValue().getErrorState().getStateName() + " to Level " + entry.getValue().getErrorState().getLevelName() + "Tags:  " + entry.getValue().getTags());
+                LOGGER.info("Sent metric " + entry.getValue().sha256Code()+" Name:"+entry.getValue().getName() + " State " + entry.getValue().getErrorState().getStateName() + " to Level " + entry.getValue().getErrorState().getLevelName() + "Tags:  " + entry.getValue().getTags());
             }            
             if (Counter < 11) {
                 if (entry.getValue().getErrorState().getLevel() == -1) {
-                    Text = Text + "\nMertic " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().hashCode() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> Already not Error </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
+                    Text = Text + "\nMertic " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> Already not Error </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
                 } else {
-                    Text = Text + "\nLevel For " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().hashCode() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>";
+                    Text = Text + "\nLevel For " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>";
                 }                
-                targetdata.getLastSendList().put(entry.getValue().hashCode(), entry.getValue().getErrorState().getLevel());
+                targetdata.getLastSendList().put(entry.getValue().sha256Code(), entry.getValue().getErrorState().getLevel());
                 iter.remove();
             }
             else

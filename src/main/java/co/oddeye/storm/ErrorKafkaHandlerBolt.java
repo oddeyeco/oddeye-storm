@@ -82,7 +82,7 @@ public class ErrorKafkaHandlerBolt extends BaseRichBolt {
 
 //        if (mtrsc.getErrorState().getState() != 1) {
         JsonObject jsonResult = new JsonObject();
-        jsonResult.addProperty("hash", mtrsc.hashCode());
+        jsonResult.addProperty("hash", mtrsc.sha256Code());
         jsonResult.addProperty("key", Hex.encodeHexString(mtrsc.getKey()));
         jsonResult.addProperty("action", mtrsc.getErrorState().getState());
         JsonElement starttimes = gson.toJsonTree(mtrsc.getErrorState().getStarttimes());

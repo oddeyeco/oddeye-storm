@@ -176,16 +176,16 @@ public class CalcRulesBolt extends BaseRichBolt {
                     }
                 }
 
-                Integer code = 0;
+                String code = null;
                 try {
-                    code = mtrsc.hashCode();
+                    code = mtrsc.sha256Code();
                 } catch (Exception ex) {
-                    LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+                    LOGGER.error("In sha hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
                 }
 
-                if (code != 0) {
-                    if (MetricMetaList.containsKey(mtrsc.hashCode())) {
-                        mtrsc =(OddeeyMetricMetaCalculeted) MetricMetaList.get(mtrsc.hashCode());                        
+                if (code != null) {
+                    if (MetricMetaList.containsKey(mtrsc.sha256Code())) {
+                        mtrsc =(OddeeyMetricMetaCalculeted) MetricMetaList.get(mtrsc.sha256Code());                        
                     }
                     try {
                         calcRules(mtrsc, metric, code);
@@ -205,7 +205,7 @@ public class CalcRulesBolt extends BaseRichBolt {
         }
     }
 
-    private void calcRules(OddeeyMetricMetaCalculeted mtrsc, OddeeyMetric metric, Integer code) throws Exception {
+    private void calcRules(OddeeyMetricMetaCalculeted mtrsc, OddeeyMetric metric, String code) throws Exception {
 
         if (mtrsc.isInProcess()) {
             LOGGER.warn("Metric long calc " + "-" + mtrsc.getName() + " " + mtrsc.getTags());
@@ -252,9 +252,9 @@ public class CalcRulesBolt extends BaseRichBolt {
             Deferred.groupInOrder(deferreds).join();
             endtime = System.currentTimeMillis() - starttime;
             if (endtime > 5000) {
-                LOGGER.warn("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
+                LOGGER.warn("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " sha Hash " + mtrsc.sha256Code() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
             } else {
-                LOGGER.info("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
+                LOGGER.info("Rules join SLOW " + deferreds.size() + " Calced Map " + mtrsc.getCalcedRulesMap().size() + " Count " + CalendarObjRules.getTime() + " time: " + endtime + " sha Hash " + mtrsc.sha256Code() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
             }
 
         } else {
@@ -274,13 +274,13 @@ public class CalcRulesBolt extends BaseRichBolt {
                     for (Map.Entry<String, MetriccheckRule> rule : rulesmap.entrySet()) {
                         if (rule.getValue().getQualifier() == null) {
                             qualifiers[index] = "null".getBytes();
-                            LOGGER.warn("qualifiers is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
+                            LOGGER.warn("qualifiers is null " + " sha Hash: " + mtrsc.sha256Code() + " index:" + index);
                         } else {
                             qualifiers[index] = rule.getValue().getQualifier();
                         }
                         if (rule.getValue().getValues() == null) {
                             values[index] = "null".getBytes();
-                            LOGGER.warn("values is null " + " Hash: " + mtrsc.hashCode() + " index:" + index);
+                            LOGGER.warn("values is null " + " sha Hash: " + mtrsc.sha256Code() + " index:" + index);
                         } else {
                             values[index] = rule.getValue().getValues();
                         }
@@ -292,12 +292,12 @@ public class CalcRulesBolt extends BaseRichBolt {
                         try {
                             PutRequest putvalue = new PutRequest(metatable, key, family, qualifiers, values);
                             globalFunctions.getClient(clientconf).put(putvalue).join();
-                            LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.hashCode() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
+                            LOGGER.info("Client putvalue " + deferreds.size() + " qualifiers " + qualifiers.length + " Count " + CalendarObjRules.getTime() + " Hash " + mtrsc.sha256Code() + " Name:" + mtrsc.getName() + " host:" + mtrsc.getTags());
 
                         } catch (Exception e) {
                             LOGGER.warn("catch In Multi qualifiers index: " + index + "rulesmap.size" + rulesmap.size() + " qualifiers.length " + qualifiers.length);
                             LOGGER.warn("catch In Multi qualifiers metatable: " + Arrays.toString(metatable) + " key " + Arrays.toString(key) + "family" + family);
-                            LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.hashCode() + " qualifiers " + Arrays.deepToString(qualifiers) + "values" + Arrays.deepToString(values));
+                            LOGGER.warn("catch In Multi qualifiers Hash: " + mtrsc.sha256Code() + " qualifiers " + Arrays.deepToString(qualifiers) + "values" + Arrays.deepToString(values));
                             LOGGER.error("catch In Multi qualifiers stackTrace: " + globalFunctions.stackTrace(e));
 
                         }

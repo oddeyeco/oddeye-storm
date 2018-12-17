@@ -49,7 +49,7 @@ public class SendNotifierBolt extends BaseRichBolt {
     private byte[] userstable;
     private JsonParser parser;
     private Map<String, StormUser> UserList;
-    private Map<Integer, OddeeyMetricMeta> ErrorsList;
+    private Map<String, OddeeyMetricMeta> ErrorsList;
     private ExecutorService executor;
     private Map<String, Object> mailconf;
 
@@ -157,17 +157,17 @@ public class SendNotifierBolt extends BaseRichBolt {
                     }
                     final StormUser User = UserList.get(metricMeta.getTags().get("UUID").getValue());
                     try {
-                        if (ErrorsList.containsKey(metricMeta.hashCode())) {
-                            User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.hashCode()), false);
+                        if (ErrorsList.containsKey(metricMeta.sha256Code())) {
+                            User.PrepareNotifier(metricMeta, ErrorsList.get(metricMeta.sha256Code()), false);
                             if (metricMeta.getErrorState().getLevel() == -1) {
-                                ErrorsList.remove(metricMeta.hashCode());
+                                ErrorsList.remove(metricMeta.sha256Code());
                             } else {
-                                ErrorsList.put(metricMeta.hashCode(), metricMeta);
+                                ErrorsList.put(metricMeta.sha256Code(), metricMeta);
                             }
                         } else {
                             if (metricMeta.getErrorState().getLevel() > -1) {
                                 User.PrepareNotifier(metricMeta, null, true);
-                                ErrorsList.put(metricMeta.hashCode(), metricMeta);
+                                ErrorsList.put(metricMeta.sha256Code(), metricMeta);
                             }
 
                         }

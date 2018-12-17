@@ -41,8 +41,8 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
     private final Map conf;
     private byte[] metatable;
     private OddeeyMetricMetaList mtrscList;
-    private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialMap = new HashMap<>();
-    private final Map<Integer, OddeeysSpecialMetric> lastTimeSpecialLiveMap = new HashMap<>();
+    private final Map<String, OddeeysSpecialMetric> lastTimeSpecialMap = new HashMap<>();
+    private final Map<String, OddeeysSpecialMetric> lastTimeSpecialLiveMap = new HashMap<>();
     private JsonParser parser = null;
     private JsonObject jsonResult = null;
 
@@ -82,15 +82,15 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 int TaskId = context.getThisTaskId();
                 int TaskIndex = context.getThisTaskIndex();
                 List<Integer> tasks = context.getComponentTasks(context.getThisComponentId());
-                for (Map.Entry<Integer, OddeeyMetricMeta> mtr : mtrscList.entrySet()) {
+                for (Map.Entry<String, OddeeyMetricMeta> mtr : mtrscList.entrySet()) {
                     if ((mtr.getValue().isSpecial()) && (mtr.getValue().getLastreaction() > 0)) {
                         OddeeyMetricMeta mt = mtr.getValue();
                         if ((System.currentTimeMillis() - mt.getLasttime()) > Math.abs(60000 * mt.getLastreaction())) {
-                            if (lastTimeSpecialLiveMap.get(mt.hashCode()) == null) {
+                            if (lastTimeSpecialLiveMap.get(mt.sha256Code()) == null) {
                                 final OddeeysSpecialMetric metric = new OddeeysSpecialMetric(mt);
                                 if (tasks.get(Math.abs(metric.hashCode()) % tasks.size()) == TaskId) {
 //                                    LOGGER.warn("Task test: "+"Metahash " + mt.hashCode() + " Metrichash " + metric.hashCode() + " PPPP " + tasks.get(Math.abs(metric.hashCode()) % tasks.size()) + " TaskId:" + TaskId + " TaskIndex:" + TaskIndex);
-                                    lastTimeSpecialLiveMap.put(mt.hashCode(), metric);
+                                    lastTimeSpecialLiveMap.put(mt.sha256Code(), metric);
                                     mt.getErrorState().setLevel(AlertLevel.ALERT_LEVEL_SEVERE, System.currentTimeMillis());
                                 }
 
@@ -150,8 +150,8 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
         }
 
         if (input.getSourceComponent().equals("TimeSpout")) {
-            for (Iterator<Map.Entry<Integer, OddeeysSpecialMetric>> it = lastTimeSpecialMap.entrySet().iterator(); it.hasNext();) {
-                Map.Entry<Integer, OddeeysSpecialMetric> metricEntry = it.next();
+            for (Iterator<Map.Entry<String, OddeeysSpecialMetric>> it = lastTimeSpecialMap.entrySet().iterator(); it.hasNext();) {
+                Map.Entry<String, OddeeysSpecialMetric> metricEntry = it.next();
                 final OddeeysSpecialMetric metric = metricEntry.getValue();
                 final Long lastTime = metric.getTimestamp();
                 if ((System.currentTimeMillis() - lastTime) > Math.abs(60000 * metric.getReaction())) {
@@ -180,8 +180,8 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
                 }
             }
 
-            for (Iterator<Map.Entry<Integer, OddeeysSpecialMetric>> it = lastTimeSpecialLiveMap.entrySet().iterator(); it.hasNext();) {
-                Map.Entry<Integer, OddeeysSpecialMetric> metricEntry = it.next();
+            for (Iterator<Map.Entry<String, OddeeysSpecialMetric>> it = lastTimeSpecialLiveMap.entrySet().iterator(); it.hasNext();) {
+                Map.Entry<String, OddeeysSpecialMetric> metricEntry = it.next();
                 final OddeeysSpecialMetric metric = metricEntry.getValue();
                 final Long lastTime = metric.getTimestamp();
                 if ((System.currentTimeMillis() - lastTime) > Math.abs(60000 * metric.getReaction())) {
@@ -217,9 +217,9 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
 //                OddeeysSpecialMetric metric = (OddeeysSpecialMetric) input.getValueByField("metric");
             OddeeyMetricMeta mtrsc = new OddeeyMetricMeta(metric, globalFunctions.getTSDB(openTsdbConfig, clientconf));
 
-            if (mtrscList.containsKey(mtrsc.hashCode())) 
+            if (mtrscList.containsKey(mtrsc.sha256Code())) 
             {
-                mtrsc = mtrscList.get(mtrsc.hashCode());
+                mtrsc = mtrscList.get(mtrsc.sha256Code());
             }
             
             globalFunctions.saveMetric(mtrsc, metric, mtrscList, clientconf, metatable);
@@ -227,20 +227,20 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
             mtrsc.setLasttime(metric.getTimestamp());
             mtrsc.getErrorState().setLevel(AlertLevel.getPyName(metric.getStatus()), metric.getTimestamp());
             if (metric.getReaction() == 0) {
-                lastTimeSpecialLiveMap.remove(mtrsc.hashCode());
-                lastTimeSpecialMap.remove(mtrsc.hashCode());
+                lastTimeSpecialLiveMap.remove(mtrsc.sha256Code());
+                lastTimeSpecialMap.remove(mtrsc.sha256Code());
 
             }
             if (metric.getReaction() > 0) {
-                if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()) == null) {
-                    lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
-                } else if (lastTimeSpecialLiveMap.get(mtrsc.hashCode()).getTimestamp() < metric.getTimestamp()) {
-                    lastTimeSpecialLiveMap.put(mtrsc.hashCode(), metric);
+                if (lastTimeSpecialLiveMap.get(mtrsc.sha256Code()) == null) {
+                    lastTimeSpecialLiveMap.put(mtrsc.sha256Code(), metric);
+                } else if (lastTimeSpecialLiveMap.get(mtrsc.sha256Code()).getTimestamp() < metric.getTimestamp()) {
+                    lastTimeSpecialLiveMap.put(mtrsc.sha256Code(), metric);
                 }
-                lastTimeSpecialMap.remove(mtrsc.hashCode());
+                lastTimeSpecialMap.remove(mtrsc.sha256Code());
             } else if (metric.getReaction() < 0) {
-                lastTimeSpecialMap.put(mtrsc.hashCode(), metric);
-                lastTimeSpecialLiveMap.remove(mtrsc.hashCode());
+                lastTimeSpecialMap.put(mtrsc.sha256Code(), metric);
+                lastTimeSpecialLiveMap.remove(mtrsc.sha256Code());
             }
 //                }
 

@@ -242,24 +242,24 @@ public class CompareBolt extends BaseRichBolt {
 
             PutRequest putvalue;
             byte[] key = mtrscMetaInput.getKey();
-            byte[][] qualifiers;
-            byte[][] values;
-            Integer code = 0;
+//            byte[][] qualifiers;
+//            byte[][] values;
+            String code = null;
             try {
-                code = mtrscMetaInput.hashCode();
+                code = mtrscMetaInput.sha256Code();
             } catch (Exception ex) {
-                LOGGER.error("In hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
+                LOGGER.error("In sha hashCode: " + metric.getName() + " " + globalFunctions.stackTrace(ex));
             }
 
-            if (code != 0) {
+            if (code != null) {
                 if (!MetricMetaList.containsKey(code)) {
                     mtrscMetaLocal = mtrscMetaInput;
                 } else {
-                    mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.hashCode());
+                    mtrscMetaLocal = MetricMetaList.get(mtrscMetaInput.sha256Code());
                 }
 
                 if (!Arrays.equals(mtrscMetaLocal.getKey(), key)) {
-                    LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaInput.getKey()) + " Key= " + Hex.encodeHexString(key));
+                    LOGGER.warn("More key for single hash:" + mtrscMetaLocal.getName() + " tags " + mtrscMetaLocal.getTags() + "More key for single hash:" + mtrscMetaInput.getName() + " tags " + mtrscMetaInput.getTags() + " mtrsc.getKey() = " + Hex.encodeHexString(mtrscMetaLocal.getKey()) + " Key= " + Hex.encodeHexString(key));
                 }
 
                 globalFunctions.saveMetric(mtrscMetaLocal, metric, MetricMetaList, clientconf, metatable);

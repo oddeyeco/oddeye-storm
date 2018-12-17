@@ -34,26 +34,25 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
 
     private Date date;
     protected Boolean special;
-    private JsonParser parser;   
+    private JsonParser parser;
     public static final Logger baseLOGGER = LoggerFactory.getLogger(BaseParseMetricBolt.class);
     protected OutputCollector collector;
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer ofd) {
         ofd.declare(new Fields("MetricField"));
-    }    
-    
+    }
+
     @Override
     public void prepare(Map map, TopologyContext tc, OutputCollector oc) {
-        baseLOGGER.warn("DoPrepare "+getClass());
+        baseLOGGER.warn("DoPrepare " + getClass());
         collector = oc;
         parser = new JsonParser();
-    }    
-    
+    }
+
 //    public BaseParseMetricBolt() {
 //        parser = new JsonParser();
 //    }
-
     protected TreeMap<Integer, OddeeyMetric> prepareJsonObjectV2(JsonElement json, String msg) {
         JsonObject jsonResult = json.getAsJsonObject().get("data").getAsJsonObject();
 
@@ -96,18 +95,17 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
                         Metric.addProperty("reaction", 0);
                     } else {
                         Metric.add("reaction", tmpMetric.getAsJsonObject().get("reaction"));
-                    }                                        
-                    
-                    if ((tmpMetric.getAsJsonObject().get("tags") != null)&&(tmpMetric.getAsJsonObject().get("tags").isJsonObject())) {
+                    }
+
+                    if ((tmpMetric.getAsJsonObject().get("tags") != null) && (tmpMetric.getAsJsonObject().get("tags").isJsonObject())) {
                         for (Map.Entry<String, JsonElement> tagEntry : tmpMetric.getAsJsonObject().get("tags").getAsJsonObject().entrySet()) {
-                            if ( tagEntry.getValue().isJsonPrimitive())
-                            {
+                            if (tagEntry.getValue().isJsonPrimitive()) {
                                 Metric.get("tags").getAsJsonObject().add(tagEntry.getKey(), tagEntry.getValue());
                             }
-                            
+
                         }
-                    }                                        
-                    
+                    }
+
                 }
 
                 try {
@@ -221,15 +219,12 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
                 Metric = jsonResult.get(i);
                 try {
                     final OddeeyMetric mtrsc;
-                    if (special)
-                    {
+                    if (special) {
                         mtrsc = new OddeeysSpecialMetric(Metric);
-                    }
-                    else
-                    {
+                    } else {
                         mtrsc = new OddeeyMetric(Metric);
                     }
-                    
+
                     if (mtrsc.isSpecial() != special) {
                         baseLOGGER.info("Welcom special tag:" + Metric.toString());
                         continue;
@@ -316,14 +311,14 @@ public abstract class BaseParseMetricBolt extends BaseRichBolt {
             }
         }
         if (output != null) {
-            if (special) {
+//            if (special) {
 //                CompareSpec.execute(output);
-            } else {
+//            } else {
 //                Compare.execute(output);
-            }
+//            }
 
             collector.emit(new Values(output));
         }
-         this.collector.ack(input);
+        this.collector.ack(input);
     }
 }
