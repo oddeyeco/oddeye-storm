@@ -125,7 +125,7 @@ public class CheckSpecialErrorBolt extends BaseRichBolt {
             jsonResult = this.parser.parse(input.getValueByField("action").toString()).getAsJsonObject();
 
             if (jsonResult.get("action").getAsString().equals("deletemetricbyhash")) {
-                final int hash = jsonResult.get("hash").getAsInt();
+                final String hash = jsonResult.get("hash").getAsString();
                 if (mtrscList.containsKey(hash)) {
                     mtrscList.remove(hash);
                     lastTimeSpecialLiveMap.remove(hash);

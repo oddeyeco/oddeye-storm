@@ -179,14 +179,14 @@ public class CompareBolt extends BaseRichBolt {
             jsonResult = this.parser.parse(tuple.getValueByField("action").toString()).getAsJsonObject();
 
             if (jsonResult.get("action").getAsString().equals("deletemetricbyhash")) {
-                final int hash = jsonResult.get("hash").getAsInt();
+                final String hash = jsonResult.get("hash").getAsString();
                 if (MetricMetaList.containsKey(hash)) {
                     MetricMetaList.remove(hash);
                 }
             }
 
             if (jsonResult.get("action").getAsString().equals("resetregresion")) {
-                final int hash = jsonResult.get("hash").getAsInt();
+                final String hash = jsonResult.get("hash").getAsString();
                 if (MetricMetaList.containsKey(hash)) {
                     try {
                         final OddeeyMetricMeta mtrsc = MetricMetaList.get(hash);
