@@ -239,8 +239,8 @@ public class StormUser implements Serializable {
 
                     Sendlist = getTargetList().get(target);
                     try {
-                        if ((RemoveList.get(target)) && (Sendlist.containsKey(metric.hashCode()))) {
-                            Sendlist.remove(metric.hashCode());
+                        if ((RemoveList.get(target)) && (Sendlist.containsKey(metric.sha256Code()))) {
+                            Sendlist.remove(metric.sha256Code());
                         } else {
                             if (LOGGER.isInfoEnabled()) {
                                 LOGGER.info("Metric Sendlist.set: " + metric.getName() + " State:" + metric.getErrorState().getState() + " level:" + metric.getErrorState().getLevel() + " tags:" + metric.getTags());
