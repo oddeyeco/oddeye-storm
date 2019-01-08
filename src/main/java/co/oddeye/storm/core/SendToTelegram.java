@@ -57,11 +57,19 @@ public class SendToTelegram extends SendTo {
                 LOGGER.info("Sent metric " + entry.getValue().sha256Code()+" Name:"+entry.getValue().getName() + " State " + entry.getValue().getErrorState().getStateName() + " to Level " + entry.getValue().getErrorState().getLevelName() + "Tags:  " + entry.getValue().getTags());
             }            
             if (Counter < 11) {
+//                if (entry.getValue().getErrorState().getLevel() == -1) {
+//                    Text = Text + "\nMertic " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> Already not Error </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
+//                } else {
+//                    Text = Text + "\nLevel For " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>";
+//                }
+
                 if (entry.getValue().getErrorState().getLevel() == -1) {
-                    Text = Text + "\nMertic " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> Already not Error </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
-                } else {
-                    Text = Text + "\nLevel For " + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateName() + " to " + entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>";
-                }                
+                    Text = Text + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> : OK </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>\n";
+                } else {//+ entry.getValue().getErrorState().getStateName()
+                    Text = Text + "<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b>" + entry.getValue().getErrorState().getStateChar()  + entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ") + "</code>";
+                }
+                
+                
                 targetdata.getLastSendList().put(entry.getValue().sha256Code(), entry.getValue().getErrorState().getLevel());
                 iter.remove();
             }
