@@ -53,7 +53,7 @@ public class NotifierSenderBolt extends BaseRichBolt {
     private JsonParser parser;
     private Map<String, StormUser> UserList;
     private Map<String, Object> mailconf;
-    
+
     public NotifierSenderBolt(java.util.Map config) {
         this.conf = config;
     }
@@ -108,7 +108,7 @@ public class NotifierSenderBolt extends BaseRichBolt {
         } catch (Exception ex) {
             LOGGER.error("ERROR: " + globalFunctions.stackTrace(ex));
         }
-                            }
+    }
 
     @Override
     public void execute(Tuple tuple) {
@@ -170,19 +170,25 @@ public class NotifierSenderBolt extends BaseRichBolt {
                         if (optionJSON.getAsJsonObject().has("notifier-v")) {
                             if (NotifierSenderBolt.checkOpton(optionJSON.getAsJsonObject(), metricMeta)) {
                                 JsonObject notifier_v = optionJSON.getAsJsonObject().get("notifier-v").getAsJsonObject();
-                                JsonArray f_col = optionJSON.getAsJsonObject().get("f_col").getAsJsonArray();                                
+                                JsonArray f_col = optionJSON.getAsJsonObject().get("f_col").getAsJsonArray();
                                 ArrayList<String> f_colA = new ArrayList<>();
                                 for (JsonElement jsonElement : f_col) {
                                     f_colA.add(jsonElement.getAsString());
-                                }                                
+                                }
                                 for (Map.Entry<String, JsonElement> notifierjson : notifier_v.entrySet()) {
                                     if (!User.getErrorsList().containsKey(notifierjson.getKey())) {
                                         User.getErrorsList().put(notifierjson.getKey(), new HashMap<>());
                                     }
                                     for (JsonElement notifierjsonitem : notifierjson.getValue().getAsJsonArray()) {
                                         if (!User.getErrorsList().get(notifierjson.getKey()).containsKey(notifierjsonitem.getAsString())) {
-                                            OddeeySenderMetricMetaList list = new OddeeySenderMetricMetaList(notifierjson.getKey(), notifierjsonitem.getAsString(),f_colA );
-                                            User.getErrorsList().get(notifierjson.getKey()).put(notifierjsonitem.getAsString(),list );
+                                            OddeeySenderMetricMetaList list = new OddeeySenderMetricMetaList(notifierjson.getKey(), notifierjsonitem.getAsString(), f_colA);
+                                            User.getErrorsList().get(notifierjson.getKey()).put(notifierjsonitem.getAsString(), list);
+                                        } else {
+                                            OddeeySenderMetricMetaList list = User.getErrorsList().get(notifierjson.getKey()).get(notifierjsonitem.getAsString());
+                                            list.setTargetType(notifierjson.getKey());
+                                            list.setTargetValue(notifierjsonitem.getAsString());
+                                            list.setTargetOption(f_colA);
+                                            User.getErrorsList().get(notifierjson.getKey()).put(notifierjsonitem.getAsString(), list);
                                         }
                                         try {
                                             User.getErrorsList().get(notifierjson.getKey()).get(notifierjsonitem.getAsString()).put(metricMeta.sha256Code(), (OddeeyMetricMeta) metricMeta.clone());
