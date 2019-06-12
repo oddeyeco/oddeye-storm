@@ -7,11 +7,7 @@ package co.oddeye.storm;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
@@ -61,10 +57,9 @@ public class TimeSeriesTopology {
 // Second argument is the topic name
 // Third argument is the ZooKeeper root for Kafka
 // Fourth argument is consumer group id
-        String kafkaConfigZkRoot = String.valueOf(kafkaconf.get("zkRoot"));
-        createDirectory(kafkaConfigZkRoot);
+
         SpoutConfig kafkaConfig = new SpoutConfig(zkHosts,
-                String.valueOf(kafkaconf.get("tsdbtopic")), kafkaConfigZkRoot, String.valueOf(kafkaconf.get("zkKeyTSDB")));
+                String.valueOf(kafkaconf.get("tsdbtopic")), String.valueOf(kafkaconf.get("zkRoot")), String.valueOf(kafkaconf.get("zkKeyTSDB")));
 
         kafkaConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 
@@ -78,11 +73,8 @@ public class TimeSeriesTopology {
         // Semaphore Spout        
         BrokerHosts zkSemaphoreHosts = new ZkHosts(String.valueOf(kafkasemaphoreconf.get("zkHosts")));
 
-        
-        String kafkaSemaphoreConfigZkRoot = String.valueOf(kafkasemaphoreconf.get("zkRoot"));
-        createDirectory(kafkaSemaphoreConfigZkRoot);        
         SpoutConfig kafkaSemaphoreConfig = new SpoutConfig(zkSemaphoreHosts,
-                String.valueOf(kafkasemaphoreconf.get("topic")), kafkaSemaphoreConfigZkRoot, String.valueOf(kafkasemaphoreconf.get("zkKey")));
+                String.valueOf(kafkasemaphoreconf.get("topic")), String.valueOf(kafkasemaphoreconf.get("zkRoot")), String.valueOf(kafkasemaphoreconf.get("zkKey")));
 
         kafkaSemaphoreConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
         builder.setSpout("kafkaSemaphoreSpot", new KafkaSpout(kafkaSemaphoreConfig), Integer.parseInt(String.valueOf(tconf.get("SpoutSemaphoreParallelism_hint"))));
@@ -192,18 +184,6 @@ public class TimeSeriesTopology {
             StormSubmitter.submitTopology(topologyname, conf, builder.createTopology());
         } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException alreadyAliveException) {
             System.out.println(alreadyAliveException);
-        }
-    }
-    
-    private static void createDirectory(String fullPath) {
-        Path path = Paths.get(fullPath);
-        //if directory exists?
-        if (!Files.exists(path)) {
-            try {
-                Files.createDirectories(path);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
