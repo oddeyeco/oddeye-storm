@@ -3,7 +3,7 @@
 Kafka:
    zkHosts: "pve4.office.loc:2181"       
    tsdbtopic: "oddeyetsdb"   
-   zkRoot: "/storm_oddeye"
+   zkRoot: "/home/sasha/NetBeansProjects/oddeye-storm/storm_oddeye"
    zkKey: "oddeye-staus"
    zkKeyTSDB: "oddeye-TSDBstat"
    
@@ -14,7 +14,7 @@ ErrorKafka:
 KafkaSemaphore:
    zkHosts: "pve4.office.loc:2181"       
    topic: "semaphore"   
-   zkRoot: "/semaphore_oddeye"
+   zkRoot: "/home/sasha/NetBeansProjects/oddeye-storm/semaphore_oddeye"
    zkKey: "semaphore-staus"       
    
    
