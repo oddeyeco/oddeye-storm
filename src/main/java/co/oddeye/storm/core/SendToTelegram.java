@@ -54,6 +54,7 @@ public class SendToTelegram extends SendTo {
             }                        
             Counter++;            
             if (LOGGER.isInfoEnabled()) {
+//                entry.getValue().getErrorState().getMessage()
                 LOGGER.info("Sent metric " + entry.getValue().sha256Code()+" Name:"+entry.getValue().getName() + " State " + entry.getValue().getErrorState().getStateName() + " to Level " + entry.getValue().getErrorState().getLevelName() + "Tags:  " + entry.getValue().getTags());
             }            
             if (Counter < 11) {
@@ -65,7 +66,10 @@ public class SendToTelegram extends SendTo {
 
                 if (entry.getValue().getErrorState().getLevel() == -1) {
                     Text = Text + "\n<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "\">" + entry.getValue().getName() + "</a> <b> : OK </b> <code>\nTags:\n " + entry.getValue().getDisplayTags("\n ",targetdata.getTargetOption()) + "</code>\n";
-                } else {//+ entry.getValue().getErrorState().getStateName()
+                } else if (entry.getValue().isSpecial()) {
+                    Text = Text + "\n<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b> :" + entry.getValue().getErrorState().getStateChar()+" "+entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ",targetdata.getTargetOption()) + "</code>"+entry.getValue().getErrorState().getMessage();
+                }
+                else {//+ entry.getValue().getErrorState().getStateName()
                     Text = Text + "\n<a href=\"" + "https://app.oddeye.co/OddeyeCoconut/metriq/" + entry.getValue().sha256Code() + "/" + (long) Math.floor(entry.getValue().getErrorState().getTime() / 1000) + "/\">" + entry.getValue().getName() + "</a> <b> :" + entry.getValue().getErrorState().getStateChar()+" "+entry.getValue().getErrorState().getLevelName() + "</b> <code> \nTags:\n " + entry.getValue().getDisplayTags("\n ",targetdata.getTargetOption()) + "</code>";
                 }
                 
